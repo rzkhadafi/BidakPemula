@@ -87,4 +87,73 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 0 terpenuhi).
 
-- **Langkah berikutnya:** Menunggu instruksi untuk memulai Fase 1 (Playable Chess: integrasi aturan catur `chess.js`, Web Worker Stockfish, interaksi click/tap dan drag-and-drop, validasi promosi/skakmat/remis, jam catur, dan penyimpanan hasil lokal).
+- **Langkah berikutnya:** Fase 1 (Playable Chess: integrasi aturan catur `chess.js`, Web Worker Stockfish, interaksi click/tap dan drag-and-drop, validasi promosi/skakmat/remis, jam catur, dan penyimpanan hasil lokal).
+
+---
+
+### 2026-10-21 — Fase 1: Playable Chess Core & Local Persistence
+
+- **Tujuan:** 
+  Mengubah halaman `/play` dari visual placeholder menjadi permainan catur lokal yang sepenuhnya dapat dimainkan melawan bot engine Stockfish melalui Web Worker. Mengintegrasikan pustaka `chess.js` untuk validasi seluruh aturan legal catur (termasuk promosi pion interaktif, en passant, rokade, skak, skakmat, stalemate, remis), sistem jam catur nyata, undo mode latihan, persistensi lokal SSR-safe untuk riwayat permainan di `localStorage`, serta menghubungkan halaman `/archive` dan `/archive/[gameId]` dengan data pertandingan nyata dan kontrol tayang ulang (replay) langkah-per-langkah.
+
+- **Perubahan utama:**
+  1. **Pemasangan Dependensi & Aset Mesin Catur:**
+     - Memasang `chess.js` (v1.4.0) untuk validasi langkah legal dan manipulasi FEN/PGN.
+     - Memasang `stockfish` (v19.0.1) dan menempatkan distribusi WebAssembly single-thread di `public/engine/stockfish.js` dan `public/engine/stockfish.wasm` sehingga engine dapat berjalan offline tanpa CORS/CDN external dependency.
+     - Menyimpan berkas lisensi resmi `public/engine/LICENSE-STOCKFISH.txt` (GNU GPL v3) sesuai ketentuan lisensi Stockfish.
+     - Memperbarui `eslint.config.mjs` untuk mengabaikan berkas third-party minified `public/engine/stockfish.js`.
+  2. **Model Data & Persistensi Lokal (`src/types/chess.ts` & `src/lib/storage/game-archive.ts`):**
+     - Mendefinisikan tipe TypeScript ketat: `GameStatus`, `GameResult`, `PieceSymbol`, `Color`, `TimeControl`, `BotDifficulty`, `MoveRecord`, `ArchivedGame` (skema versi 1), dan `GameTerminationReason`.
+     - Mengimplementasikan modul penyimpanan SSR-safe dengan pola `useSyncExternalStore` (`subscribeToArchivedGames`, `getArchivedGames`, `getArchivedGamesServerSnapshot`) yang mencegah hydration mismatch pada Next.js App Router.
+     - Mendukung ketahanan terhadap data korup, penolakan rekaman duplikat, dan penghapusan arsip dengan konfirmasi.
+  3. **Pengontrol Kesulitan Bot & Web Worker Engine:**
+     - `src/features/engine/difficulty.ts`: 5 tingkat kesulitan (Pemula ~600 Elo hingga Sangat Kuat ~2000 Elo). Menggunakan `applyControlledDifficultyMove` untuk menyimulasikan ketidakakuratan taktis pada level pemula tanpa pernah menghasilkan langkah ilegal.
+     - `src/features/engine/stockfish-adapter.ts`: Abstraksi Web Worker UCI yang mengelola siklus hidup engine (`uci`, `isready`, `position fen`, `go movetime`), pembatalan pencarian (`stop`), pelacakan generation token pencarian untuk mengabaikan evaluasi basi jika pemain berpindah/reset, serta `MockChessEngine` untuk pengujian otomatis.
+  4. **State Machine & Game Hook (`src/features/game/use-chess-game.ts`):**
+     - Hook mandiri yang mengelola seluruh siklus pertandingan: giliran, penghitungan jam catur mundur, pemilihan bidak dan petak tujuan legal, pelaksanaan langkah, penanganan respons bot asinkron, modal pemilihan promosi pion (Queen, Rook, Bishop, Knight), deteksi status skak/skakmat/remis/waktu habis, undo 2 ply pada mode latihan, dan auto-save ke arsip saat pertandingan selesai.
+  5. **Papan Interaktif (`src/components/chessboard/InteractiveChessboard.tsx`):**
+     - Papan catur 2D 8x8 rasio 1:1 dengan interaksi klik/tap dan drag-and-drop.
+     - Indikator visual terstandarisasi: petak terpilih (`--board-selected`), langkah terakhir (`--board-last-move`), titik tujuan legal dan lingkaran tangkapan bidak, serta highlight bahaya pada raja yang sedang diserang skak (`#E17C78`).
+     - Dialog modal promosi pion terpadu yang memungkinkan pemain memilih bidak promosi secara eksplisit.
+  6. **Arena Bermain Terhubung (`src/app/play/page.tsx`):**
+     - Menggantikan placeholder Fase 0 dengan permainan catur aktif melawan bot.
+     - Jam catur real-time dengan pilihan kontrol waktu (3m, 5m, 10m, 15m), indikator giliran aktif, avatar dan level bot, tabel riwayat langkah SAN dengan scroll otomatis, banner hasil akhir pertandingan (menang, kalah, remis), tombol Menyerah (Resign), Urungkan (Undo), dan modal Mulai Ulang (New Game).
+  7. **Arsip & Replay Terhubung (`src/app/archive/page.tsx` & `src/app/archive/[gameId]/page.tsx`):**
+     - Menghubungkan `/archive` langsung ke `localStorage` melalui `useSyncExternalStore`. Menampilkan kartu ringkasan pertandingan nyata (hasil, alasan akhir, waktu, jumlah langkah, level bot) dan empty state informatif jika belum ada data.
+     - Menghubungkan `/archive/[gameId]` ke rekaman pertandingan aktual dengan viewer tayang ulang interaktif: tombol navigasi awal (`|<<`), mundur (`<`), maju (`>`), akhir (`>>`), navigasi keyboard (`ArrowLeft`, `ArrowRight`, `Home`, `End`), lompatan langkah langsung dengan klik pada tabel notasi, dan tombol Salin PGN.
+  8. **Rangkaian Pengujian Komprehensif:**
+     - `tests/unit/chess-rules.test.ts` (9 pengujian aturan catur `chess.js`, promosi, skakmat, remis).
+     - `tests/unit/difficulty.test.ts` (4 pengujian konfigurasi bot dan seleksi langkah terkontrol).
+     - `tests/unit/storage.test.ts` (7 pengujian persistensi arsip, validasi skema, dan pencegahan duplikasi).
+     - `tests/unit/interactive-game.test.tsx` (7 pengujian state machine game hook dan interaksi papan).
+     - `tests/integration/play-and-archive.test.tsx` (1 pengujian alur lengkap: bermain -> menyerah -> simpan ke arsip -> muat ulang dan tayangkan di arsip).
+
+- **File penting yang dibuat/dimodifikasi:**
+  - `package.json`, `package-lock.json`, `eslint.config.mjs`
+  - `public/engine/stockfish.js`, `public/engine/stockfish.wasm`, `public/engine/LICENSE-STOCKFISH.txt`
+  - `src/types/chess.ts`
+  - `src/lib/storage/game-archive.ts`
+  - `src/features/engine/difficulty.ts`, `src/features/engine/stockfish-adapter.ts`
+  - `src/features/game/use-chess-game.ts`
+  - `src/components/chessboard/InteractiveChessboard.tsx`
+  - `src/app/play/page.tsx`, `src/app/archive/page.tsx`, `src/app/archive/[gameId]/page.tsx`
+  - `tests/unit/chess-rules.test.ts`, `tests/unit/difficulty.test.ts`, `tests/unit/storage.test.ts`, `tests/unit/interactive-game.test.tsx`, `tests/integration/play-and-archive.test.tsx`, `tests/unit/smoke.test.tsx`
+
+- **Tests/commands yang dijalankan:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` selesai dengan 0 kesalahan).
+  - `npm run test` -> **PASS** (8 test files, 50 unit & integration tests lulus 100%).
+  - `npm run build` -> **PASS** (Next.js Turbopack production build selesai tanpa kendala, 19 rute berhasil di-compile).
+
+- **Visual & UX review:**
+  - **Papan Catur & Interaksi:** Petak terpilih, langkah terakhir, dan indikator target legal kontras dan mudah dibaca tanpa mengaburkan bidak. Modal promosi pion muncul tepat waktu ketika pion mencapai rank 8/rank 1 dan tidak pernah otomatis memilih menteri tanpa izin pemain.
+  - **Replay Viewer:** Tombol navigasi langkah dan keyboard shortcuts berjalan mulus. Mengklik langkah mana pun pada daftar notasi langsung melompat ke posisi FEN yang bersangkutan.
+  - **Responsivitas:** Tata letak tetap solid pada layar desktop (grid 2 kolom) dan mobile (single column stack dengan papan proporsional 1:1).
+
+- **Known issues / limitations:**
+  - Analisis evaluasi mesin mendalam per langkah (blunder/mistake badge pada riwayat tayang ulang) dan Gemini AI Tutor belum dimasukkan karena merupakan ruang lingkup Fase 3 & Fase 4.
+  - Rating bot (400-2000 Elo) merupakan estimasi target berbasis tingkat kedalaman dan waktu berpikir engine; belum dikalibrasi terhadap data turnamen riil.
+
+- **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 1 terpenuhi secara penuh).
+
+- **Langkah berikutnya:** Menunggu arahan untuk Fase 2 (Tactics & Puzzles Core).

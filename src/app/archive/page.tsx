@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   Archive,
@@ -15,34 +15,47 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import {
+  getArchivedGames,
+  getArchivedGamesServerSnapshot,
+  subscribeToArchivedGames,
+  clearArchivedGames,
+} from "@/lib/storage/game-archive";
 
-// Placeholder sample games for Phase 0 visual shell
-const SAMPLE_GAMES = [
-  {
-    id: "game-demo-01",
-    date: "2026-10-21",
-    result: "Menang",
-    resultType: "white_win",
-    playerColor: "Putih",
-    botLevel: "Pemula",
-    movesCount: 24,
-    duration: "4m 12s",
-  },
-  {
-    id: "game-demo-02",
-    date: "2026-10-20",
-    result: "Kalah",
-    resultType: "black_win",
-    playerColor: "Hitam",
-    botLevel: "Santai",
-    movesCount: 38,
-    duration: "8m 45s",
-  },
-];
+function formatDuration(ms?: number): string {
+  if (!ms || ms <= 0) return "1m 00s";
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${seconds < 10 ? "0" : ""}${seconds}s`;
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
 
 export default function ArchivePage() {
+  const games = useSyncExternalStore(
+    subscribeToArchivedGames,
+    getArchivedGames,
+    getArchivedGamesServerSnapshot
+  );
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [hasGames, setHasGames] = useState(true);
+
+  const handleClearArchive = () => {
+    clearArchivedGames();
+    setDeleteModalOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -61,7 +74,7 @@ export default function ArchivePage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {hasGames && (
+          {games.length > 0 && (
             <Button
               variant="destructive"
               size="sm"
@@ -76,70 +89,76 @@ export default function ArchivePage() {
       </div>
 
       {/* Game List or Empty State */}
-      {hasGames ? (
+      {games.length > 0 ? (
         <div className="space-y-3">
           <div className="text-xs text-[#8A9299] flex items-center justify-between px-1">
-            <span>Daftar Pertandingan Terakhir (Data Contoh Fase 0)</span>
-            <span>2 Pertandingan Tercatat</span>
+            <span>Daftar Pertandingan Terakhir</span>
+            <span>{games.length} Pertandingan Tercatat</span>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
-            {SAMPLE_GAMES.map((game) => (
-              <Card
-                key={game.id}
-                variant="surface"
-                className="hover:border-[#C7A66A]/40 transition-colors p-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#24292E] border border-[#353B42] flex items-center justify-center text-lg">
-                      ♟
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[#F2F0E8]">
-                          vs Bot {game.botLevel}
-                        </span>
-                        <Badge
-                          variant={
-                            game.resultType === "white_win"
-                              ? "success"
-                              : "danger"
-                          }
-                          size="sm"
-                        >
-                          {game.result}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-[#8A9299]">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {game.date}
-                        </span>
-                        <span>•</span>
-                        <span>{game.playerColor}</span>
-                        <span>•</span>
-                        <span>{game.movesCount} langkah</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {game.duration}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+            {games.map((game) => {
+              const isWin =
+                (game.playerColor === "white" && game.result === "white_win") ||
+                (game.playerColor === "black" && game.result === "black_win");
+              const isDraw = game.result === "draw";
 
-                  <div className="flex items-center gap-2 self-end sm:self-center">
-                    <Link href={`/archive/${game.id}`}>
-                      <Button variant="secondary" size="sm">
-                        Tinjau Permainan
-                        <ChevronRight className="w-3.5 h-3.5 ml-1 text-[#C7A66A]" />
-                      </Button>
-                    </Link>
+              return (
+                <Card
+                  key={game.id}
+                  variant="surface"
+                  className="hover:border-[#C7A66A]/40 transition-colors p-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#24292E] border border-[#353B42] flex items-center justify-center text-lg">
+                        ♟
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-[#F2F0E8]">
+                            vs Bot {game.botLevel}
+                          </span>
+                          <Badge
+                            variant={isWin ? "success" : isDraw ? "warning" : "danger"}
+                            size="sm"
+                          >
+                            {isWin ? "Menang" : isDraw ? "Remis" : "Kalah"} •{" "}
+                            {game.termination}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-[#8A9299]">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDate(game.createdAt)}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {game.playerColor === "white" ? "Putih" : "Hitam"}
+                          </span>
+                          <span>•</span>
+                          <span>{game.moves.length} langkah</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {formatDuration(game.durationMs)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <Link href={`/archive/${game.id}`}>
+                        <Button variant="secondary" size="sm">
+                          Tinjau Permainan
+                          <ChevronRight className="w-3.5 h-3.5 ml-1 text-[#C7A66A]" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </div>
       ) : (
@@ -152,19 +171,21 @@ export default function ArchivePage() {
               Belum ada arsip permainan
             </h2>
             <p className="text-xs text-[#8A9299] max-w-sm mx-auto mt-1">
-              Pertandingan yang Anda selesaikan di menu Main Catur akan otomatis tercatat dan dapat ditinjau di sini.
+              Pertandingan yang Anda selesaikan di menu Main Catur akan otomatis tersimpan dan dapat ditinjau kembali di sini.
             </p>
           </div>
-          <Link href="/play" className="inline-block pt-2">
-            <Button variant="primary" size="sm">
-              <Swords className="w-4 h-4 mr-1.5" />
-              Mulai Permainan Baru
-            </Button>
-          </Link>
+          <div className="pt-2">
+            <Link href="/play">
+              <Button variant="primary" size="sm">
+                <Swords className="w-4 h-4 mr-1.5" />
+                Mulai Permainan Pertama
+              </Button>
+            </Link>
+          </div>
         </Card>
       )}
 
-      {/* Confirmation Modal for Clearing Archive */}
+      {/* Confirmation Modal */}
       <Modal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -190,10 +211,7 @@ export default function ArchivePage() {
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => {
-                setHasGames(false);
-                setDeleteModalOpen(false);
-              }}
+              onClick={handleClearArchive}
             >
               Ya, Hapus Semua Catatan
             </Button>

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   RotateCcw,
   Undo2,
@@ -9,35 +10,109 @@ import {
   Clock,
   Bot,
   User,
-  ShieldAlert,
+  ShieldCheck,
   Play,
+  Trophy,
+  Archive,
 } from "lucide-react";
-import { ChessboardPlaceholder } from "@/components/chessboard/ChessboardPlaceholder";
+import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessboard";
+import { useChessGame } from "@/features/game/use-chess-game";
+import {
+  PlayerColor,
+  BotDifficultyLevel,
+  TimeControlId,
+} from "@/types/chess";
+import { getAllDifficulties } from "@/features/engine/difficulty";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 
+function formatClock(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 export default function PlayPage() {
   const [configModalOpen, setConfigModalOpen] = useState(false);
-  const [playerColor, setPlayerColor] = useState<"white" | "black">("white");
-  const [botLevel, setBotLevel] = useState("Pemula");
-  const [timeControl, setTimeControl] = useState("5 Menit");
-  const [isPracticeMode, setIsPracticeMode] = useState(true);
+  const [selectedColor, setSelectedColor] = useState<PlayerColor>("white");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<BotDifficultyLevel>("beginner");
+  const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControlId>("5m");
+  const [isPracticeMode, setIsPracticeMode] = useState<boolean>(true);
+
+  const moveListContainerRef = useRef<HTMLDivElement>(null);
+
+  const {
+    chess,
+    turn,
+    isCheck,
+    gameStatus,
+    gameResult,
+    terminationReason,
+    history,
+    lastMove,
+    selectedSquare,
+    legalDestinations,
+    pendingPromotion,
+    whiteClockMs,
+    blackClockMs,
+    botThinking,
+    engineStatus,
+    config,
+    handleSquareClick,
+    confirmPromotion,
+    cancelPromotion,
+    undoMove,
+    resignGame,
+    startNewGame,
+    resetGame,
+  } = useChessGame({
+    playerColor: selectedColor,
+    botDifficulty: selectedDifficulty,
+    timeControl: selectedTimeControl,
+    isPracticeMode: isPracticeMode,
+  });
+
+  // Auto-scroll move list to latest move
+  useEffect(() => {
+    if (moveListContainerRef.current) {
+      moveListContainerRef.current.scrollTop =
+        moveListContainerRef.current.scrollHeight;
+    }
+  }, [history.length]);
+
+  const difficulties = getAllDifficulties();
+  const currentDiff = difficulties.find((d) => d.id === config.botDifficulty);
+
+  // Group moves into pairs (White move, Black move)
+  const movePairs: Array<{ number: number; white?: string; black?: string }> = [];
+  for (let i = 0; i < history.length; i += 2) {
+    movePairs.push({
+      number: Math.floor(i / 2) + 1,
+      white: history[i]?.san,
+      black: history[i + 1]?.san,
+    });
+  }
+
+  const isPlayerWhite = config.playerColor === "white";
+  const isPlayerTurn =
+    (isPlayerWhite && turn === "w") || (!isPlayerWhite && turn === "b");
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#353B42]">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-semibold text-[#F2F0E8]">
               Main Catur vs Bot
             </h1>
-            <Badge variant="accent">Fase 0 Visual Shell</Badge>
+            <Badge variant="accent">Stockfish 19 Web Worker</Badge>
           </div>
           <p className="text-xs sm:text-sm text-[#B0B5B9] mt-0.5">
-            Latihan mandiri melawan bot Stockfish lokal (diaktifkan di Fase 1).
+            Latihan mandiri dengan validasi aturan catur standar penuh dan penyimpanan lokal.
           </p>
         </div>
 
@@ -54,7 +129,7 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {/* Main Playing Arena: Board & Side Panel */}
+      {/* Main Playing Arena */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Chessboard Column */}
         <div className="lg:col-span-8 flex flex-col items-center">
@@ -67,26 +142,57 @@ export default function PlayPage() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-medium text-[#F2F0E8]">
-                    Bot Komputer ({botLevel})
+                    Bot ({currentDiff?.label || "Pemula"})
                   </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#73B894]" />
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      engineStatus === "error"
+                        ? "bg-[#E17C78]"
+                        : botThinking
+                        ? "bg-[#E3B66F] animate-pulse"
+                        : "bg-[#73B894]"
+                    }`}
+                  />
                 </div>
                 <span className="text-[11px] text-[#8A9299]">
-                  Menunggu langkah pertama
+                  {botThinking
+                    ? "Bot sedang berpikir..."
+                    : !isPlayerTurn && gameStatus === "ongoing"
+                    ? "Giliran bot melangkah"
+                    : "Menunggu giliran"}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#141619] border border-[#353B42] font-mono text-xs tabular-nums text-[#F2F0E8]">
-              <Clock className="w-3.5 h-3.5 text-[#8A9299]" />
-              <span>05:00</span>
-            </div>
+            {config.timeControl !== "unlimited" && (
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border font-mono text-xs tabular-nums ${
+                  !isPlayerTurn && gameStatus === "ongoing"
+                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8]"
+                    : "bg-[#141619] border-[#353B42] text-[#8A9299]"
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-[#8A9299]" />
+                <span>
+                  {formatClock(isPlayerWhite ? blackClockMs : whiteClockMs)}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Chessboard Presentation */}
-          <ChessboardPlaceholder
-            orientation={playerColor}
-            caption="Papan catur interaktif dengan validasi chess.js & Stockfish aktif di Fase 1."
+          {/* Interactive Chessboard */}
+          <InteractiveChessboard
+            chess={chess}
+            orientation={config.playerColor}
+            selectedSquare={selectedSquare}
+            legalDestinations={legalDestinations}
+            lastMove={lastMove}
+            isCheck={isCheck}
+            disabled={gameStatus !== "ongoing" && gameStatus !== "not_started"}
+            pendingPromotion={pendingPromotion}
+            onSquareClick={handleSquareClick}
+            onConfirmPromotion={confirmPromotion}
+            onCancelPromotion={cancelPromotion}
           />
 
           {/* Player Info Bar */}
@@ -98,29 +204,104 @@ export default function PlayPage() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-medium text-[#F2F0E8]">
-                    Pemain ({playerColor === "white" ? "Bidak Putih" : "Bidak Hitam"})
+                    Anda ({isPlayerWhite ? "Bidak Putih" : "Bidak Hitam"})
                   </span>
-                  {isPracticeMode && (
+                  {config.isPracticeMode && (
                     <Badge variant="muted" size="sm">
                       Mode Latihan
                     </Badge>
                   )}
                 </div>
                 <span className="text-[11px] text-[#C7A66A]">
-                  Giliran Putih melangkah
+                  {gameStatus !== "ongoing" && gameStatus !== "not_started"
+                    ? "Permainan Selesai"
+                    : isPlayerTurn
+                    ? "Giliran Anda melangkah"
+                    : "Menunggu langkah bot..."}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#141619] border border-[#353B42] font-mono text-xs tabular-nums text-[#F2F0E8]">
-              <Clock className="w-3.5 h-3.5 text-[#8A9299]" />
-              <span>05:00</span>
-            </div>
+            {config.timeControl !== "unlimited" && (
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border font-mono text-xs tabular-nums ${
+                  isPlayerTurn && gameStatus === "ongoing"
+                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8]"
+                    : "bg-[#141619] border-[#353B42] text-[#8A9299]"
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-[#8A9299]" />
+                <span>
+                  {formatClock(isPlayerWhite ? whiteClockMs : blackClockMs)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Side Panel: Move List & Controls */}
+        {/* Side Panel: Controls & Move History */}
         <div className="lg:col-span-4 space-y-4 w-full">
+          {/* Game Over Banner */}
+          {gameStatus !== "ongoing" && gameStatus !== "not_started" && (
+            <Card
+              variant="raised"
+              className={`space-y-3 border-2 ${
+                gameResult === (isPlayerWhite ? "white_win" : "black_win")
+                  ? "border-[#73B894] bg-[#73B894]/10"
+                  : gameResult === "draw"
+                  ? "border-[#E3B66F] bg-[#E3B66F]/10"
+                  : "border-[#E17C78] bg-[#E17C78]/10"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-[#C7A66A]" />
+                  <h2 className="text-sm font-semibold text-[#F2F0E8]">
+                    {gameResult === (isPlayerWhite ? "white_win" : "black_win")
+                      ? "Kemenangan Untuk Anda!"
+                      : gameResult === "draw"
+                      ? "Pertandingan Remis"
+                      : "Bot Memenangkan Pertandingan"}
+                  </h2>
+                </div>
+                <Badge
+                  variant={
+                    gameResult === (isPlayerWhite ? "white_win" : "black_win")
+                      ? "success"
+                      : gameResult === "draw"
+                      ? "warning"
+                      : "danger"
+                  }
+                  size="sm"
+                >
+                  {terminationReason}
+                </Badge>
+              </div>
+
+              <p className="text-xs text-[#B0B5B9] leading-relaxed">
+                Pertandingan ini telah otomatis disimpan ke dalam arsip lokal Anda ({history.length} langkah).
+              </p>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={resetGame}
+                  className="flex-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                  Main Lagi
+                </Button>
+                <Link href="/archive" className="flex-1">
+                  <Button variant="secondary" size="sm" className="w-full">
+                    <Archive className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+                    Buka Arsip
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
+
           {/* Action Controls */}
           <Card variant="surface" className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-[#B0B5B9]">
@@ -130,27 +311,43 @@ export default function PlayPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                disabled
-                title="Aktif saat mesin catur terhubung di Fase 1"
+                onClick={undoMove}
+                disabled={
+                  !config.isPracticeMode ||
+                  history.length === 0 ||
+                  botThinking ||
+                  gameStatus !== "ongoing"
+                }
+                title={
+                  !config.isPracticeMode
+                    ? "Undo hanya aktif pada Mode Latihan"
+                    : history.length === 0
+                    ? "Belum ada langkah untuk di-undo"
+                    : "Batalkan langkah terakhir"
+                }
               >
-                <Undo2 className="w-4 h-4 mr-1 text-[#8A9299]" />
+                <Undo2 className="w-4 h-4 mr-1 text-[#C7A66A]" />
                 Undo
               </Button>
+
               <Button
                 variant="secondary"
                 size="sm"
-                disabled
-                title="Aktif saat permainan dimulai di Fase 1"
+                onClick={resetGame}
+                disabled={history.length === 0 && gameStatus === "not_started"}
+                title="Mulai ulang pertandingan"
               >
                 <RotateCcw className="w-4 h-4 mr-1 text-[#8A9299]" />
                 Mulai Ulang
               </Button>
+
               <Button
                 variant="destructive"
                 size="sm"
-                disabled
+                onClick={resignGame}
+                disabled={gameStatus !== "ongoing" || history.length === 0}
                 className="col-span-2"
-                title="Aktif saat permainan dimulai di Fase 1"
+                title="Menyerah pada pertandingan ini"
               >
                 <Flag className="w-4 h-4 mr-1" />
                 Menyerah
@@ -158,33 +355,58 @@ export default function PlayPage() {
             </div>
           </Card>
 
-          {/* Move List */}
+          {/* Move History Table */}
           <Card variant="surface" className="space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-[#353B42]">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[#B0B5B9]">
-                Catatan Langkah (Notasi SAN)
+                Catatan Langkah (SAN)
               </h2>
-              <span className="text-[11px] text-[#8A9299]">0 langkah</span>
+              <span className="text-[11px] text-[#8A9299]">
+                {history.length} langkah
+              </span>
             </div>
 
-            {/* Empty move list state */}
-            <div className="h-44 flex flex-col items-center justify-center text-center p-4 text-[#8A9299] text-xs space-y-2">
-              <span className="text-2xl">♟</span>
-              <p>Belum ada langkah yang dicatat.</p>
-              <p className="text-[11px] text-[#8A9299]">
-                Langkah pemain dan bot akan tervalidasi di Fase 1.
-              </p>
+            <div
+              ref={moveListContainerRef}
+              className="h-52 overflow-y-auto space-y-1 pr-1 font-mono text-xs"
+            >
+              {movePairs.length > 0 ? (
+                movePairs.map((pair) => (
+                  <div
+                    key={pair.number}
+                    className="grid grid-cols-12 gap-1 py-1 px-1.5 rounded hover:bg-[#24292E] text-[#F2F0E8] transition-colors"
+                  >
+                    <span className="col-span-2 text-[#8A9299]">
+                      {pair.number}.
+                    </span>
+                    <span className="col-span-5 text-[#C7A66A] font-medium">
+                      {pair.white}
+                    </span>
+                    <span className="col-span-5 text-[#B0B5B9]">
+                      {pair.black || ""}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center text-[#8A9299] text-xs space-y-1">
+                  <span>♟</span>
+                  <p>Belum ada langkah yang dibuat.</p>
+                  <p className="text-[11px]">
+                    Klik bidak untuk melihat langkah legal.
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
 
-          {/* Notice Box */}
-          <div className="p-3.5 rounded-xl bg-[#24292E]/60 border border-[#353B42] text-xs text-[#B0B5B9] space-y-1.5">
-            <div className="flex items-center gap-1.5 text-[#C7A66A] font-medium">
-              <ShieldAlert className="w-4 h-4 shrink-0" />
-              <span>Status Pengembangan</span>
+          {/* Verification Badge */}
+          <div className="p-3.5 rounded-xl bg-[#1C2024] border border-[#353B42] text-xs text-[#8A9299] space-y-1">
+            <div className="flex items-center gap-1.5 text-[#73B894] font-medium">
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <span>Validasi Catur Standar Aktif</span>
             </div>
             <p className="text-[11px] text-[#8A9299] leading-relaxed">
-              Ini adalah tata letak visual Fase 0. Pustaka aturan <code className="text-[#F2F0E8]">chess.js</code>, Web Worker Stockfish, dan interaksi drag-and-drop akan diintegrasikan pada <strong>Fase 1</strong>.
+              Aturan diuji dengan <code className="text-[#F2F0E8]">chess.js</code>. Bot ditenagai engine Stockfish 19 Web Worker tanpa memblokir thread antarmuka.
             </p>
           </div>
         </div>
@@ -194,8 +416,8 @@ export default function PlayPage() {
       <Modal
         isOpen={configModalOpen}
         onClose={() => setConfigModalOpen(false)}
-        title="Pengaturan Permainan Catur"
-        description="Pilih preferensi warna bidak, tingkat bot, dan kontrol waktu untuk sesi baru."
+        title="Pengaturan Pertandingan Baru"
+        description="Atur warna bidak, tingkat kecerdasan bot, kontrol jam, dan mode latihan."
       >
         <div className="space-y-4 pt-2">
           {/* Color Selection */}
@@ -206,9 +428,9 @@ export default function PlayPage() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setPlayerColor("white")}
+                onClick={() => setSelectedColor("white")}
                 className={`py-2 px-3 rounded-lg text-xs font-medium border transition-colors ${
-                  playerColor === "white"
+                  selectedColor === "white"
                     ? "bg-[#24292E] border-[#C7A66A] text-[#F2F0E8]"
                     : "border-[#353B42] text-[#8A9299] hover:bg-[#24292E]"
                 }`}
@@ -217,9 +439,9 @@ export default function PlayPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setPlayerColor("black")}
+                onClick={() => setSelectedColor("black")}
                 className={`py-2 px-3 rounded-lg text-xs font-medium border transition-colors ${
-                  playerColor === "black"
+                  selectedColor === "black"
                     ? "bg-[#24292E] border-[#C7A66A] text-[#F2F0E8]"
                     : "border-[#353B42] text-[#8A9299] hover:bg-[#24292E]"
                 }`}
@@ -235,22 +457,21 @@ export default function PlayPage() {
               Tingkat Kesulitan Bot
             </label>
             <div className="grid grid-cols-3 gap-1.5">
-              {["Pemula", "Santai", "Menengah", "Mahir", "Sangat Kuat"].map(
-                (lvl) => (
-                  <button
-                    key={lvl}
-                    type="button"
-                    onClick={() => setBotLevel(lvl)}
-                    className={`py-1.5 px-2 rounded-md text-xs font-medium border transition-colors ${
-                      botLevel === lvl
-                        ? "bg-[#24292E] border-[#C7A66A] text-[#F2F0E8]"
-                        : "border-[#353B42] text-[#8A9299] hover:bg-[#24292E]"
-                    }`}
-                  >
-                    {lvl}
-                  </button>
-                )
-              )}
+              {difficulties.map((diff) => (
+                <button
+                  key={diff.id}
+                  type="button"
+                  onClick={() => setSelectedDifficulty(diff.id)}
+                  className={`py-1.5 px-2 rounded-md text-xs font-medium border transition-colors ${
+                    selectedDifficulty === diff.id
+                      ? "bg-[#24292E] border-[#C7A66A] text-[#F2F0E8]"
+                      : "border-[#353B42] text-[#8A9299] hover:bg-[#24292E]"
+                  }`}
+                >
+                  <div>{diff.label}</div>
+                  <div className="text-[10px] text-[#8A9299]">~{diff.targetElo} Elo</div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -260,18 +481,25 @@ export default function PlayPage() {
               Kontrol Jam Catur
             </label>
             <div className="grid grid-cols-4 gap-1.5">
-              {["Tanpa Waktu", "3 Menit", "5 Menit", "10 Menit"].map((tc) => (
+              {(
+                [
+                  { id: "unlimited", label: "Tanpa Jam" },
+                  { id: "3m", label: "3 Menit" },
+                  { id: "5m", label: "5 Menit" },
+                  { id: "10m", label: "10 Menit" },
+                ] as const
+              ).map((tc) => (
                 <button
-                  key={tc}
+                  key={tc.id}
                   type="button"
-                  onClick={() => setTimeControl(tc)}
+                  onClick={() => setSelectedTimeControl(tc.id)}
                   className={`py-1.5 px-2 rounded-md text-xs font-medium border transition-colors ${
-                    timeControl === tc
+                    selectedTimeControl === tc.id
                       ? "bg-[#24292E] border-[#C7A66A] text-[#F2F0E8]"
                       : "border-[#353B42] text-[#8A9299] hover:bg-[#24292E]"
                   }`}
                 >
-                  {tc}
+                  {tc.label}
                 </button>
               ))}
             </div>
@@ -284,7 +512,7 @@ export default function PlayPage() {
                 Mode Latihan (Izinkan Undo)
               </span>
               <span className="text-[11px] text-[#8A9299]">
-                Mengizinkan pembatalan langkah saat bermain santai
+                Boleh membatalkan langkah saat bermain santai
               </span>
             </div>
             <input
@@ -295,7 +523,7 @@ export default function PlayPage() {
             />
           </div>
 
-          {/* Modal Action Buttons */}
+          {/* Modal Buttons */}
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#353B42]">
             <Button
               variant="secondary"
@@ -307,10 +535,18 @@ export default function PlayPage() {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => setConfigModalOpen(false)}
+              onClick={() => {
+                setConfigModalOpen(false);
+                startNewGame({
+                  playerColor: selectedColor,
+                  botDifficulty: selectedDifficulty,
+                  timeControl: selectedTimeControl,
+                  isPracticeMode: isPracticeMode,
+                });
+              }}
             >
               <Play className="w-3.5 h-3.5 mr-1" />
-              Terapkan Konfigurasi
+              Mulai Permainan Baru
             </Button>
           </div>
         </div>

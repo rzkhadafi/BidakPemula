@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import HomePage from "@/app/page";
 import PlayPage from "@/app/play/page";
@@ -9,8 +9,13 @@ import ArchivePage from "@/app/archive/page";
 import SettingsPage from "@/app/settings/page";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { saveArchivedGame, CURRENT_SCHEMA_VERSION } from "@/lib/storage/game-archive";
 
 describe("Smoke Tests: P0 Pages and Shells", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it("renders Navbar with brand and main links", () => {
     render(<Navbar />);
     expect(screen.getByText("CHESS ARCHIVE")).toBeInTheDocument();
@@ -43,7 +48,7 @@ describe("Smoke Tests: P0 Pages and Shells", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Play Page with 2D board placeholder and control buttons", () => {
+  it("renders Play Page with interactive board and control buttons", () => {
     render(<PlayPage />);
     expect(screen.getByText("Main Catur vs Bot")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
@@ -66,9 +71,33 @@ describe("Smoke Tests: P0 Pages and Shells", () => {
     expect(screen.getByText("Tujuan Puzzle")).toBeInTheDocument();
   });
 
-  it("renders Archive Page with games list", () => {
+  it("renders Archive Page with empty state when no games are stored", () => {
     render(<ArchivePage />);
     expect(screen.getByText("Arsip Pertandingan Lokal")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada arsip permainan")).toBeInTheDocument();
+  });
+
+  it("renders Archive Page with game list when games exist in storage", () => {
+    saveArchivedGame({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      id: "game-smoke-test",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      playerColor: "white",
+      botLevel: "Pemula",
+      timeControlId: "5m",
+      timeControlLabel: "5 Menit",
+      result: "white_win",
+      termination: "Skakmat",
+      initialFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      finalFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      pgn: "1. e4",
+      moves: [],
+      durationMs: 12000,
+    });
+
+    render(<ArchivePage />);
+    expect(screen.getByText("vs Bot Pemula")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Hapus Seluruh Arsip Pertandingan/i })
     ).toBeInTheDocument();
