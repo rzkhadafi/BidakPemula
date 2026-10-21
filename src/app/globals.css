@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #141619;
+  --color-surface: #1C2024;
+  --color-surface-raised: #24292E;
+  --color-surface-muted: #2C3238;
+  --color-border: #353B42;
+  --color-text: #F2F0E8;
+  --color-text-muted: #B0B5B9;
+  --color-text-subtle: #8A9299;
+  --color-accent: #C7A66A;
+  --color-accent-hover: #D8BB83;
+  --color-success: #73B894;
+  --color-warning: #E3B66F;
+  --color-danger: #E17C78;
+
+  --board-light: #E8E3D8;
+  --board-dark: #68716F;
+  --board-last-move: rgba(199, 166, 106, 0.38);
+  --board-selected: rgba(230, 190, 94, 0.55);
+  --board-legal-dot: rgba(20, 22, 25, 0.30);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-archive-bg: var(--color-bg);
+  --color-archive-surface: var(--color-surface);
+  --color-archive-raised: var(--color-surface-raised);
+  --color-archive-muted: var(--color-surface-muted);
+  --color-archive-border: var(--color-border);
+  --color-archive-text: var(--color-text);
+  --color-archive-text-muted: var(--color-text-muted);
+  --color-archive-text-subtle: var(--color-text-subtle);
+  --color-archive-accent: var(--color-accent);
+  --color-archive-accent-hover: var(--color-accent-hover);
+  --color-archive-success: var(--color-success);
+  --color-archive-warning: var(--color-warning);
+  --color-archive-danger: var(--color-danger);
+
+  --color-board-light: var(--board-light);
+  --color-board-dark: var(--board-dark);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100%;
+}
+
+/* Tabular numerals for clocks and notation */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-muted);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

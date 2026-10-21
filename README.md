@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chess Archive — Project Documentation Pack
 
-## Getting Started
+Dokumentasi ini adalah sumber kebenaran awal untuk membangun Chess Archive dari proyek kosong menggunakan Antigravity.
 
-First, run the development server:
+## Mulai di sini
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Buka folder ini sebagai workspace/project di Antigravity.
+2. Baca `AGENTS.md` dan `ANTIGRAVITY_START_HERE.md`.
+3. Ikuti instruksi pada `ANTIGRAVITY_START_HERE.md` untuk meminta agen menganalisis spesifikasi terlebih dahulu. Jangan meminta seluruh aplikasi dibuat dalam satu prompt.
+4. Selesaikan gerbang setiap fase di `docs/IMPLEMENTATION_PLAN.md` sebelum pindah ke fase berikutnya.
+5. Gunakan `docs/TEST_PLAN.md` untuk menguji hasil. Jangan menganggap build sukses hanya berdasarkan klaim agen; jalankan perintahnya dan lihat keluarannya.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Struktur dokumen
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `PRD.md` — visi produk, target, ruang lingkup, dan acceptance criteria.
+- `AGENTS.md` — aturan tetap untuk coding agent.
+- `ANTIGRAVITY_START_HERE.md` — prompt siap pakai untuk memulai dan menjalankan fase.
+- `docs/DESIGN_SYSTEM.md` — token visual dan komponen.
+- `docs/UI_UX_SPEC.md` — alur, navigasi, interaksi, aksesibilitas, dan responsivitas.
+- `docs/SCREEN_SPEC.md` — spesifikasi per layar.
+- `docs/TECH_ARCHITECTURE.md` — stack, struktur, batas modul, keamanan, dan integrasi.
+- `docs/CHESS_ENGINE_SPEC.md` — aturan permainan, bot, analisis, dan rating bot.
+- `docs/AI_TUTOR_SPEC.md` — Gemini sebagai guru catur berbahasa Indonesia.
+- `docs/DATA_MODEL.md` — bentuk data dan penyimpanan lokal.
+- `docs/IMPLEMENTATION_PLAN.md` — fase, urutan, dan gerbang penyelesaian.
+- `docs/TEST_PLAN.md` — pengujian logika, UI, AI, aksesibilitas, dan build.
+- `docs/REFERENCES.md` — referensi teknis dan catatan lisensi.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Status
 
-## Learn More
+Dokumen ini merupakan baseline produk v1.0, tanggal 21 Oktober 2026. Implementasi harus memverifikasi versi paket, kompatibilitas, kuota API, serta syarat layanan terbaru sebelum deployment. Dokumen tidak mengunci nomor versi dependensi secara sembarang.
 
-To learn more about Next.js, take a look at the following resources:
+## Prinsip utama
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Bahasa antarmuka utama: Bahasa Indonesia.
+- Produk harus berguna meskipun API Gemini tidak dikonfigurasi atau kuotanya habis.
+- Aturan catur ditangani pustaka catur; model bahasa tidak menentukan legalitas langkah.
+- Jangan menampilkan angka Elo sebagai rating terkalibrasi sebelum bot diuji melalui pertandingan.
+- Jangan mengirim API key ke client/browser atau menyimpannya di Git.
+- Tidak boleh ada tombol utama yang hanya dekoratif. Jika fitur belum dibuat, sembunyikan atau tandai sebagai rencana secara eksplisit.
