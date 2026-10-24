@@ -10,6 +10,7 @@ import {
 } from "./puzzle-progress";
 import { chessAudio } from "@/lib/audio/chess-audio";
 import { getSkillByPuzzleId, recordActivityEvidence } from "@/features/learning";
+import { unlockBadge } from "@/features/badges";
 
 export function usePuzzleGame(puzzle: ChessPuzzle) {
   const [chess, setChess] = useState<Chess>(() => new Chess(puzzle.startingFen));
@@ -228,6 +229,7 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
                   setFeedback("Luar biasa! Puzzle berhasil dipecahkan.");
                   chessAudio.playGameOver(true);
                   recordPuzzleSolved(puzzle.id, solutionRevealed);
+                  unlockBadge("puzzle_solver");
 
                   const skillDef = getSkillByPuzzleId(puzzle.id);
                   if (skillDef) {
@@ -251,6 +253,7 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
           setFeedback("Luar biasa! Puzzle berhasil dipecahkan.");
           chessAudio.playGameOver(true);
           recordPuzzleSolved(puzzle.id, solutionRevealed);
+          unlockBadge("puzzle_solver");
 
           const skillDef = getSkillByPuzzleId(puzzle.id);
           if (skillDef) {

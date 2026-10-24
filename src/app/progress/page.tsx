@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { useLearningProfile } from "@/features/learning";
 import { getSkillDefinition } from "@/features/learning/skills-catalog";
 import { SpeechController } from "@/features/tutor/speech-controller";
+import { BadgeCollectionGrid } from "@/features/badges";
 
 // Singleton speech controller for the page
 let pageSpeechController: SpeechController | null = null;
@@ -315,6 +316,11 @@ export default function ProgressPage() {
           </div>
         </section>
       )}
+
+      {/* Bagian 4: Koleksi Lencana Kehormatan Pemula */}
+      <section className="pt-2 border-t border-[#353B42]">
+        <BadgeCollectionGrid />
+      </section>
 
       {/* Bagian 5: Riwayat Aktivitas Belajar */}
       {profile.evidenceHistory.length > 0 && (

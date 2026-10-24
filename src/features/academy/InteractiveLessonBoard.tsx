@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/Modal";
 import { chessAudio } from "@/lib/audio/chess-audio";
 import { tutorSpeech } from "@/features/tutor/speech-controller";
 import { getSkillByLessonId, recordActivityEvidence } from "@/features/learning";
+import { unlockBadge } from "@/features/badges";
 
 interface InteractiveLessonBoardProps {
   lesson: AcademyLesson;
@@ -118,6 +119,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
             chessAudio.playMove();
           }
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
+          unlockBadge("curious_student");
 
           const skillDef = getSkillByLessonId(lesson.id);
           if (skillDef) {
@@ -169,6 +171,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           setShowSuccessModal(true);
           chessAudio.playMove();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
+          unlockBadge("curious_student");
 
           const skillDef = getSkillByLessonId(lesson.id);
           if (skillDef) {

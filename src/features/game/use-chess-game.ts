@@ -22,6 +22,7 @@ import {
 } from "@/features/engine/stockfish-adapter";
 import { saveArchivedGame, CURRENT_SCHEMA_VERSION } from "@/lib/storage/game-archive";
 import { chessAudio } from "@/lib/audio/chess-audio";
+import { unlockBadge } from "@/features/badges";
 import {
   evaluateMoveSafety,
   generateSocraticHint,
@@ -236,6 +237,9 @@ export function useChessGame(
         (config.playerColor === "white" && result === "white_win") ||
         (config.playerColor === "black" && result === "black_win");
       chessAudio.playGameOver(playerWon);
+      if (playerWon) {
+        unlockBadge("first_win");
+      }
 
       // Map result to ArchivedGame format
       let mappedResult: "white_win" | "black_win" | "draw" | "aborted" = "draw";
@@ -614,6 +618,27 @@ export function useChessGame(
         chessAudio.playCapture();
       } else {
         chessAudio.playMove();
+      }
+
+      // Lencana Apresiasi Langkah Pertama (Beginner Badges of Honor)
+      unlockBadge("first_move");
+      if (moveRes.captured) {
+        unlockBadge("first_capture");
+      }
+      if (isCastle) {
+        unlockBadge("first_castle");
+      }
+      if (checkState) {
+        unlockBadge("first_check");
+      }
+      if (moveRes.promotion) {
+        unlockBadge("first_promotion");
+      }
+      if (
+        moveRes.piece === "n" &&
+        ["c3", "f3", "c6", "f6", "d4", "e4", "d5", "e5"].includes(moveRes.to)
+      ) {
+        unlockBadge("active_knights");
       }
 
       // Check game termination
@@ -1009,6 +1034,7 @@ export function useChessGame(
       setUndoFeedback(
         "Permainan diputar ulang dari Titik Balik. Silakan coba langkah alternatif yang lebih kokoh!"
       );
+      unlockBadge("turning_point_hero");
 
       // Refresh socratic hint if active on restored board position
       if (isSocraticActiveRef.current && !restoredChess.isGameOver()) {

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { BadgeToastNotification } from "@/features/badges";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#141619] text-[#F2F0E8] overflow-x-hidden">
+        <BadgeToastNotification />
         <Suspense
           fallback={
             <div className="h-16 w-full border-b border-[#353B42] bg-[#141619]" />

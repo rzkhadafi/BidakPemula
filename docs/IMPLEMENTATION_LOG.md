@@ -875,3 +875,52 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
 
 - **Gate:** **PASS** (Suara catur otentik chess.com dan jeda berpikir natural bot telah aktif sepenuhnya).
+
+---
+
+### Implementasi Fitur: Ide 5 — "Lencana & Apresiasi Langkah Pertama" (Beginner Badges of Honor)
+
+- **Latar Belakang & Kebutuhan Pengguna:**
+  Pemula sering merasa ragu dan takut salah saat belajar catur serta merasa tidak melihat kemajuan bertahap. Fitur ini memberikan apresiasi visual seketika (*instant positive reinforcement*) saat pemula berhasil mempraktikkan fondasi penting catur untuk pertama kali. Apresiasi disajikan dalam bentuk pop-up notifikasi melayang (*top floating toast banner*) yang muncul dari atas layar selama beberapa detik lalu otomatis menghilang secara halus tanpa mengganggu interaksi papan.
+
+- **Perubahan yang Diterapkan:**
+  1. **Sistem & Katalog Lencana Pemula (`src/features/badges/`):**
+     - Mendefinisikan 10 lencana kehormatan bertingkat dengan narasi berbahasa Indonesia yang memotivasi:
+       - 👣 **Langkah Perdana** (`first_move`): Menjalankan langkah catur pertama.
+       - ⚔️ **Tangkapan Pertama** (`first_capture`): Menangkap bidak lawan untuk pertama kali.
+       - 🛡️ **Benteng Kokoh** (`first_castle`): Melakukan manuver Rokade untuk mengamankan Raja.
+       - ⚡ **Serangan Langsung** (`first_check`): Memberikan ancaman skak kepada Raja lawan.
+       - 👑 **Kelahiran Perwira** (`first_promotion`): Mempromosikan Pion ke baris terakhir.
+       - 🧭 **Kuda Melompat** (`active_knights`): Mengaktifkan Kuda ke petak tengah strategis.
+       - 🏆 **Kemenangan Perdana** (`first_win`): Memenangkan pertandingan melawan bot komputer.
+       - 🧠 **Ahli Taktik** (`puzzle_solver`): Menyelesaikan teka-teki taktik puzzle pertama.
+       - 🎓 **Langkah Sang Pelajar** (`curious_student`): Menyelesaikan latihan tantangan di Akademi Catur.
+       - 🔄 **Bangkit Kembali** (`turning_point_hero`): Memutar ulang pertandingan dari Titik Balik Kesalahan.
+     - Persistensi aman di `localStorage` (`chess_archive_badges_v1`) yang menjamin lencana hanya dihadiahi sekali saat pencapaian pertama tercapai.
+  2. **Komponen Notifikasi Pop-up dari Atas Layar (`BadgeToastNotification.tsx`):**
+     - Banner mengambang di bagian atas tengah (`fixed top-4 inset-x-0 z-[100]`) bertema Dark Graphite berbingkai emas elegan (`bg-[#1C2024]/95 border-2 border-[#C7A66A] shadow-2xl backdrop-blur-md rounded-2xl`).
+     - Animasi transisi geser turun mulus (`translate-y-0 opacity-100 scale-100`) saat lencana terbuka, bertahan selama 4.8 detik, lalu meluncur kembali ke atas (`-translate-y-16 opacity-0 scale-95`).
+     - Didukung antrean cerdas (*queue*): jika beberapa lencana terbuka berturut-turut, notifikasi akan bergantian tampil rapi.
+     - Disertai lonceng audio perayaan halus (`chessAudio.playGameStart()`) dan tombol tutup manual (`X`).
+     - Dipasang di `RootLayout` (`src/app/layout.tsx`) sehingga aktif secara global di seluruh layar aplikasi.
+  3. **Tampilan Galeri Koleksi Lencana (`BadgeCollectionGrid.tsx` & `/progress`):**
+     - Terintegrasi di halaman Perkembangan Belajar Personal (`/progress`).
+     - Menampilkan bilah progres pencapaian (misal: "4 / 10 Lencana Diraih (40%)").
+     - Filter kategori ("Semua", "Permainan", "Taktik", "Belajar", "Perjalanan").
+     - Kartu lencana emas yang diraih dilengkapi tanggal perolehan; kartu lencana terkunci dilengkapi instruksi/kriteria cara membukanya.
+  4. **Pemicu Otomatis di Berbagai Modul:**
+     - `useChessGame`: Pemicuan pada langkah pertama, penangkapan, rokade, skak, promosi, pengembangan kuda, kemenangan, dan rewind titik balik.
+     - `usePuzzleGame`: Pemicuan saat puzzle berhasil dipecahkan.
+     - `InteractiveLessonBoard`: Pemicuan saat latihan tantangan akademi selesai.
+  5. **Pengujian Komprehensif:**
+     - `tests/unit/badges.test.ts` (6 tests): Memverifikasi integritas katalog, pembukaan pertama, pencegahan pembukaan ganda, notifikasi subscriber, dan reset data.
+     - `tests/unit/badge-toast-ui.test.tsx` (4 tests): Memverifikasi kemunculan pop-up dari atas, konten teks/ikon, penutupan manual, dan sinkronisasi galeri progres.
+     - Total pengujian lulus: **171 tests (29 test suites)**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm test` -> **PASS** (29 test suites, **171 tests lulus 100%**).
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (Fitur Lencana & Notifikasi Apresiasi Langkah Pertama aktif sempurna).
