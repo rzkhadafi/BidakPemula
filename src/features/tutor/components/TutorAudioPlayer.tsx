@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import {
   Volume2,
   Play,
@@ -38,8 +38,10 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   const preferences = useSyncExternalStore(
     subscribeTutorPreferences,
     getTutorPreferences,
-    () => ({ autoplay: false, speed: 1.0 as const, voice: "Puck" })
+    () => ({ autoplay: false, speed: 1.0 as const, voice: "Aoede" })
   );
+
+  const lastSpokenTextRef = useRef<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = tutorSpeech.subscribe((s) => {
@@ -53,13 +55,24 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   // Handle user-opted autoplay when spokenText changes
   useEffect(() => {
     if (autoPlayTrigger && preferences.autoplay && spokenText) {
-      tutorSpeech.speak(spokenText).catch(() => {});
+      if (lastSpokenTextRef.current !== spokenText) {
+        lastSpokenTextRef.current = spokenText;
+        tutorSpeech.speak(spokenText).catch(() => {});
+      }
     }
   }, [autoPlayTrigger, preferences.autoplay, spokenText]);
+
+  // Clean up any ongoing audio when the player component unmounts
+  useEffect(() => {
+    return () => {
+      tutorSpeech.stop();
+    };
+  }, []);
 
   const { playbackState, source, speed, errorMessage } = controllerState;
 
   const handlePlay = () => {
+    lastSpokenTextRef.current = spokenText;
     tutorSpeech.speak(spokenText);
   };
 
@@ -72,6 +85,7 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   };
 
   const handleReplay = () => {
+    lastSpokenTextRef.current = spokenText;
     tutorSpeech.replay();
   };
 
@@ -84,7 +98,16 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   };
 
   const handleAutoplayToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    saveTutorPreferences({ autoplay: e.target.checked });
+    const checked = e.target.checked;
+    saveTutorPreferences({ autoplay: checked });
+    if (checked) {
+      if (spokenText && controllerState.playbackState === "idle") {
+        lastSpokenTextRef.current = spokenText;
+        tutorSpeech.speak(spokenText).catch(() => {});
+      }
+    } else {
+      tutorSpeech.stop();
+    }
   };
 
   return (

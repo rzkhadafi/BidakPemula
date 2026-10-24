@@ -44,10 +44,10 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
     setCurrentStepIdx(0);
   }
 
-  // Stop previous speech immediately when step or lesson changes
+  // Stop previous speech immediately when step, lesson, or tab changes
   React.useEffect(() => {
     tutorSpeech.stop();
-  }, [currentStepIdx, lesson.id]);
+  }, [currentStepIdx, lesson.id, activeTab]);
 
   // Cleanup speech when navigating away
   React.useEffect(() => {
@@ -57,11 +57,24 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
   }, []);
 
   const handleLessonComplete = () => {
+    tutorSpeech.stop();
     markLessonCompleted(lesson.id);
     setCompletionModalOpen(true);
   };
 
   const currentStep = lesson.steps[currentStepIdx] || lesson.steps[0];
+
+  const tutorRequestContext = React.useMemo(
+    () => ({
+      fen: currentStep.fen,
+      sideToMove: "w" as const,
+      learnerLevel: "pemula" as const,
+      mode: "lesson" as const,
+      lessonTitle: lesson.title,
+      lessonStepInstruction: currentStep.instruction,
+    }),
+    [currentStep.fen, currentStep.instruction, lesson.title]
+  );
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -135,14 +148,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
           {activeTab === "tutor" ? (
             <TutorPanel
               key={`${lesson.id}-${currentStep.id}`}
-              requestContext={{
-                fen: currentStep.fen,
-                sideToMove: "w",
-                learnerLevel: "pemula",
-                mode: "lesson",
-                lessonTitle: lesson.title,
-                lessonStepInstruction: currentStep.instruction,
-              }}
+              requestContext={tutorRequestContext}
             />
           ) : (
             <>

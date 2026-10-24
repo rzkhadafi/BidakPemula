@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { chessAudio } from "@/lib/audio/chess-audio";
+import { tutorSpeech } from "@/features/tutor/speech-controller";
 import { getSkillByLessonId, recordActivityEvidence } from "@/features/learning";
 
 interface InteractiveLessonBoardProps {
@@ -105,6 +106,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         setPendingPromotion(null);
 
         if (isExpected) {
+          tutorSpeech.stop();
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
           setShowSuccessModal(true);
@@ -155,6 +157,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
       // Mode A: Click target square directly (e.g. learning board coordinates)
       if (step.targetSquare) {
         if (squareCoord.toLowerCase() === step.targetSquare.toLowerCase()) {
+          tutorSpeech.stop();
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
           setShowSuccessModal(true);
@@ -242,6 +245,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   );
 
   const handleNextStep = () => {
+    tutorSpeech.stop();
     setShowSuccessModal(false);
     if (currentStepIdx < lesson.steps.length - 1) {
       setCurrentStepIdx((prev) => prev + 1);
@@ -251,6 +255,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   };
 
   const handleResetStep = () => {
+    tutorSpeech.stop();
     const fresh = new Chess(step.fen);
     setChess(fresh);
     setSelectedSquare(null);

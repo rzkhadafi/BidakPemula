@@ -38,7 +38,7 @@ export function getTutorPreferences(): TutorPreferences {
     memoryCache = {
       autoplay: Boolean(parsed.autoplay),
       speed: parsed.speed === 0.85 || parsed.speed === 1.25 ? parsed.speed : 1.0,
-      voice: typeof parsed.voice === "string" ? parsed.voice : "Puck",
+      voice: typeof parsed.voice === "string" && parsed.voice.trim() ? parsed.voice.trim() : "Aoede",
     };
     return memoryCache;
   } catch {

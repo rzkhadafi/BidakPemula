@@ -22,6 +22,8 @@ export class SpeechController {
   private state: SpeechControllerState;
   private listeners = new Set<(state: SpeechControllerState) => void>();
   private activeUtterance: SpeechSynthesisUtterance | null = null;
+  private currentRequestId = 0;
+  private currentAbortController: AbortController | null = null;
 
   constructor() {
     const prefs = getTutorPreferences();
@@ -94,40 +96,96 @@ export class SpeechController {
   }
 
   /**
+   * Instantly silences all active sound engines (both HTMLAudioElement and Web Speech API).
+   */
+  private silenceAllAudio(): void {
+    if (this.audio) {
+      try {
+        this.audio.pause();
+        this.audio.currentTime = 0;
+        this.audio.removeAttribute("src");
+        this.audio.load();
+      } catch {}
+    }
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+
+    this.activeUtterance = null;
+
+    if (this.currentObjectUrl) {
+      try {
+        URL.revokeObjectURL(this.currentObjectUrl);
+      } catch {}
+      this.currentObjectUrl = null;
+    }
+  }
+
+  /**
    * Play speech for given text using Gemini TTS with cache and Web Speech fallback.
+   * Guaranteed single active audio stream with generation locking and AbortController.
    */
   public async speak(text: string, voice?: string): Promise<void> {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      this.stop();
+      return;
+    }
 
-    // Stop existing playback
-    this.stop();
+    // Invalidate any ongoing speech request or async promise
+    this.currentRequestId++;
+    const requestId = this.currentRequestId;
+
+    // Abort pending network fetch if active
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+    }
+
+    // Silence active audio immediately
+    this.silenceAllAudio();
+
+    const abortController = new AbortController();
+    this.currentAbortController = abortController;
 
     const selectedVoice = voice || getTutorPreferences().voice;
     this.updateState({
       playbackState: "loading",
       errorMessage: null,
       currentText: trimmed,
+      source: null,
     });
 
     const cacheKey = generateAudioCacheKey(trimmed, selectedVoice);
 
-    // 1. Try local cache
+    // 1. Try local IndexedDB cache
     try {
       const cachedBlob = await getCachedAudioBlob(cacheKey);
+      if (requestId !== this.currentRequestId) {
+        return; // Superseded by a newer request or stop()
+      }
+
       if (cachedBlob) {
-        this.playBlob(cachedBlob, "gemini");
+        this.playBlob(cachedBlob, "gemini", requestId);
         return;
       }
     } catch {
       // Ignore cache read error, continue to fetch
     }
 
-    // 2. Fetch from server API
+    if (requestId !== this.currentRequestId) {
+      return;
+    }
+
+    // 2. Fetch from server Gemini TTS API with abort signal
     try {
       const res = await fetch("/api/tutor/speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abortController.signal,
         body: JSON.stringify({
           text: trimmed,
           voice: selectedVoice,
@@ -135,27 +193,49 @@ export class SpeechController {
         }),
       });
 
+      if (requestId !== this.currentRequestId) {
+        return; // Superseded during fetch
+      }
+
       if (res.ok) {
         const audioBlob = await res.blob();
+        if (requestId !== this.currentRequestId) {
+          return; // Superseded during blob conversion
+        }
+
         saveAudioBlobToCache(cacheKey, audioBlob).catch(() => {});
-        this.playBlob(audioBlob, "gemini");
+        this.playBlob(audioBlob, "gemini", requestId);
         return;
       }
 
-      // If server responds with 503 or error, try Web Speech API
+      // If server responds with non-ok (503 / quota exhausted), fall back to Web Speech
+      if (requestId !== this.currentRequestId) {
+        return;
+      }
       console.warn("Gemini TTS unavailable, falling back to Web Speech API.");
-      this.fallbackToWebSpeech(trimmed);
-    } catch (err) {
+      this.fallbackToWebSpeech(trimmed, requestId);
+    } catch (err: unknown) {
+      // If deliberately aborted (e.g. step changed or user stopped), DO NOT trigger Web Speech fallback!
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+
+      if (requestId !== this.currentRequestId) {
+        return;
+      }
+
       console.warn("Fetch to /api/tutor/speech failed, trying Web Speech fallback:", err);
-      this.fallbackToWebSpeech(trimmed);
+      this.fallbackToWebSpeech(trimmed, requestId);
     }
   }
 
-  private playBlob(blob: Blob, source: SpeechSource): void {
-    if (this.currentObjectUrl) {
-      URL.revokeObjectURL(this.currentObjectUrl);
-      this.currentObjectUrl = null;
+  private playBlob(blob: Blob, source: SpeechSource, requestId: number): void {
+    if (requestId !== this.currentRequestId) {
+      return;
     }
+
+    // Silence any lingering speech synthesis before starting element playback
+    this.silenceAllAudio();
 
     try {
       const audio = this.getAudioElement();
@@ -169,10 +249,14 @@ export class SpeechController {
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            this.updateState({ playbackState: "playing" });
+            if (requestId === this.currentRequestId) {
+              this.updateState({ playbackState: "playing" });
+            }
           })
           .catch((err) => {
-            // Check if autoplay was blocked by browser
+            if (requestId !== this.currentRequestId) {
+              return;
+            }
             if (err.name === "NotAllowedError") {
               this.updateState({
                 playbackState: "idle",
@@ -187,14 +271,23 @@ export class SpeechController {
           });
       }
     } catch {
-      this.updateState({
-        playbackState: "error",
-        errorMessage: "Gagal memproses berkas audio.",
-      });
+      if (requestId === this.currentRequestId) {
+        this.updateState({
+          playbackState: "error",
+          errorMessage: "Gagal memproses berkas audio.",
+        });
+      }
     }
   }
 
-  private fallbackToWebSpeech(text: string): void {
+  private fallbackToWebSpeech(text: string, requestId: number): void {
+    if (requestId !== this.currentRequestId) {
+      return;
+    }
+
+    // Ensure audio element is completely silent
+    this.silenceAllAudio();
+
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       this.updateState({
         playbackState: "error",
@@ -204,7 +297,6 @@ export class SpeechController {
     }
 
     try {
-      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "id-ID";
       utterance.rate = this.state.speed;
@@ -219,35 +311,48 @@ export class SpeechController {
       }
 
       utterance.onstart = () => {
-        this.updateState({
-          playbackState: "playing",
-          source: "webspeech",
-        });
+        if (requestId === this.currentRequestId) {
+          this.updateState({
+            playbackState: "playing",
+            source: "webspeech",
+          });
+        }
       };
 
       utterance.onend = () => {
-        this.updateState({
-          playbackState: "idle",
-          source: null,
-        });
-        this.activeUtterance = null;
+        if (requestId === this.currentRequestId) {
+          this.updateState({
+            playbackState: "idle",
+            source: null,
+          });
+          this.activeUtterance = null;
+        }
       };
 
-      utterance.onerror = () => {
-        this.updateState({
-          playbackState: "error",
-          errorMessage: "Gagal memutar suara perangkat.",
-        });
-        this.activeUtterance = null;
+      utterance.onerror = (ev) => {
+        // Ignore canceled / interrupted errors caused by intentional stop() calls
+        if (ev.error === "canceled" || ev.error === "interrupted") {
+          return;
+        }
+
+        if (requestId === this.currentRequestId) {
+          this.updateState({
+            playbackState: "error",
+            errorMessage: "Gagal memutar suara perangkat.",
+          });
+          this.activeUtterance = null;
+        }
       };
 
       this.activeUtterance = utterance;
       window.speechSynthesis.speak(utterance);
     } catch {
-      this.updateState({
-        playbackState: "error",
-        errorMessage: "Gagal menginisialisasi suara perangkat.",
-      });
+      if (requestId === this.currentRequestId) {
+        this.updateState({
+          playbackState: "error",
+          errorMessage: "Gagal menginisialisasi suara perangkat.",
+        });
+      }
     }
   }
 
@@ -289,17 +394,20 @@ export class SpeechController {
     }
   }
 
+  /**
+   * Completely stops any current speech, invalidates in-flight network requests,
+   * and silences both audio element and speech synthesis.
+   */
   public stop(): void {
-    if (this.audio) {
-      this.audio.pause();
-      this.audio.currentTime = 0;
+    this.currentRequestId++;
+
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
     }
 
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
+    this.silenceAllAudio();
 
-    this.activeUtterance = null;
     this.updateState({
       playbackState: "idle",
       source: null,
@@ -317,10 +425,6 @@ export class SpeechController {
 
   public destroy(): void {
     this.stop();
-    if (this.currentObjectUrl) {
-      URL.revokeObjectURL(this.currentObjectUrl);
-      this.currentObjectUrl = null;
-    }
     this.listeners.clear();
   }
 }

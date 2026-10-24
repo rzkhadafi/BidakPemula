@@ -705,4 +705,44 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Papan catur dan seluruh panel pendamping kini 100% tersinkronisasi secara real-time).
 
+---
+
+### Perbaikan Sistem Audio Guru AI: Eliminasi Suara Ganda & Pencegahan Tabrakan Audio (Race Condition)
+
+- **Masalah yang Dilaporkan Pengguna:**
+  1. Suara ganda / tumpang tindih (*overlapping*) untuk penjelasan yang sama: suara pria (Web Speech API) berbunyi terlebih dahulu lalu disusul oleh suara wanita (Gemini Aoede).
+  2. Tabrakan audio saat melangkah cepat: ketika audio penjelasan langkah lama masih dimuat (*loading*), pemain menyelesaikan misi dan menekan tombol langkah berikutnya; permintaan audio lama yang baru saja selesai tetap berbunyi dan menimpa audio langkah yang baru.
+
+- **Analisis Akar Masalah (Root Cause):**
+  1. **Kesalahan Penanganan Abort pada Fallback Suara:** Pada implementasi sebelumnya di `speech-controller.ts`, ketika suatu permintaan `speak()` atau `stop()` membatalkan `fetch("/api/tutor/speech")`, blok `catch (err)` menangkap exception `AbortError` dan secara keliru mengeksekusi `fallbackToWebSpeech(trimmed)`. Hal ini memicu pemutar lokal peramban Windows (`Microsoft David` - suara pria) untuk mulai berbicara. Ketika permintaan suara berikutnya (atau cache) selesai, pemutar audio elemen menyetel suara wanita (`Aoede`), sehingga kedua suara berbunyi bersamaan.
+  2. **Ketiadaan Token Generasi & Pembatalan Jaringan:** Kelas `SpeechController` belum menggunakan `AbortController` terpadu dan `currentRequestId`. Setiap fetch yang tertunda di latar belakang tidak dapat dibatalkan ketika pemain menekan tombol langkah berikutnya. Saat data audio langkah lama selesai diunduh beberapa ratus milidetik kemudian, ia langsung memanggil `.play()` dan menimpa langkah baru.
+  3. **Inkonsistensi Nilai Default Suara:** Terdapat *fallback* `"Puck"` (suara pria Gemini) di `tutor-preferences.ts` dan `TutorAudioPlayer.tsx`, bertabrakan dengan default sistem `"Aoede"` (suara wanita).
+  4. **Ketiadaan Mutex antara Elemen Audio dan Web Speech:** Pemutaran berkas audio blob tidak secara eksplisit menghentikan `speechSynthesis.cancel()`, dan `fallbackToWebSpeech` tidak menghentikan `audio.pause()`.
+
+- **Perubahan yang Diterapkan:**
+  1. **Siklus Hidup Audio & Pembatalan Terpadu (`src/features/tutor/speech-controller.ts`):**
+     - Memperkenalkan `currentRequestId: number` dan `currentAbortController: AbortController | null`.
+     - Setiap pemanggilan `speak()` atau `stop()` menaikkan nomor generasi `currentRequestId++` dan langsung memanggil `abort()` pada fetch yang sedang berlangsung.
+     - Menambahkan fungsi pembungkaman total `silenceAllAudio()` yang menjamin `window.speechSynthesis.cancel()` dan `this.audio.pause()` dieksekusi bersamaan tanpa celah.
+     - Pemeriksaan keamanan ketat: jika exception adalah `AbortError` atau jika token permintaan telah usang (`requestId !== this.currentRequestId`), proses diabaikan seketika dan **tidak akan pernah** memicu fallback Web Speech.
+  2. **Deduplikasi Autoplay & Cleanup Unmount (`src/features/tutor/components/TutorAudioPlayer.tsx`):**
+     - Menggunakan `useRef` untuk melacak `lastSpokenTextRef`, mencegah pemicuan berulang ketika preferensi berubah.
+     - Menambahkan unmount cleanup `useEffect(() => () => tutorSpeech.stop(), [])` sehingga setiap navigasi langkah langsung menghentikan audio yang aktif.
+     - Standarisasi nilai default suara ke `"Aoede"` secara seragam.
+  3. **Penyelarasan Siklus Langkah Belajar (`InteractiveLessonBoard.tsx` & `LessonViewClient.tsx`):**
+     - Menghentikan suara seketika (`tutorSpeech.stop()`) saat modal keberhasilan muncul, saat tombol *"Lanjut ke Tantangan Berikutnya"* ditekan, saat tombol *"Ulangi"* ditekan, dan saat berpindah tab.
+     - Memoisasi `tutorRequestContext` untuk mencegah re-render yang tidak diinginkan pada `TutorPanel`.
+  4. **Penambahan Unit Test Terverifikasi (`tests/unit/speech-controller.test.ts`):**
+     - Pengujian pembatalan fetch in-flight saat `stop()` dipanggil tanpa memicu fallback lokal.
+     - Pengujian balapan permintaan cepat (langkah 1 disusul langkah 2) yang memverifikasi hanya suara langkah terbaru yang diputar.
+     - Total pengujian lulus: **144 tests (24 test suites)**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (24 test suites, **144 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk 42 rute).
+
+- **Gate:** **PASS** (Audio AI kini 100% monolitik, bebas tumpang tindih, dan langsung berhenti saat melangkah cepat).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).

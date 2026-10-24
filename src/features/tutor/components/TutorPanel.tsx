@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { TutorExplainRequest, TutorExplainResponse, SuggestedMove } from "../types";
 import { requestTutorExplanation } from "../tutor-client";
+import { tutorSpeech } from "../speech-controller";
 import { TutorAudioPlayer } from "./TutorAudioPlayer";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -70,6 +71,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
     const trimmed = q.trim();
     if (!trimmed || loading) return;
 
+    tutorSpeech.stop();
     setLoading(true);
     setCustomQuestion("");
     try {
