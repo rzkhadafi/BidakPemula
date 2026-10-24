@@ -13,6 +13,42 @@ export interface SpeechResult {
 }
 
 /**
+ * Wraps raw linear PCM buffer in a standard 44-byte RIFF WAVE header.
+ * Gemini 2.5 Flash TTS outputs raw 16-bit signed integer linear PCM mono at 24000Hz (audio/L16;codec=pcm;rate=24000).
+ */
+export function pcmToWav(
+  pcmBuffer: Buffer,
+  sampleRate = 24000,
+  numChannels = 1,
+  bitsPerSample = 16
+): Buffer {
+  const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+  const blockAlign = (numChannels * bitsPerSample) / 8;
+  const wavHeader = Buffer.alloc(44);
+
+  // RIFF Chunk Descriptor
+  wavHeader.write("RIFF", 0);
+  wavHeader.writeUInt32LE(36 + pcmBuffer.length, 4);
+  wavHeader.write("WAVE", 8);
+
+  // "fmt " sub-chunk
+  wavHeader.write("fmt ", 12);
+  wavHeader.writeUInt32LE(16, 16); // Subchunk1Size (16 for PCM)
+  wavHeader.writeUInt16LE(1, 20); // AudioFormat (1 = PCM linear)
+  wavHeader.writeUInt16LE(numChannels, 22);
+  wavHeader.writeUInt32LE(sampleRate, 24);
+  wavHeader.writeUInt32LE(byteRate, 28);
+  wavHeader.writeUInt16LE(blockAlign, 32);
+  wavHeader.writeUInt16LE(bitsPerSample, 34);
+
+  // "data" sub-chunk
+  wavHeader.write("data", 36);
+  wavHeader.writeUInt32LE(pcmBuffer.length, 40);
+
+  return Buffer.concat([wavHeader, pcmBuffer]);
+}
+
+/**
  * Server-only service interacting securely with Gemini models.
  * API keys and server secrets are never exposed to the client.
  */
@@ -26,11 +62,11 @@ export class GeminiTutorService {
   }
 
   private static getTtsModel(): string {
-    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-3.8-flash";
+    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-2.5-flash-preview-tts";
   }
 
   private static getDefaultVoice(): string {
-    return process.env.GEMINI_TTS_VOICE?.trim() || "Puck";
+    return process.env.GEMINI_TTS_VOICE?.trim() || "Aoede";
   }
 
   public static isTutorConfigured(): boolean {
@@ -99,7 +135,7 @@ ${
 PEDOMAN PENTING:
 1. Jelaskan alasan sebuah langkah baik/buruk dengan bahasa Indonesia sederhana tanpa jargon yang membingungkan. Jika menyebut istilah (misal: rokade, garpu, pin), jelaskan artinya secara singkat.
 2. JANGAN MENGARANG langkah terbaik atau evaluasi jika data engine tidak menyediakannya. Jika analisis engine tidak ada, sampaikan penjelasan berdasarkan prinsip visual papan.
-3. Field "spokenText" HARUS berupa naskah lisan yang mengalir santun dan alami jika dibacakan keras-keras oleh narator suara (hindari membacakan notasi mentah seperti "Nf3" atau simbol teknis; sebutkan "kuda ke petak f3").
+3. Field "spokenText" HARUS berupa naskah percakapan lisan yang hangat, bersahabat, memiliki intonasi hidup, dan menyenangkan didengar (maksimal 3 kalimat). Gunakan gaya tutur seorang mentor ramah yang berbicara langsung kepada murid (misalnya: "Halo! Langkah ini bagus sekali karena membuka jalan untuk perwiramu menguasai petak tengah."). Hindari gaya bahasa baku seperti ensiklopedia dan jangan pernah mengeja kode notasi mentah seperti "Nf3" atau tanda catur teknis.
 4. Kembalikan HANYA format JSON valid tanpa markdown formatting tambahan atau pembungkus lain:
 {
   "title": "Judul singkat penjelasan",
@@ -277,12 +313,33 @@ PEDOMAN PENTING:
         return null;
       }
 
-      const audioBuffer = Buffer.from(inlineData.data, "base64");
-      const mimeType = inlineData.mimeType || "audio/wav";
+      const rawBuffer = Buffer.from(inlineData.data, "base64");
+      const returnedMime = inlineData.mimeType || "audio/wav";
+
+      // If already a complete WAV with RIFF header, return directly
+      let wavBuffer: Buffer;
+      if (
+        rawBuffer.length >= 12 &&
+        rawBuffer.subarray(0, 4).toString() === "RIFF" &&
+        rawBuffer.subarray(8, 12).toString() === "WAVE"
+      ) {
+        wavBuffer = rawBuffer;
+      } else {
+        // Raw Linear PCM (e.g. audio/L16;codec=pcm;rate=24000)
+        let sampleRate = 24000;
+        const rateMatch = returnedMime.match(/rate=(\d+)/);
+        if (rateMatch) {
+          const parsedRate = parseInt(rateMatch[1], 10);
+          if (!isNaN(parsedRate) && parsedRate > 0) {
+            sampleRate = parsedRate;
+          }
+        }
+        wavBuffer = pcmToWav(rawBuffer, sampleRate, 1, 16);
+      }
 
       return {
-        audioBuffer,
-        mimeType,
+        audioBuffer: wavBuffer,
+        mimeType: "audio/wav",
       };
     } catch (err) {
       console.warn("Gemini TTS synthesis failed:", err);

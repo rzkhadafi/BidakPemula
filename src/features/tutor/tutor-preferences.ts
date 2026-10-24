@@ -5,7 +5,7 @@ const STORAGE_KEY = "chess_archive_tutor_prefs_v1";
 const DEFAULT_PREFERENCES: TutorPreferences = {
   autoplay: false,
   speed: 1.0,
-  voice: "Puck",
+  voice: "Aoede",
 };
 
 let memoryCache: TutorPreferences | null = null;

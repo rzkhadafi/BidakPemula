@@ -317,3 +317,33 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 41 rute statis & server berhasil dibuat).
 
 - **Gate:** **PASS** (Set visual kayu klasik dan bidak 3D Staunton Neo telah terpasang rapi di seluruh aplikasi).
+
+---
+
+### 2026-10-24 — Jalur Suara Gemini TTS Manusiawi: Karakter Aoede & Konverter PCM ke WAV
+
+- **Tujuan:**
+  Mengaktifkan jalur suara asli Gemini TTS berbahasa Indonesia dengan nada dan intonasi manusiawi menggunakan karakter suara ekspresif **Aoede**, mengonversi audio biner mentah Linear PCM 24kHz ke format standar WAV (RIFF header 44-byte), serta memperbarui preferensi tutor audio dan instruksi gaya tutur pada naskah lisan.
+
+- **Perubahan utama:**
+  1. **Konverter Audio PCM ke WAV (`src/features/tutor/server/gemini-service.ts`):**
+     - Mengimplementasikan fungsi `pcmToWav()` untuk membungkus data audio biner mentah dari Gemini TTS (`audio/L16;codec=pcm;rate=24000`) ke dalam kontainer standar WAV dengan header RIFF 44-byte (24kHz, 16-bit mono, 48000 byte/s).
+     - Menghilangkan kegagalan pemutaran di pemutar audio HTML5 sehingga browser tidak lagi terlempar ke suara robot bawaan laptop (*Web Speech fallback*).
+  2. **Konfigurasi Model & Suara Aoede:**
+     - Mengarahkan `GEMINI_TTS_MODEL` ke model audio resmi Google AI Studio: `gemini-2.5-flash-preview-tts`.
+     - Menetapkan default karakter suara ke `Aoede` (hangat, ramah, artikulatif, dan bernada ekspresif) di `.env.example`, `.env.local`, dan `tutor-preferences.ts`.
+  3. **Penyempurnaan Gaya Naskah Lisan (*Spoken Text*):**
+     - Memperbarui prompt instruksi agar naskah suara yang dihasilkan bergaya bahasa tutur percakapan hangat seorang mentor catur pribadi, menghindari bahasa baku kaku buku teks dan notasi mentah.
+  4. **Selektor Karakter Suara di Halaman Pengaturan (`/settings`):**
+     - Menambahkan kontrol pilihan karakter suara Guru AI di pengaturan aplikasi dengan opsi `Aoede` (rekomendasi), `Puck`, `Charon`, `Fenrir`, dan `Kore`.
+  5. **Pengujian Unit & Verifikasi Nyata:**
+     - Menambahkan test case di `tests/unit/tutor-service.test.ts` untuk memvalidasi pembuatan header RIFF WAVE 44-byte secara presisi.
+     - Melakukan uji coba pemanggilan live API Gemini TTS: berhasil menghasilkan file audio WAV 24kHz asli sebesar 269.370 byte (HTTP 200).
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (16 test suites, **96 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 41 rute berhasil di-generate).
+
+- **Gate:** **PASS** (Jalur suara asli Gemini TTS dengan karakter Aoede dan konverter WAV telah aktif sepenuhnya).

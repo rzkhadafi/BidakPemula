@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { GeminiTutorService } from "@/features/tutor/server/gemini-service";
+import { GeminiTutorService, pcmToWav } from "@/features/tutor/server/gemini-service";
 import { getCuratedTutorExplanation } from "@/features/tutor/server/curated-tutor-fallbacks";
 import { TutorExplainRequest } from "@/features/tutor/types";
 
@@ -127,5 +127,26 @@ describe("Gemini Tutor Service & Curated Fallbacks", () => {
     await expect(GeminiTutorService.synthesizeSpeech("x".repeat(1001))).rejects.toMatchObject({
       code: "INVALID_REQUEST",
     });
+  });
+
+  it("converts raw PCM buffer into valid standard WAV container with 44-byte RIFF header", () => {
+    // 240 samples of 16-bit silence (480 bytes)
+    const mockPcm = Buffer.alloc(480);
+    const wav = pcmToWav(mockPcm, 24000, 1, 16);
+
+    expect(wav.length).toBe(44 + 480);
+    expect(wav.subarray(0, 4).toString()).toBe("RIFF");
+    expect(wav.readUInt32LE(4)).toBe(36 + 480);
+    expect(wav.subarray(8, 12).toString()).toBe("WAVE");
+    expect(wav.subarray(12, 16).toString()).toBe("fmt ");
+    expect(wav.readUInt32LE(16)).toBe(16); // PCM fmt chunk size
+    expect(wav.readUInt16LE(20)).toBe(1); // Audio format 1 = PCM
+    expect(wav.readUInt16LE(22)).toBe(1); // 1 channel
+    expect(wav.readUInt32LE(24)).toBe(24000); // Sample rate 24kHz
+    expect(wav.readUInt32LE(28)).toBe(48000); // Byte rate (24000 * 1 * 16 / 8)
+    expect(wav.readUInt16LE(32)).toBe(2); // Block align
+    expect(wav.readUInt16LE(34)).toBe(16); // Bits per sample
+    expect(wav.subarray(36, 40).toString()).toBe("data");
+    expect(wav.readUInt32LE(40)).toBe(480);
   });
 });

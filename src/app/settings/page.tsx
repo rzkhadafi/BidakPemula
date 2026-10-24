@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const [soundEnabled, setSoundEnabled] = useState(() => chessAudio.isEnabled());
   const [tutorAutoplay, setTutorAutoplay] = useState(() => getTutorPreferences().autoplay);
   const [tutorSpeed, setTutorSpeed] = useState(() => getTutorPreferences().speed);
+  const [tutorVoice, setTutorVoice] = useState(() => getTutorPreferences().voice);
 
   const handleSoundToggle = (enabled: boolean) => {
     setSoundEnabled(enabled);
@@ -45,6 +46,11 @@ export default function SettingsPage() {
   const handleSpeedChange = (speed: 0.85 | 1.0 | 1.25) => {
     setTutorSpeed(speed);
     saveTutorPreferences({ speed });
+  };
+
+  const handleVoiceChange = (voice: string) => {
+    setTutorVoice(voice);
+    saveTutorPreferences({ voice });
   };
 
   const [confirmModal, setConfirmModal] = useState<{
@@ -232,6 +238,28 @@ export default function SettingsPage() {
               onChange={(e) => handleAutoplayToggle(e.target.checked)}
               className="accent-[#C7A66A] w-4 h-4 cursor-pointer"
             />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#353B42]">
+            <div>
+              <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
+                Karakter Suara Guru AI (Gemini TTS)
+              </span>
+              <span className="text-xs text-[#8A9299]">
+                Pilihan intonasi dan warna suara manusiawi dari model Gemini
+              </span>
+            </div>
+            <select
+              value={tutorVoice}
+              onChange={(e) => handleVoiceChange(e.target.value)}
+              className="bg-[#141619] text-[#F2F0E8] border border-[#353B42] rounded-lg px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#C7A66A] cursor-pointer"
+            >
+              <option value="Aoede">Aoede — Hangat & Artikulatif (Rekomendasi)</option>
+              <option value="Puck">Puck — Kasual & Ceria</option>
+              <option value="Charon">Charon — Tenang & Berwibawa</option>
+              <option value="Fenrir">Fenrir — Energik & Tegas</option>
+              <option value="Kore">Kore — Lembut & Santai</option>
+            </select>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-[#353B42]">
