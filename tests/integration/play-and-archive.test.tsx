@@ -72,7 +72,7 @@ describe("Integration: Play Game -> Save to Local Storage -> Review in Archive",
     // 3. Verify ArchivePage displays the saved game
     const { unmount } = render(<ArchivePage />);
     expect(screen.getByText(/Arsip Pertandingan Lokal/i)).toBeInTheDocument();
-    expect(screen.getByText(/vs Bot Sangat Kuat/i)).toBeInTheDocument();
+    expect(screen.getByText(/vs Bot Kuat/i)).toBeInTheDocument();
     expect(screen.getByText(/2 langkah/i)).toBeInTheDocument();
     expect(screen.getByText(/Kalah • Pemain Menyerah/i)).toBeInTheDocument();
     unmount();

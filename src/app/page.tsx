@@ -1,141 +1,161 @@
-import React from "react";
+"use client";
+
+import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Swords, GraduationCap, Sparkles, BookOpen, Clock, ChevronRight } from "lucide-react";
+import { GraduationCap, Swords, Sparkles, ArrowRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import {
+  subscribeToAcademyProgress,
+  getAcademyProgressSnapshot,
+  getAcademyProgressServerSnapshot,
+} from "@/features/academy/academy-progress";
+import { getLessonById, ACADEMY_LESSONS } from "@/features/academy/academy-catalog";
 
 export default function HomePage() {
+  const progress = useSyncExternalStore(
+    subscribeToAcademyProgress,
+    getAcademyProgressSnapshot,
+    getAcademyProgressServerSnapshot
+  );
+
+  const hasProgress = progress.completedLessonIds.length > 0;
+  const currentLesson = getLessonById(progress.currentLessonId) || ACADEMY_LESSONS[0];
+
   return (
-    <div className="space-y-10 py-2 sm:py-4">
-      {/* Header Statement */}
-      <section className="space-y-3 max-w-3xl">
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#24292E] border border-[#353B42] text-xs text-[#B0B5B9]">
-          <span className="w-2 h-2 rounded-full bg-[#C7A66A]" />
-          <span>Fase 0 — Fondasi & Kerangka Visual</span>
+    <div className="space-y-10 py-4 sm:py-8 max-w-4xl mx-auto">
+      {/* Hero Section */}
+      <section className="space-y-4 text-center sm:text-left">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#24292E] border border-[#353B42] text-xs text-[#B0B5B9]">
+          <span className="w-2 h-2 rounded-full bg-[#73B894]" />
+          <span>Gratis &bull; Tanpa Akun &bull; 100% Berbahasa Indonesia</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-[#F2F0E8]">
-          Ruang arsip strategi dan latihan catur mandiri.
+
+        <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-[#F2F0E8] leading-tight">
+          Belajar catur, satu langkah demi satu langkah.
         </h1>
-        <p className="text-sm sm:text-base text-[#B0B5B9] leading-relaxed">
-          Mainkan catur melawan bot komputer, pelajari konsep taktis berbahasa Indonesia, dan tinjau setiap keputusan langkah tanpa tekanan akun atau rating kompetitif.
+
+        <p className="text-base sm:text-lg text-[#B0B5B9] leading-relaxed max-w-2xl">
+          Siapa pun bisa mulai dari nol. Pelajari cara setiap bidak bergerak melalui papan interaktif, pahami strategi dasarnya, dan mulailah bermain catur dengan percaya diri.
         </p>
 
-        {/* Primary and Secondary Actions */}
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          <Link href="/play">
-            <Button variant="primary" size="lg" className="w-full sm:w-auto">
-              <Swords className="w-5 h-5 mr-2 text-[#141619]" />
-              Mulai Permainan
+        {/* Primary Call to Action */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <Link href="/academy" className="w-full sm:w-auto">
+            <Button variant="primary" size="lg" className="w-full text-base font-medium">
+              <GraduationCap className="w-5 h-5 mr-2 text-[#141619]" />
+              Mulai Belajar dari Nol
             </Button>
           </Link>
-          <Link href="/academy">
-            <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-              <GraduationCap className="w-5 h-5 mr-2 text-[#C7A66A]" />
-              Lanjutkan Belajar
-            </Button>
-          </Link>
-          <Link href="/puzzles">
-            <Button variant="ghost" size="lg" className="w-full sm:w-auto text-[#B0B5B9] hover:text-[#F2F0E8]">
-              <Sparkles className="w-5 h-5 mr-2 text-[#E3B66F]" />
-              Pecahkan Puzzle
+
+          <Link href="/play" className="w-full sm:w-auto">
+            <Button variant="secondary" size="lg" className="w-full text-base">
+              <Swords className="w-5 h-5 mr-2 text-[#C7A66A]" />
+              Langsung Main Catur
             </Button>
           </Link>
         </div>
       </section>
 
-      {/* Grid: Belajar Terarah, Puzzle Harian, dan Status Arsip */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Akademi Card */}
-        <Card variant="surface" className="flex flex-col justify-between hover:border-[#C7A66A]/40 transition-colors">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="p-2 rounded-lg bg-[#24292E] border border-[#353B42] text-[#C7A66A]">
-                <BookOpen className="w-5 h-5" />
-              </span>
-              <Badge variant="accent">Materi Dasar</Badge>
-            </div>
-            <div>
-              <h2 className="text-base font-medium text-[#F2F0E8]">Kurikulum Akademi</h2>
-              <p className="text-xs text-[#B0B5B9] mt-1">
-                8 modul kurasi lokal mulai dari pengenalan papan, rokade, hingga taktik garpu (fork) dan pin.
-              </p>
-            </div>
-          </div>
-          <div className="pt-4 mt-4 border-t border-[#353B42] flex items-center justify-between text-xs">
-            <span className="text-[#8A9299]">Modul 1: Mengenal Papan</span>
-            <Link
-              href="/academy"
-              className="text-[#C7A66A] hover:underline flex items-center gap-1 font-medium"
-            >
-              Buka <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </Card>
+      {/* Resume Learning Section (If progress exists) */}
+      {hasProgress && (
+        <section className="animate-in fade-in duration-200">
+          <Card variant="raised" className="p-5 border-[#C7A66A]/40 bg-[#1C2024]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="accent" size="sm">
+                    Lanjutkan Belajar
+                  </Badge>
+                  <span className="text-xs text-[#8A9299]">
+                    {progress.completedLessonIds.length} dari {ACADEMY_LESSONS.length} Pelajaran Selesai
+                  </span>
+                </div>
+                <h2 className="text-base font-semibold text-[#F2F0E8]">
+                  Pelajaran {currentLesson.order}: {currentLesson.title}
+                </h2>
+                <p className="text-xs text-[#B0B5B9]">
+                  {currentLesson.subtitle}
+                </p>
+              </div>
 
-        {/* Puzzle Card */}
+              <Link href={`/academy/${currentLesson.id}`}>
+                <Button variant="primary" size="sm" className="w-full sm:w-auto whitespace-nowrap">
+                  <span>Lanjutkan Materi</span>
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </section>
+      )}
+
+      {/* Simple Practice Teaser Section */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        {/* Latihan Singkat */}
         <Card variant="surface" className="flex flex-col justify-between hover:border-[#C7A66A]/40 transition-colors">
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="p-2 rounded-lg bg-[#24292E] border border-[#353B42] text-[#E3B66F]">
+              <div className="w-9 h-9 rounded-lg bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#E3B66F]">
                 <Sparkles className="w-5 h-5" />
-              </span>
-              <Badge variant="warning">Latihan Taktik</Badge>
+              </div>
+              <Badge variant="warning" size="sm">
+                Latihan Mandiri
+              </Badge>
             </div>
             <div>
-              <h2 className="text-base font-medium text-[#F2F0E8]">Koleksi Puzzle</h2>
-              <p className="text-xs text-[#B0B5B9] mt-1">
-                Uji ketajaman taktis dengan petunjuk bertahap tanpa membongkar solusi secara langsung.
+              <h3 className="text-base font-semibold text-[#F2F0E8]">
+                Latihan & Puzzle Taktis
+              </h3>
+              <p className="text-xs text-[#B0B5B9] mt-1 leading-relaxed">
+                Asah insting taktik Anda dengan posisi catur nyata: garpu kuda, serangan tusuk, dan pola skakmat sederhana.
               </p>
             </div>
           </div>
-          <div className="pt-4 mt-4 border-t border-[#353B42] flex items-center justify-between text-xs">
-            <span className="text-[#8A9299]">Level: Pemula & Santai</span>
+
+          <div className="pt-4 mt-4 border-t border-[#353B42] flex items-center justify-between">
+            <span className="text-xs text-[#8A9299]">Tersedia 3 tingkat kesulitan</span>
             <Link
               href="/puzzles"
-              className="text-[#C7A66A] hover:underline flex items-center gap-1 font-medium"
+              className="text-xs text-[#C7A66A] hover:underline flex items-center gap-1 font-medium"
             >
-              Latihan <ChevronRight className="w-3.5 h-3.5" />
+              Coba Latihan <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </Card>
 
-        {/* Arsip Card (Empty State) */}
-        <Card variant="surface" className="flex flex-col justify-between">
-          <div className="space-y-3">
+        {/* Bermain Lawan Bot */}
+        <Card variant="surface" className="flex flex-col justify-between hover:border-[#C7A66A]/40 transition-colors">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="p-2 rounded-lg bg-[#24292E] border border-[#353B42] text-[#B0B5B9]">
-                <Clock className="w-5 h-5" />
-              </span>
-              <Badge variant="muted">Penyimpanan Lokal</Badge>
+              <div className="w-9 h-9 rounded-lg bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#73B894]">
+                <Play className="w-5 h-5" />
+              </div>
+              <Badge variant="accent" size="sm">
+                Mode Santai
+              </Badge>
             </div>
             <div>
-              <h2 className="text-base font-medium text-[#F2F0E8]">Catatan Pertandingan</h2>
-              <p className="text-xs text-[#8A9299] mt-1">
-                Belum ada riwayat permainan tersimpan di peramban ini. Selesaikan pertandingan pertama untuk meninjau kembali keputusan langkah Anda.
+              <h3 className="text-base font-semibold text-[#F2F0E8]">
+                Bermain Lawan Komputer
+              </h3>
+              <p className="text-xs text-[#B0B5B9] mt-1 leading-relaxed">
+                Uji kemampuan Anda melawan bot catur berkecepatan natural. Anda bisa membatalkan langkah (undo) kapan saja untuk belajar dari kesalahan.
               </p>
             </div>
           </div>
-          <div className="pt-4 mt-4 border-t border-[#353B42] flex items-center justify-between text-xs">
-            <span className="text-[#8A9299]">0 pertandingan</span>
+
+          <div className="pt-4 mt-4 border-t border-[#353B42] flex items-center justify-between">
+            <span className="text-xs text-[#8A9299]">Level bot ramah pemula</span>
             <Link
-              href="/archive"
-              className="text-[#B0B5B9] hover:text-[#F2F0E8] flex items-center gap-1"
+              href="/play"
+              className="text-xs text-[#C7A66A] hover:underline flex items-center gap-1 font-medium"
             >
-              Lihat Arsip <ChevronRight className="w-3.5 h-3.5" />
+              Mulai Bermain <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </Card>
-      </section>
-
-      {/* Prinsip Belajar & Transparansi */}
-      <section className="p-5 rounded-xl bg-[#1C2024]/60 border border-[#353B42] space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#C7A66A]">
-          Filosofi Belajar Chess Archive
-        </h3>
-        <p className="text-xs text-[#B0B5B9] leading-relaxed">
-          Semua aturan permainan divalidasi oleh pustaka catur standar. Mesin Stockfish (Web Worker) bertindak sebagai lawan tanding dan analisis taktis, sedangkan kecerdasan buatan Gemini hanya bertugas merangkum penjelasan dalam Bahasa Indonesia yang bersahabat.
-        </p>
       </section>
     </div>
   );

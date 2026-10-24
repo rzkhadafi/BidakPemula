@@ -15,11 +15,20 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { clearArchivedGames } from "@/lib/storage/game-archive";
+import { clearAcademyProgress } from "@/features/academy/academy-progress";
+import { clearPuzzleProgress } from "@/features/puzzles/puzzle-progress";
+import { chessAudio } from "@/lib/audio/chess-audio";
 
 export default function SettingsPage() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">("white");
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => chessAudio.isEnabled());
+
+  const handleSoundToggle = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    chessAudio.setEnabled(enabled);
+  };
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -119,7 +128,7 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               checked={soundEnabled}
-              onChange={(e) => setSoundEnabled(e.target.checked)}
+              onChange={(e) => handleSoundToggle(e.target.checked)}
               className="accent-[#C7A66A] w-4 h-4 cursor-pointer"
             />
           </div>
@@ -282,11 +291,14 @@ export default function SettingsPage() {
               size="sm"
               onClick={() => {
                 setConfirmModal({ ...confirmModal, isOpen: false });
-                showToast(
-                  confirmModal.type === "history"
-                    ? "Riwayat pertandingan telah dikosongkan."
-                    : "Progres belajar telah direset."
-                );
+                if (confirmModal.type === "history") {
+                  clearArchivedGames();
+                  showToast("Riwayat pertandingan telah dikosongkan.");
+                } else {
+                  clearAcademyProgress();
+                  clearPuzzleProgress();
+                  showToast("Progres belajar telah direset.");
+                }
               }}
             >
               Konfirmasi Eksekusi

@@ -11,7 +11,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { saveArchivedGame, CURRENT_SCHEMA_VERSION } from "@/lib/storage/game-archive";
 
-describe("Smoke Tests: P0 Pages and Shells", () => {
+describe("Smoke Tests: Core Pages and Navigation", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
@@ -19,11 +19,10 @@ describe("Smoke Tests: P0 Pages and Shells", () => {
   it("renders Navbar with brand and main links", () => {
     render(<Navbar />);
     expect(screen.getByText("CHESS ARCHIVE")).toBeInTheDocument();
-    expect(screen.getByText("Beranda")).toBeInTheDocument();
+    expect(screen.getByText("Belajar")).toBeInTheDocument();
     expect(screen.getByText("Main Catur")).toBeInTheDocument();
-    expect(screen.getByText("Akademi")).toBeInTheDocument();
-    expect(screen.getByText("Puzzle")).toBeInTheDocument();
-    expect(screen.getByText("Arsip Saya")).toBeInTheDocument();
+    expect(screen.getByText("Latihan")).toBeInTheDocument();
+    expect(screen.getByText("Arsip")).toBeInTheDocument();
   });
 
   it("renders Footer with copyright and local privacy notice", () => {
@@ -36,15 +35,18 @@ describe("Smoke Tests: P0 Pages and Shells", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Home Page without errors", () => {
+  it("renders Home Page with warm beginner headline and action buttons", () => {
     render(<HomePage />);
     expect(
       screen.getByRole("heading", {
-        name: /Ruang arsip strategi dan latihan catur mandiri/i,
+        name: /Belajar catur, satu langkah demi satu langkah/i,
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Mulai Permainan/i })
+      screen.getByRole("button", { name: /Mulai Belajar dari Nol/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Langsung Main Catur/i })
     ).toBeInTheDocument();
   });
 
@@ -55,20 +57,20 @@ describe("Smoke Tests: P0 Pages and Shells", () => {
     expect(screen.getByRole("button", { name: "Mulai Ulang" })).toBeDisabled();
   });
 
-  it("renders Academy Page with curriculum list", () => {
+  it("renders Academy Page with beginner curriculum list", () => {
     render(<AcademyPage />);
-    expect(screen.getByText("Akademi Catur")).toBeInTheDocument();
+    expect(screen.getByText("Belajar Catur dari Nol")).toBeInTheDocument();
     expect(
-      screen.getByText("Mengenal Papan dan Koordinat")
+      screen.getByText("Mengenal Papan Catur")
     ).toBeInTheDocument();
-    expect(screen.getByText("Prinsip Pembukaan Catur")).toBeInTheDocument();
+    expect(screen.getByText("Prinsip Strategi untuk Pemula")).toBeInTheDocument();
   });
 
-  it("renders Puzzles Page with objective and categories", () => {
+  it("renders Puzzles Page with exercises and tabs", () => {
     render(<PuzzlesPage />);
-    expect(screen.getByText("Puzzle Taktik Catur")).toBeInTheDocument();
-    expect(screen.getByText("Semua Kategori")).toBeInTheDocument();
-    expect(screen.getByText("Tujuan Puzzle")).toBeInTheDocument();
+    expect(screen.getByText("Latihan Taktik & Puzzle")).toBeInTheDocument();
+    expect(screen.getByText("Semua Latihan")).toBeInTheDocument();
+    expect(screen.getByText("Tantangan Skakmat")).toBeInTheDocument();
   });
 
   it("renders Archive Page with empty state when no games are stored", () => {
@@ -98,15 +100,11 @@ describe("Smoke Tests: P0 Pages and Shells", () => {
 
     render(<ArchivePage />);
     expect(screen.getByText("vs Bot Pemula")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Hapus Seluruh Arsip Pertandingan/i })
-    ).toBeInTheDocument();
   });
 
   it("renders Settings Page with options", () => {
     render(<SettingsPage />);
     expect(screen.getByText("Pengaturan Aplikasi")).toBeInTheDocument();
-    expect(screen.getByText("Tema & Tampilan")).toBeInTheDocument();
-    expect(screen.getByText("Preferensi Papan Catur")).toBeInTheDocument();
+    expect(screen.getByText("Tema Visual")).toBeInTheDocument();
   });
 });

@@ -4,16 +4,7 @@ import React from "react";
 import { Chess, Square } from "chess.js";
 import { PlayerColor } from "@/types/chess";
 import { Modal } from "@/components/ui/Modal";
-
-// Unicode piece mapping
-const PIECE_SYMBOLS: Record<string, string> = {
-  p: "♟",
-  r: "♜",
-  n: "♞",
-  b: "♝",
-  q: "♛",
-  k: "♚",
-};
+import { ChessPiece } from "./ChessPieces";
 
 interface InteractiveChessboardProps {
   chess: Chess;
@@ -83,9 +74,9 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[560px] mx-auto select-none">
+    <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
       <div
-        className="relative aspect-square w-full rounded-lg overflow-hidden border border-[#353B42] shadow-2xl bg-[#141619]"
+        className="relative aspect-square w-full rounded-xl overflow-hidden border border-[#353B42] shadow-2xl bg-[#141619]"
         role="region"
         aria-label="Papan catur interaktif"
       >
@@ -109,8 +100,6 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 piece.type === "k" &&
                 piece.color === chess.turn();
 
-              // Piece symbol & color
-              const pieceGlyph = piece ? PIECE_SYMBOLS[piece.type] : null;
               const isWhitePiece = piece?.color === "w";
 
               return (
@@ -120,17 +109,17 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   onClick={() => !disabled && onSquareClick(squareCoord)}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, squareCoord)}
-                  className={`relative flex items-center justify-center cursor-pointer transition-colors ${
+                  className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 ${
                     isLight ? "bg-[#E8E3D8]" : "bg-[#68716F]"
                   } ${
-                    isSelected ? "!bg-[#C7A66A]/60 ring-2 ring-inset ring-[#C7A66A]" : ""
+                    isSelected ? "!bg-[#C7A66A]/75 ring-2 ring-inset ring-[#C7A66A]" : ""
                   } ${
                     isLastMoveSquare && !isSelected
-                      ? "after:absolute after:inset-0 after:bg-[rgba(199,166,106,0.38)]"
+                      ? "after:absolute after:inset-0 after:bg-[rgba(199,166,106,0.35)]"
                       : ""
                   } ${
                     isKingInCheck
-                      ? "!bg-[#E17C78]/70 ring-2 ring-inset ring-[#E17C78]"
+                      ? "!bg-[#E17C78]/80 ring-2 ring-inset ring-[#E17C78]"
                       : ""
                   }`}
                   role="button"
@@ -150,7 +139,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   {/* Rank coordinate on first column */}
                   {fileIdx === 0 && (
                     <span
-                      className={`absolute top-0.5 left-1 text-[10px] font-mono font-medium pointer-events-none select-none z-10 ${
+                      className={`absolute top-0.5 left-1 text-[11px] font-mono font-semibold pointer-events-none select-none z-10 ${
                         isLight ? "text-[#68716F]" : "text-[#E8E3D8]"
                       }`}
                     >
@@ -161,7 +150,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   {/* File coordinate on bottom row */}
                   {rankIdx === 7 && (
                     <span
-                      className={`absolute bottom-0.5 right-1 text-[10px] font-mono font-medium pointer-events-none select-none z-10 ${
+                      className={`absolute bottom-0.5 right-1 text-[11px] font-mono font-semibold pointer-events-none select-none z-10 ${
                         isLight ? "text-[#68716F]" : "text-[#E8E3D8]"
                       }`}
                     >
@@ -170,29 +159,25 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   )}
 
                   {/* Piece */}
-                  {pieceGlyph && (
-                    <span
-                      draggable={!disabled && piece?.color === chess.turn()}
+                  {piece && (
+                    <div
+                      draggable={!disabled && piece.color === chess.turn()}
                       onDragStart={(e) => handleDragStart(e, squareCoord)}
-                      className={`font-serif text-3xl sm:text-4xl md:text-5xl leading-none select-none transition-transform z-10 drop-shadow-xs active:scale-95 ${
-                        isWhitePiece
-                          ? "text-[#FFFFFF] [text-shadow:0_1px_2px_rgba(0,0,0,0.7)]"
-                          : "text-[#141619] [text-shadow:0_1px_1px_rgba(255,255,255,0.4)]"
-                      }`}
+                      className="w-[82%] h-[82%] flex items-center justify-center select-none z-10 drop-shadow-md transition-transform duration-150 active:scale-95"
                     >
-                      {pieceGlyph}
-                    </span>
+                      <ChessPiece type={piece.type} color={piece.color} />
+                    </div>
                   )}
 
-                  {/* Legal move indicator (Empty square = Dot, Capture = Ring) */}
+                  {/* Legal move indicator (Empty square = Central Dot, Capture = Refined Ring) */}
                   {isLegal && !piece && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                      <div className="w-3.5 h-3.5 rounded-full bg-[#141619]/45 border border-white/20 shadow-xs" />
+                      <div className="w-4 h-4 rounded-full bg-[#141619]/40 border border-[#F2F0E8]/30 shadow-xs" />
                     </div>
                   )}
 
                   {isLegal && piece && (
-                    <div className="absolute inset-0 border-4 border-[#C7A66A]/80 rounded-sm pointer-events-none z-20" />
+                    <div className="absolute inset-1 border-[3px] border-[#C7A66A] rounded-full pointer-events-none z-20 animate-pulse" />
                   )}
                 </div>
               );
@@ -209,12 +194,12 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
         description="Pilih perwira pengganti untuk pion yang mencapai petak ujung lawan."
       >
         <div className="space-y-4 pt-2">
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-4 gap-3">
             {[
-              { id: "q", label: "Menteri (Q)", symbol: "♛" },
-              { id: "r", label: "Benteng (R)", symbol: "♜" },
-              { id: "b", label: "Gajah (B)", symbol: "♝" },
-              { id: "n", label: "Kuda (N)", symbol: "♞" },
+              { id: "q", label: "Menteri" },
+              { id: "r", label: "Benteng" },
+              { id: "b", label: "Gajah" },
+              { id: "n", label: "Kuda" },
             ].map((p) => (
               <button
                 key={p.id}
@@ -222,9 +207,12 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 onClick={() => onConfirmPromotion(p.id as "q" | "r" | "b" | "n")}
                 className="flex flex-col items-center justify-center p-3 rounded-xl bg-[#24292E] border border-[#353B42] hover:border-[#C7A66A] hover:bg-[#2C3238] transition-all group focus-visible:outline-2 focus-visible:outline-[#C7A66A]"
               >
-                <span className="text-4xl text-[#F2F0E8] group-hover:text-[#C7A66A] transition-colors mb-1">
-                  {p.symbol}
-                </span>
+                <div className="w-12 h-12 mb-1 group-hover:scale-105 transition-transform">
+                  <ChessPiece
+                    type={p.id as "q" | "r" | "b" | "n"}
+                    color={chess.turn()}
+                  />
+                </div>
                 <span className="text-xs font-medium text-[#B0B5B9] group-hover:text-[#F2F0E8]">
                   {p.label}
                 </span>
@@ -238,7 +226,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
               onClick={onCancelPromotion}
               className="text-xs text-[#8A9299] hover:text-[#F2F0E8] underline"
             >
-              Batal
+              Batalkan
             </button>
           </div>
         </div>

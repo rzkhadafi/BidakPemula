@@ -156,4 +156,72 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 1 terpenuhi secara penuh).
 
-- **Langkah berikutnya:** Menunggu arahan untuk Fase 2 (Tactics & Puzzles Core).
+- **Langkah berikutnya:** Fase 2 & Revisi UX Pemula (Kurikulum Belajar, Peningkatan Papan & Bidak Vektor, Efek Suara, dan Sistem Taktik).
+
+---
+
+### 2026-10-24 — Revisi UX Pemula, Penyempurnaan Permainan, Kurikulum Belajar & Sistem Taktik
+
+- **Tujuan:**
+  Mengubah arah pengalaman produk Chess Archive agar ramah pemula mutlak (100% Bahasa Indonesia), menyederhanakan hierarki navigasi dan beranda, memperbesar dan memperhalus visual papan catur dengan bidak vektor SVG serta animasi transisi, menambahkan efek suara Web Audio API offline tanpa dependensi luar, menyempurnakan penghitungan jam catur berbasis delta timestamp dan jeda berpikir alami bot, menyediakan kurikulum belajar interaktif langkah-demi-langkah (9 modul lengkap), serta menyediakan arena latihan taktik (18 puzzle terkurasi dengan 3 tingkat petunjuk bertahap).
+
+- **Perubahan utama:**
+  1. **Hierarki Navigasi Sederhana & Rancang Ulang Beranda:**
+     - Mengubah navigasi utama menjadi 3 fokus utama: **Belajar** (`/academy`), **Main Catur** (`/play`), dan **Latihan** (`/puzzles`). Fitur Arsip dan Pengaturan dialihkan ke menu sekunder yang rapi.
+     - Merancang ulang beranda (`/`): Headline ramah pemula ("Belajar catur, satu langkah demi satu langkah"), tombol aksi terarah ("Mulai Belajar dari Nol" dan "Langsung Main Catur"), kartu modul belajar lanjutan otomatis, serta kartu pratinjau kurikulum dan latihan.
+  2. **Penyempurnaan Papan Catur & Bidak Vektor SVG:**
+     - Memperbesar ukuran maksimal papan catur pada desktop menjadi 640px–660px (`max-w-[640px] lg:max-w-[660px]`).
+     - Mengganti glif teks Unicode dengan bidak vektor SVG presisi tinggi (`src/components/chessboard/ChessPieces.tsx`) untuk seluruh bidak Putih dan Hitam.
+     - Menambahkan animasi perpindahan bidak yang halus (durasi 140–200ms) dengan dukungan `@media (prefers-reduced-motion: reduce)` yang mematikan animasi bagi pengguna dengan sensitivitas gerak.
+     - Memperhalus visual petak terpilih (`#C7A66A`), langkah terakhir, ring bidak target yang dapat dipukul, dan highlight merah pada raja saat posisi skak.
+  3. **Sistem Efek Suara (Web Audio API Synthesizer):**
+     - Mengimplementasikan `src/lib/audio/chess-audio.ts` menggunakan osilator Web Audio API bawaan peramban (zero external assets, 0ms latency, offline-first).
+     - Menghasilkan nada taktil kayu untuk langkah bidak, nada dampak ganda untuk pemukulan (capture), peringatan resonan untuk skak, dan akord kemenangan/kekalahan.
+     - Menyediakan toggle status suara di bilah kontrol `/play` dan `/settings` dengan persistensi ke `localStorage` (`chess_archive_sound_enabled`).
+  4. **Penyempurnaan Jam Catur & Waktu Berpikir Alami Bot:**
+     - Menghitung waktu mundur jam catur menggunakan delta timestamp monotonik (`Date.now() - lastTickTime`) yang kebal terhadap throttle interval browser.
+     - Jam catur bot kini aktif berdetik mundur selama bot menganalisis dan berpikir.
+     - Menerapkan jeda berpikir alami bot (`BOT_MIN_THINKING_DELAYS`: 650ms–1500ms) agar respons bot terasa seperti lawan manusia dan tidak terjadi seketika, dengan bypass instan khusus lingkungan unit testing.
+     - Memperbarui 5 tingkat kesulitan bot dengan istilah ramah pemula: **Santai**, **Pemula**, **Berkembang**, **Menantang**, dan **Kuat**.
+  5. **Kurikulum Belajar Interaktif Pemula (`/academy`):**
+     - Menyusun 9 modul belajar catur dari nol:
+       1. *Mengenal Papan Catur* (64 petak, lajur a–h, baris 1–8, petak pusat)
+       2. *Gerakan Bidak: Benteng* (lajur vertikal dan baris horizontal)
+       3. *Gerakan Bidak: Gajah* (diagonal sewarna)
+       4. *Gerakan Bidak: Menteri* (kombinasi benteng dan gajah)
+       5. *Gerakan Bidak: Kuda* (lompatan pola 'L' menembus barisan)
+       6. *Gerakan Bidak: Pion* (maju lurus, memukul miring)
+       7. *Raja & Ancaman Skak* (keselamatan raja, menghindari dan membalas skak)
+       8. *Gerakan Khusus* (rokade sayap raja/menteri dan promosi pion)
+       9. *Prinsip Strategi Dasar* (kuasai pusat, aktifkan perwira, amankan raja)
+     - Membuat komponen `InteractiveLessonBoard.tsx` yang memvalidasi langkah langsung melalui `chess.js`, memberikan umpan balik hangat seketika, petunjuk bertahap, dan tombol lanjut.
+     - Menyimpan progres modul dan langkah secara persisten di `localStorage` melalui adapter SSR-safe `src/features/academy/academy-progress.ts`.
+  6. **Latihan Taktik & Puzzle Terverifikasi (`/puzzles`):**
+     - 18 puzzle taktis yang diverifikasi legalitas FEN dan notasi UCI-nya (`puzzle-validator.ts`), mencakup 6 tema taktis (Garpu Kuda, Pin/Paku, Tusukan/Skewer, Discovered Attack, Defleksi/Pengalihan, dan Skakmat Bertahap).
+     - Tab filter latihan: *Semua*, *Taktik Dasar*, *Skakmat*, dan *Lanjutan*.
+     - 3 tingkat petunjuk bertahap berbahasa Indonesia, tombol coba ulang saat salah, serta tombol buka solusi jika pemain buntu.
+     - Persistensi progres latihan di `localStorage` (`puzzle-progress.ts`) dengan ringkasan akurasi dan jumlah puzzle yang diselesaikan.
+  7. **Halaman Pengaturan Diperbarui (`/settings`):**
+     - Penyesuaian preferensi suara, animasi, tema Dark Graphite, serta aksi pembersihan data arsip permainan dan progres kurikulum secara terpisah dengan dialog konfirmasi aman.
+
+- **File penting yang dibuat/dimodifikasi:**
+  - `src/components/chessboard/ChessPieces.tsx`
+  - `src/components/chessboard/InteractiveChessboard.tsx`, `ChessboardPlaceholder.tsx`
+  - `src/lib/audio/chess-audio.ts`
+  - `src/features/engine/difficulty.ts`
+  - `src/features/game/use-chess-game.ts`
+  - `src/components/layout/Navbar.tsx`
+  - `src/app/page.tsx`, `src/app/play/page.tsx`, `src/app/settings/page.tsx`
+  - `src/features/academy/types.ts`, `academy-catalog.ts`, `academy-progress.ts`, `InteractiveLessonBoard.tsx`, `LessonViewClient.tsx`
+  - `src/app/academy/page.tsx`, `src/app/academy/[lessonId]/page.tsx`
+  - `src/features/puzzles/types.ts`, `puzzle-catalog.ts`, `puzzle-validator.ts`, `puzzle-progress.ts`, `use-puzzle-game.ts`, `PuzzleViewClient.tsx`
+  - `src/app/puzzles/page.tsx`, `src/app/puzzles/[puzzleId]/page.tsx`
+  - `tests/unit/academy.test.ts`, `tests/unit/puzzle-progress.test.ts`, `tests/unit/chess-audio.test.ts`, `tests/unit/interactive-game.test.tsx`, `tests/integration/play-and-archive.test.tsx`, `tests/unit/smoke.test.tsx`
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run test` -> **PASS** (12 test suites, 74 tests passed 100%).
+  - `npm run build` -> **PASS** (Next.js Turbopack production build selesai tanpa kendala; 39 rute statis & partial prerendering berhasil di-generate).
+
+- **Gate:** **PASS** (Seluruh spesifikasi perombakan UX pemula, permainan catur interaktif, modul belajar pemula, latihan taktik, dan audio lokal telah terpenuhi secara lengkap).

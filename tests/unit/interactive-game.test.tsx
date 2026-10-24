@@ -212,9 +212,9 @@ describe("Chess Game Hook & Interactive Board (useChessGame)", () => {
     );
 
     expect(screen.getByText("Promosi Pion")).toBeInTheDocument();
-    expect(screen.getByText(/Menteri \(Q\)/i)).toBeInTheDocument();
+    expect(screen.getByText("Menteri")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText(/Menteri \(Q\)/i));
+    fireEvent.click(screen.getByText("Menteri"));
     expect(handleConfirmPromotion).toHaveBeenCalledWith("q");
   });
 });

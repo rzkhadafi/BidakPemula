@@ -21,6 +21,7 @@ import {
   StockfishWorkerEngine,
 } from "@/features/engine/stockfish-adapter";
 import { saveArchivedGame, CURRENT_SCHEMA_VERSION } from "@/lib/storage/game-archive";
+import { chessAudio } from "@/lib/audio/chess-audio";
 
 export interface ChessGameConfig {
   playerColor: PlayerColor;
@@ -34,6 +35,15 @@ const DEFAULT_CONFIG: ChessGameConfig = {
   botDifficulty: "beginner",
   timeControl: "5m",
   isPracticeMode: true,
+};
+
+// Natural human-like minimum thinking delay (in ms)
+const BOT_MIN_THINKING_DELAYS: Record<BotDifficultyLevel, number> = {
+  beginner: 650,     // Santai
+  casual: 850,       // Pemula
+  intermediate: 1100, // Berkembang
+  advanced: 1300,    // Menantang
+  master: 1500,      // Kuat
 };
 
 function getInitialTimeMs(timeControl: TimeControlId): number {
@@ -88,10 +98,11 @@ export function useChessGame(
   const [botThinking, setBotThinking] = useState<boolean>(false);
   const [engineStatus, setEngineStatus] = useState<EngineStatus>("loading");
 
-  // Clocks
+  // Real-time delta clocks
   const initialTime = getInitialTimeMs(initialConfig.timeControl);
   const [whiteClockMs, setWhiteClockMs] = useState<number>(initialTime);
   const [blackClockMs, setBlackClockMs] = useState<number>(initialTime);
+  const lastTickTimeRef = useRef<number>(0);
   const clockIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Search ID tracking and game over guard
@@ -181,6 +192,12 @@ export function useChessGame(
         clockIntervalRef.current = null;
       }
 
+      // Audio notification on game over
+      const playerWon =
+        (config.playerColor === "white" && result === "white_win") ||
+        (config.playerColor === "black" && result === "black_win");
+      chessAudio.playGameOver(playerWon);
+
       // Map result to ArchivedGame format
       let mappedResult: "white_win" | "black_win" | "draw" | "aborted" = "draw";
       if (result === "white_win") mappedResult = "white_win";
@@ -212,7 +229,7 @@ export function useChessGame(
     [config]
   );
 
-  // Clock countdown interval
+  // Accurate Clock countdown using monotonic timestamp delta
   useEffect(() => {
     if (config.timeControl === "unlimited" || gameStatus !== "ongoing") {
       if (clockIntervalRef.current) {
@@ -222,23 +239,31 @@ export function useChessGame(
       return;
     }
 
+    lastTickTimeRef.current = Date.now();
+
     clockIntervalRef.current = setInterval(() => {
+      const now = Date.now();
+      const deltaMs = Math.max(0, now - lastTickTimeRef.current);
+      lastTickTimeRef.current = now;
+
       const currentTurn = chessRef.current.turn();
       if (currentTurn === "w") {
         setWhiteClockMs((prev) => {
-          if (prev <= 100) {
+          const next = prev - deltaMs;
+          if (next <= 0) {
             recordGameOver("timeout", "black_win", "Waktu Habis (Hitam Menang)", historyRef.current);
             return 0;
           }
-          return prev - 100;
+          return next;
         });
       } else {
         setBlackClockMs((prev) => {
-          if (prev <= 100) {
+          const next = prev - deltaMs;
+          if (next <= 0) {
             recordGameOver("timeout", "white_win", "Waktu Habis (Putih Menang)", historyRef.current);
             return 0;
           }
-          return prev - 100;
+          return next;
         });
       }
     }, 100);
@@ -251,7 +276,7 @@ export function useChessGame(
     };
   }, [config.timeControl, gameStatus, recordGameOver]);
 
-  // Execute bot move
+  // Execute bot move with natural thinking delay & clock ticking
   const triggerBotMove = useCallback(
     async (currentFen: string, currentHistory: ChessMoveRecord[]) => {
       const c = chessRef.current;
@@ -262,6 +287,8 @@ export function useChessGame(
       setBotThinking(true);
       const searchId = ++currentSearchIdRef.current;
       const diffConfig = getDifficultyConfig(config.botDifficulty);
+      const minDelay = customEngine ? 0 : (BOT_MIN_THINKING_DELAYS[config.botDifficulty] || 800);
+      const searchStartTime = Date.now();
 
       try {
         const legalMoves = c.moves({ verbose: true });
@@ -280,6 +307,12 @@ export function useChessGame(
           skillLevel: diffConfig.skillLevel,
           searchId: String(searchId),
         });
+
+        // Enforce natural minimum human-like delay
+        const searchElapsed = Date.now() - searchStartTime;
+        if (searchElapsed < minDelay) {
+          await new Promise((resolve) => setTimeout(resolve, minDelay - searchElapsed));
+        }
 
         // Check if searchId is still valid (user didn't reset/undo in between)
         if (searchId !== currentSearchIdRef.current || chessRef.current.isGameOver()) {
@@ -330,9 +363,19 @@ export function useChessGame(
         setHistory(updatedHistory);
         setFen(newFen);
         setTurn(c.turn());
-        setIsCheck(c.inCheck());
+        const checkState = c.inCheck();
+        setIsCheck(checkState);
         setLastMove({ from: moveRes.from, to: moveRes.to });
         setBotThinking(false);
+
+        // Sound effect
+        if (checkState) {
+          chessAudio.playCheck();
+        } else if (moveRes.captured) {
+          chessAudio.playCapture();
+        } else {
+          chessAudio.playMove();
+        }
 
         // Check termination after bot move
         const term = evaluateGameTermination();
@@ -374,8 +417,17 @@ export function useChessGame(
             setHistory(updatedHistory);
             setFen(newFen);
             setTurn(c.turn());
-            setIsCheck(c.inCheck());
+            const checkState = c.inCheck();
+            setIsCheck(checkState);
             setLastMove({ from: moveRes.from, to: moveRes.to });
+
+            if (checkState) {
+              chessAudio.playCheck();
+            } else if (moveRes.captured) {
+              chessAudio.playCapture();
+            } else {
+              chessAudio.playMove();
+            }
 
             const term = evaluateGameTermination();
             if (term) {
@@ -386,7 +438,7 @@ export function useChessGame(
         setBotThinking(false);
       }
     },
-    [config.botDifficulty, evaluateGameTermination, recordGameOver]
+    [config.botDifficulty, customEngine, evaluateGameTermination, recordGameOver]
   );
 
   // Apply player move
@@ -430,10 +482,20 @@ export function useChessGame(
       setHistory(updatedHistory);
       setFen(newFen);
       setTurn(c.turn());
-      setIsCheck(c.inCheck());
+      const checkState = c.inCheck();
+      setIsCheck(checkState);
       setLastMove({ from: moveRes.from, to: moveRes.to });
       setSelectedSquare(null);
       setLegalDestinations([]);
+
+      // Sound effect
+      if (checkState) {
+        chessAudio.playCheck();
+      } else if (moveRes.captured) {
+        chessAudio.playCapture();
+      } else {
+        chessAudio.playMove();
+      }
 
       // Check game termination
       const term = evaluateGameTermination();
@@ -605,6 +667,7 @@ export function useChessGame(
       const freshFen = newChessInstance.fen();
       gameSavedRef.current = false;
       gameStartTimeRef.current = Date.now();
+      lastTickTimeRef.current = Date.now();
 
       setConfig(resolvedConfig);
       setFen(freshFen);
@@ -626,7 +689,7 @@ export function useChessGame(
       setWhiteClockMs(tMs);
       setBlackClockMs(tMs);
 
-      // If player is Black, bot plays White and makes first move
+      // If player is Black, bot plays White and makes first move immediately
       if (resolvedConfig.playerColor === "black") {
         triggerBotMove(freshFen, []);
       }

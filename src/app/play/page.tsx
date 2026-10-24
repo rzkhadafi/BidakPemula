@@ -14,6 +14,8 @@ import {
   Play,
   Trophy,
   Archive,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessboard";
 import { useChessGame } from "@/features/game/use-chess-game";
@@ -27,6 +29,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { chessAudio } from "@/lib/audio/chess-audio";
 
 function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -41,8 +44,14 @@ export default function PlayPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<BotDifficultyLevel>("beginner");
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControlId>("5m");
   const [isPracticeMode, setIsPracticeMode] = useState<boolean>(true);
+  const [soundOn, setSoundOn] = useState<boolean>(() => chessAudio.isEnabled());
 
   const moveListContainerRef = useRef<HTMLDivElement>(null);
+
+  const toggleSound = () => {
+    const next = chessAudio.toggleSound();
+    setSoundOn(next);
+  };
 
   const {
     chess,
@@ -120,6 +129,21 @@ export default function PlayPage() {
           <Button
             variant="secondary"
             size="sm"
+            onClick={toggleSound}
+            aria-label={soundOn ? "Matikan Efek Suara" : "Nyalakan Efek Suara"}
+            title={soundOn ? "Suara Aktif (Klik untuk Mematikan)" : "Suara Nonaktif (Klik untuk Menyalakan)"}
+          >
+            {soundOn ? (
+              <Volume2 className="w-4 h-4 text-[#73B894]" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-[#8A9299]" />
+            )}
+            <span className="hidden sm:inline ml-1 text-xs">{soundOn ? "Suara" : "Mute"}</span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setConfigModalOpen(true)}
             aria-label="Atur Parameter Pertandingan"
           >
@@ -134,7 +158,7 @@ export default function PlayPage() {
         {/* Chessboard Column */}
         <div className="lg:col-span-8 flex flex-col items-center">
           {/* Opponent Info Bar */}
-          <div className="w-full max-w-[560px] flex items-center justify-between py-2.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
+          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-2.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#B0B5B9]">
                 <Bot className="w-4 h-4 text-[#73B894]" />
@@ -196,7 +220,7 @@ export default function PlayPage() {
           />
 
           {/* Player Info Bar */}
-          <div className="w-full max-w-[560px] flex items-center justify-between py-2.5 px-3 mt-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
+          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-2.5 px-3 mt-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#B0B5B9]">
                 <User className="w-4 h-4 text-[#C7A66A]" />
@@ -454,22 +478,24 @@ export default function PlayPage() {
           {/* Bot Difficulty */}
           <div>
             <label className="text-xs font-medium text-[#B0B5B9] block mb-1.5">
-              Tingkat Kesulitan Bot
+              Tingkat Kemampuan Bot
             </label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {difficulties.map((diff) => (
                 <button
                   key={diff.id}
                   type="button"
                   onClick={() => setSelectedDifficulty(diff.id)}
-                  className={`py-1.5 px-2 rounded-md text-xs font-medium border transition-colors ${
+                  className={`p-2.5 rounded-lg text-left border transition-all ${
                     selectedDifficulty === diff.id
-                      ? "bg-[#24292E] border-[#C7A66A] text-[#F2F0E8]"
-                      : "border-[#353B42] text-[#8A9299] hover:bg-[#24292E]"
+                      ? "bg-[#24292E] border-[#C7A66A] ring-1 ring-[#C7A66A]"
+                      : "border-[#353B42] hover:bg-[#24292E] hover:border-[#8A9299]"
                   }`}
                 >
-                  <div>{diff.label}</div>
-                  <div className="text-[10px] text-[#8A9299]">~{diff.targetElo} Elo</div>
+                  <div className="font-medium text-xs text-[#F2F0E8]">{diff.label}</div>
+                  <div className="text-[10px] text-[#8A9299] mt-0.5 leading-snug line-clamp-2">
+                    {diff.description}
+                  </div>
                 </button>
               ))}
             </div>

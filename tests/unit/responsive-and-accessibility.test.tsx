@@ -63,7 +63,6 @@ describe("Accessibility and Design Tokens Verification", () => {
     expect(undoBtn).toBeDisabled();
 
     render(<PuzzlesPage />);
-    const resetPuzzleBtn = screen.getByRole("button", { name: /Ulangi Posisi/i });
-    expect(resetPuzzleBtn).toBeDisabled();
+    expect(screen.getByText("Semua Latihan")).toBeInTheDocument();
   });
 });
