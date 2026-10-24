@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { chessAudio } from "@/lib/audio/chess-audio";
+import { getSkillByLessonId, recordActivityEvidence } from "@/features/learning";
 
 interface InteractiveLessonBoardProps {
   lesson: AcademyLesson;
@@ -90,16 +91,42 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           setFeedback(step.explanationOnSuccess);
           chessAudio.playMove();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
+
+          const skillDef = getSkillByLessonId(lesson.id);
+          if (skillDef) {
+            recordActivityEvidence({
+              skillId: skillDef.id,
+              sourceKind: "lesson_step",
+              sourceId: `${lesson.id}-step-${currentStepIdx}`,
+              timestamp: new Date().toISOString(),
+              outcome: "success",
+              hintsUsed: showHint ? 1 : 0,
+              weight: 1.0,
+            });
+          }
         } else {
           setStatus("incorrect");
           setFeedback("Langkah tersebut legal, tetapi belum sesuai dengan sasaran latihan. Klik 'Ulangi' untuk mencoba kembali.");
+
+          const skillDef = getSkillByLessonId(lesson.id);
+          if (skillDef) {
+            recordActivityEvidence({
+              skillId: skillDef.id,
+              sourceKind: "lesson_step",
+              sourceId: `${lesson.id}-step-${currentStepIdx}-err-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              outcome: "mistake",
+              hintsUsed: showHint ? 1 : 0,
+              weight: 0.5,
+            });
+          }
         }
       } catch {
         setStatus("incorrect");
         setFeedback("Gerakan tidak diperbolehkan menurut aturan catur.");
       }
     },
-    [chess, currentStepIdx, lesson.id, lesson.steps.length, step.allowedMovesUci, step.expectedMoveUci, step.explanationOnSuccess]
+    [chess, currentStepIdx, lesson.id, lesson.steps.length, showHint, step.allowedMovesUci, step.expectedMoveUci, step.explanationOnSuccess]
   );
 
   const handleSquareClick = useCallback(
@@ -113,9 +140,35 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           setFeedback(step.explanationOnSuccess);
           chessAudio.playMove();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
+
+          const skillDef = getSkillByLessonId(lesson.id);
+          if (skillDef) {
+            recordActivityEvidence({
+              skillId: skillDef.id,
+              sourceKind: "lesson_step",
+              sourceId: `${lesson.id}-step-${currentStepIdx}`,
+              timestamp: new Date().toISOString(),
+              outcome: "success",
+              hintsUsed: showHint ? 1 : 0,
+              weight: 1.0,
+            });
+          }
         } else {
           setStatus("incorrect");
           setFeedback(`Petak yang Anda klik adalah ${squareCoord.toUpperCase()}. Coba cari petak ${step.targetSquare.toUpperCase()}.`);
+
+          const skillDef = getSkillByLessonId(lesson.id);
+          if (skillDef) {
+            recordActivityEvidence({
+              skillId: skillDef.id,
+              sourceKind: "lesson_step",
+              sourceId: `${lesson.id}-step-${currentStepIdx}-err-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              outcome: "mistake",
+              hintsUsed: showHint ? 1 : 0,
+              weight: 0.5,
+            });
+          }
         }
         return;
       }
@@ -165,7 +218,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         setLegalDestinations(moves.map((m) => m.to));
       }
     },
-    [chess, currentStepIdx, executeMove, legalDestinations, lesson.id, lesson.steps.length, selectedSquare, status, step.explanationOnSuccess, step.targetSquare]
+    [chess, currentStepIdx, executeMove, legalDestinations, lesson.id, lesson.steps.length, selectedSquare, showHint, status, step.explanationOnSuccess, step.targetSquare]
   );
 
   const handleNextStep = () => {

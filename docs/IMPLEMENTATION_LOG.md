@@ -347,3 +347,52 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 41 rute berhasil di-generate).
 
 - **Gate:** **PASS** (Jalur suara asli Gemini TTS dengan karakter Aoede dan konverter WAV telah aktif sepenuhnya).
+
+---
+
+### 2026-10-24 — Fase 5: Perkembangan Belajar Personal (Adaptive Learning System)
+
+- **Tujuan:**
+  Membangun sistem pembelajaran personal yang memahami progres pengguna, mengenali materi yang masih perlu dilatih, dan merekomendasikan langkah belajar berikutnya berdasarkan bukti aktivitas nyata (hasil latihan Akademi, percobaan puzzle, kesalahan, penggunaan petunjuk, dan melihat solusi). Menghindari tampilan dashboard statistik yang rumit demi antarmuka editorial ramah pemula yang menjawab 4 pertanyaan inti: *Apa yang sudah saya kuasai?*, *Materi apa yang masih perlu saya latih?*, *Mengapa materi itu direkomendasikan?*, dan *Apa yang sebaiknya saya lakukan sekarang?*.
+
+- **Perubahan utama:**
+  1. **Model Kemampuan Pemain (`src/features/learning/types.ts` & `skills-catalog.ts`):**
+     - Mendefinisikan 17 keterampilan catur inti ber-ID stabil yang terbagi dalam 3 kategori:
+       - *Dasar Permainan* (Koordinat papan, Gerakan 6 bidak: Benteng, Gajah, Menteri, Kuda, Pion, Raja & Skak, serta Gerakan khusus: Rokade & Promosi).
+       - *Taktik Dasar* (Garpu/Fork, Ikatan/Pin, Serangan Tusuk/Skewer, Serangan Terbuka/Discovered Attack, Menyingkirkan Penjaga/Remove Defender, Pola Skakmat Sederhana).
+       - *Strategi Pemula* (Penguasaan Pusat Papan, Pengembangan Perwira, Keamanan Raja & Kewaspadaan).
+     - Menghubungkan setiap keterampilan dengan prasyarat (*prerequisites*), modul Akademi, dan katalog Puzzle.
+  2. **Pengukuran Penguasaan & Pengulangan Terencana (`mastery-evaluator.ts`):**
+     - Menerapkan 4 status penguasaan yang ramah pemula: *Belum dicoba*, *Sedang dipelajari*, *Hampir dikuasai*, dan *Dikuasai*.
+     - Pembobotan bukti nyata: Keberhasilan mandiri (0 hint) memberi bobot tinggi (+25), melihat solusi memberi bobot minimal (+2, tidak inflasi), dan kesalahan mengurangi skor secara lembut (-8) tanpa menghapus capaian sebelumnya.
+     - Penilaian tingkat kepercayaan (*confidence* low/medium/high berdasarkan variasi dan jumlah percobaan) untuk mencegah klaim penguasaan prematur.
+     - Penjadwalan pengulangan terencana (*spaced repetition*): Keterampilan yang telah dikuasai atau hampir dikuasai dijadwalkan ulang berkala (2 hari untuk *in-progress*, 4 hari untuk *near-mastery*, 7 hari untuk *mastered*) dan ditandai `needsReview = true` ketika sudah waktunya ditinjau.
+  3. **Mesin Rekomendasi Adaptif Berbasis Bukti (`recommendation-engine.ts`):**
+     - Algoritma deterministik 100% lokal (tanpa biaya API, bekerja instan & offline) dengan urutan prioritas:
+       1. Materi prasyarat yang belum dikuasai (misal: gerakan kuda sebelum taktik garpu).
+       2. Kelemahan nyata berdasarkan riwayat kesalahan/koreksi berulang.
+       3. Materi yang sudah waktunya diulang (*spaced review*).
+       4. Langkah terstruktur berikutnya dalam kurikulum Akademi.
+       5. Tantangan taktik baru untuk keterampilan yang sudah matang.
+     - Setiap rekomendasi menghasilkan alasan penjelasan yang hangat, masuk akal, dan bersahabat dalam bahasa Indonesia.
+  4. **Penyimpanan Lokal Berversi & Idempotensi (`learning-storage.ts` & `use-learning-profile.ts`):**
+     - Menggunakan kunci penyimpanan `chess_archive_learning_profile_v1` dengan sinkronisasi otomatis (*auto-sync*) riwayat Akademi & Puzzle yang telah selesai sebelumnya.
+     - Menjamin idempotensi melalui `processedEvidenceIds` agar render ulang atau refresh tidak melipatgandakan skor.
+     - Menyediakan fungsi reset profil progres terisolasi yang aman tanpa menyentuh arsip pertandingan atau pengaturan audio.
+  5. **Pengalaman UI/UX & Halaman Baru (`/progress`, `/`, `/academy`, `/settings`):**
+     - **Beranda (`/`):** Menampilkan kartu rekomendasi personal adaptif (*Saran Belajar Berikutnya*) bagi pemain aktif, dan sambutan ramah dari nol tanpa grafik kosong bagi pengguna baru.
+     - **Akademi (`/academy`):** Menampilkan lencana penguasaan per modul (*Dikuasai*, *Sedang Dilatih*, *Perlu Diulang*) dan sorotan lembut untuk modul yang disarankan.
+     - **Halaman Perkembangan (`/progress`):** Menjawab 4 pertanyaan pemula secara runtut dan menghadirkan tombol suara Guru Catur AI (Aoede) untuk membacakan rekomendasi belajar secara alami.
+     - **Navigasi Sekunder:** Menambahkan pintasan *Progres* pada menu sekunder Navbar dan drawer mobile.
+     - **Pengaturan (`/settings`):** Tombol *Reset Progres Belajar* diintegrasikan untuk membersihkan profil perkembangan personal secara terkonfirmasi.
+  6. **Perekaman Otomatis pada Komponen Interaktif:**
+     - `InteractiveLessonBoard.tsx`: Merekam keberhasilan dan koreksi langkah interaktif ke model keterampilan terkait.
+     - `use-puzzle-game.ts`: Merekam keberhasilan mandiri, pemakaian petunjuk, dan pembukaan solusi ke profil taktik.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings pada seluruh file TypeScript & React).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (17 test suites, **108 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 42 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 5 terpenuhi secara lengkap).

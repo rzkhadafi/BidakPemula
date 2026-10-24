@@ -21,6 +21,7 @@ const PRIMARY_NAV = [
 ];
 
 const SECONDARY_NAV = [
+  { href: "/progress", label: "Progres", icon: Compass },
   { href: "/archive", label: "Arsip", icon: Archive },
   { href: "/settings", label: "Pengaturan", icon: Settings },
 ];
@@ -182,7 +183,7 @@ export const Navbar: React.FC = () => {
             <div className="text-[11px] font-semibold uppercase tracking-wider text-[#8A9299] px-3 mb-1">
               Menu Lainnya
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {SECONDARY_NAV.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);

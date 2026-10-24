@@ -117,6 +117,71 @@ type PuzzleProgress = {
 
 Semua puzzle P0 perlu dikurasi dan solusi legalnya divalidasi saat test/build. Jangan meminta Gemini menciptakan puzzle runtime yang belum tervalidasi.
 
+## 5.1 Model Kemampuan & Perkembangan Belajar Personal (Fase 5)
+
+```ts
+type SkillCategory = "fundamentals" | "tactics" | "strategy";
+
+type SkillId =
+  | "board-coordinates" | "piece-rook" | "piece-bishop" | "piece-queen"
+  | "piece-knight" | "piece-pawn" | "piece-king" | "special-moves"
+  | "tactic-fork" | "tactic-pin" | "tactic-skewer" | "tactic-discovered-attack"
+  | "tactic-remove-defender" | "tactic-checkmate"
+  | "strategy-center-control" | "strategy-piece-development" | "strategy-king-safety";
+
+type MasteryStatus = "not_started" | "in_progress" | "near_mastery" | "mastered";
+
+type SkillMastery = {
+  skillId: SkillId;
+  status: MasteryStatus;
+  score: number; // 0 - 100
+  confidence: "low" | "medium" | "high";
+  attemptsCount: number;
+  successCount: number;
+  mistakesCount: number;
+  hintsUsedCount: number;
+  lastTrainedAt: string | null;
+  nextReviewAt: string | null;
+  needsReview: boolean;
+};
+
+type LearningEvidence = {
+  id: string; // Idempotent key
+  skillId: SkillId;
+  sourceKind: "lesson_step" | "puzzle" | "game";
+  sourceId: string;
+  timestamp: string;
+  outcome: "success" | "mistake" | "assisted";
+  hintsUsed: number;
+  weight: number;
+};
+
+type LearningRecommendation = {
+  id: string;
+  type: "lesson" | "puzzle" | "review";
+  targetId: string;
+  targetTitle: string;
+  targetSubtitle?: string;
+  skillId: SkillId;
+  skillName: string;
+  reason: string;
+  priority: number;
+  href: string;
+  actionLabel: string;
+};
+
+type LearningProfile = {
+  schemaVersion: number;
+  processedEvidenceIds: string[];
+  skills: Record<SkillId, SkillMastery>;
+  evidenceHistory: LearningEvidence[];
+  lastEvaluatedAt: string;
+  activeRecommendation: LearningRecommendation | null;
+};
+```
+
+Data profil perkembangan belajar disimpan secara lokal (`chess_archive_learning_profile_v1`) dan disinkronkan secara aman tanpa mengorbankan privasi pengguna.
+
 ## 6. Tutor interaction — jika disimpan
 
 ```ts

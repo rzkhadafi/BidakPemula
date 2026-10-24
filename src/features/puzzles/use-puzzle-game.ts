@@ -9,6 +9,7 @@ import {
   recordPuzzleSolved,
 } from "./puzzle-progress";
 import { chessAudio } from "@/lib/audio/chess-audio";
+import { getSkillByPuzzleId, recordActivityEvidence } from "@/features/learning";
 
 export function usePuzzleGame(puzzle: ChessPuzzle) {
   const [chess, setChess] = useState<Chess>(() => new Chess(puzzle.startingFen));
@@ -221,6 +222,19 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
                   setFeedback("Luar biasa! Puzzle berhasil dipecahkan.");
                   chessAudio.playGameOver(true);
                   recordPuzzleSolved(puzzle.id, solutionRevealed);
+
+                  const skillDef = getSkillByPuzzleId(puzzle.id);
+                  if (skillDef) {
+                    recordActivityEvidence({
+                      skillId: skillDef.id,
+                      sourceKind: "puzzle",
+                      sourceId: puzzle.id,
+                      timestamp: new Date().toISOString(),
+                      outcome: solutionRevealed ? "assisted" : "success",
+                      hintsUsed: hintsUnlocked,
+                      weight: solutionRevealed ? 0.2 : hintsUnlocked === 0 ? 1.0 : 0.7,
+                    });
+                  }
                 }
               }
             } catch {}
@@ -231,12 +245,38 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
           setFeedback("Luar biasa! Puzzle berhasil dipecahkan.");
           chessAudio.playGameOver(true);
           recordPuzzleSolved(puzzle.id, solutionRevealed);
+
+          const skillDef = getSkillByPuzzleId(puzzle.id);
+          if (skillDef) {
+            recordActivityEvidence({
+              skillId: skillDef.id,
+              sourceKind: "puzzle",
+              sourceId: puzzle.id,
+              timestamp: new Date().toISOString(),
+              outcome: solutionRevealed ? "assisted" : "success",
+              hintsUsed: hintsUnlocked,
+              weight: solutionRevealed ? 0.2 : hintsUnlocked === 0 ? 1.0 : 0.7,
+            });
+          }
         }
       } else {
         // Legal move, but not the puzzle tactical solution
         setStatus("wrong_step");
         setFeedback("Langkah sah, namun bukan solusi taktis terbaik. Coba cari alternatif lain!");
         recordPuzzleAttempt(puzzle.id, true);
+
+        const skillDef = getSkillByPuzzleId(puzzle.id);
+        if (skillDef) {
+          recordActivityEvidence({
+            skillId: skillDef.id,
+            sourceKind: "puzzle",
+            sourceId: `${puzzle.id}-err-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            outcome: "mistake",
+            hintsUsed: hintsUnlocked,
+            weight: 0.5,
+          });
+        }
 
         // Revert move after 600ms so board returns to retryable state
         opponentTimeoutRef.current = setTimeout(() => {
@@ -252,7 +292,7 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
         }, 650);
       }
     },
-    [currentPlyIndex, puzzle.id, puzzle.solutionLinesUci, solutionRevealed, status]
+    [currentPlyIndex, hintsUnlocked, puzzle.id, puzzle.solutionLinesUci, solutionRevealed, status]
   );
 
   const handleSquareClick = useCallback(

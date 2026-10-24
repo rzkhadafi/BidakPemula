@@ -2,7 +2,7 @@
 
 import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { GraduationCap, Swords, Sparkles, ArrowRight, Play } from "lucide-react";
+import { GraduationCap, Swords, Sparkles, ArrowRight, Play, Compass } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -11,17 +11,16 @@ import {
   getAcademyProgressSnapshot,
   getAcademyProgressServerSnapshot,
 } from "@/features/academy/academy-progress";
-import { getLessonById, ACADEMY_LESSONS } from "@/features/academy/academy-catalog";
+import { useLearningProfile } from "@/features/learning";
 
 export default function HomePage() {
-  const progress = useSyncExternalStore(
+  useSyncExternalStore(
     subscribeToAcademyProgress,
     getAcademyProgressSnapshot,
     getAcademyProgressServerSnapshot
   );
 
-  const hasProgress = progress.completedLessonIds.length > 0;
-  const currentLesson = getLessonById(progress.currentLessonId) || ACADEMY_LESSONS[0];
+  const { recommendation, isNewUser, summary } = useLearningProfile();
 
   return (
     <div className="space-y-10 py-4 sm:py-8 max-w-4xl mx-auto">
@@ -58,33 +57,48 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Resume Learning Section (If progress exists) */}
-      {hasProgress && (
+      {/* Saran Belajar Adaptif Personal */}
+      {!isNewUser && recommendation && (
         <section className="animate-in fade-in duration-200">
-          <Card variant="raised" className="p-5 border-[#C7A66A]/40 bg-[#1C2024]">
+          <Card variant="raised" className="p-5 border-[#C7A66A]/40 bg-[#1C2024] space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Badge variant="accent" size="sm">
-                    Lanjutkan Belajar
+                    Saran Belajar Berikutnya
                   </Badge>
                   <span className="text-xs text-[#8A9299]">
-                    {progress.completedLessonIds.length} dari {ACADEMY_LESSONS.length} Pelajaran Selesai
+                    {summary.masteredCount} Keterampilan Dikuasai
                   </span>
                 </div>
                 <h2 className="text-base font-semibold text-[#F2F0E8]">
-                  Pelajaran {currentLesson.order}: {currentLesson.title}
+                  {recommendation.targetTitle}
                 </h2>
-                <p className="text-xs text-[#B0B5B9]">
-                  {currentLesson.subtitle}
+                <p className="text-xs text-[#B0B5B9] leading-relaxed">
+                  {recommendation.reason}
                 </p>
               </div>
 
-              <Link href={`/academy/${currentLesson.id}`}>
-                <Button variant="primary" size="sm" className="w-full sm:w-auto whitespace-nowrap">
-                  <span>Lanjutkan Materi</span>
-                  <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
+              <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0">
+                <Link href={recommendation.href} className="w-full sm:w-auto">
+                  <Button variant="primary" size="sm" className="w-full sm:w-auto whitespace-nowrap">
+                    <span>{recommendation.actionLabel}</span>
+                    <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#353B42] flex items-center justify-between text-xs">
+              <span className="text-[#8A9299]">
+                Rekomendasi disesuaikan dari hasil latihan pribadimu
+              </span>
+              <Link
+                href="/progress"
+                className="text-[#C7A66A] hover:underline flex items-center gap-1 font-medium"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span>Lihat Detail Perkembangan</span>
               </Link>
             </div>
           </Card>

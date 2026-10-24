@@ -2,7 +2,7 @@
 
 import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { GraduationCap, ChevronRight, CheckCircle2 } from "lucide-react";
+import { GraduationCap, ChevronRight, CheckCircle2, Compass, Sparkles, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,8 @@ import {
   getAcademyProgressSnapshot,
   getAcademyProgressServerSnapshot,
 } from "@/features/academy/academy-progress";
+import { useLearningProfile } from "@/features/learning";
+import { getSkillByLessonId } from "@/features/learning/skills-catalog";
 
 export default function AcademyPage() {
   const progress = useSyncExternalStore(
@@ -19,6 +21,7 @@ export default function AcademyPage() {
     getAcademyProgressSnapshot,
     getAcademyProgressServerSnapshot
   );
+  const { profile, recommendation } = useLearningProfile();
 
   const completedCount = progress.completedLessonIds.length;
   const totalLessons = ACADEMY_LESSONS.length;
@@ -39,11 +42,20 @@ export default function AcademyPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1C2024] border border-[#353B42] text-xs text-[#B0B5B9]">
-          <GraduationCap className="w-4 h-4 text-[#C7A66A]" />
-          <span>
-            Progres: <strong className="text-[#F2F0E8]">{completedCount}</strong> dari {totalLessons} Selesai
-          </span>
+        <div className="flex items-center gap-3">
+          <Link href="/progress">
+            <Button variant="secondary" size="sm" className="text-xs flex items-center gap-1.5">
+              <Compass className="w-3.5 h-3.5 text-[#C7A66A]" />
+              <span>Lihat Progres Pribadi</span>
+            </Button>
+          </Link>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1C2024] border border-[#353B42] text-xs text-[#B0B5B9]">
+            <GraduationCap className="w-4 h-4 text-[#C7A66A]" />
+            <span>
+              <strong className="text-[#F2F0E8]">{completedCount}</strong>/{totalLessons} Selesai
+            </span>
+          </div>
         </div>
       </div>
 
@@ -52,21 +64,48 @@ export default function AcademyPage() {
         {ACADEMY_LESSONS.map((lesson) => {
           const isCompleted = progress.completedLessonIds.includes(lesson.id);
           const isCurrent = progress.currentLessonId === lesson.id;
+          const isRecommended = recommendation?.targetId === lesson.id;
+
+          const skillDef = getSkillByLessonId(lesson.id);
+          const skillMastery = skillDef ? profile.skills[skillDef.id] : null;
 
           return (
             <Card
               key={lesson.id}
               variant="surface"
               className={`flex flex-col justify-between transition-all duration-150 hover:border-[#C7A66A]/50 ${
-                isCompleted ? "border-[#73B894]/40" : ""
+                isRecommended
+                  ? "border-[#C7A66A] ring-1 ring-[#C7A66A]/30 bg-gradient-to-b from-[#1C2024] to-[#24292E]"
+                  : isCompleted
+                  ? "border-[#73B894]/40"
+                  : ""
               }`}
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#C7A66A]">
-                    Pelajaran {lesson.order}
-                  </span>
-                  {isCompleted ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-[#C7A66A]">
+                      Pelajaran {lesson.order}
+                    </span>
+                    {isRecommended && (
+                      <Badge variant="accent" size="sm" className="flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Disarankan
+                      </Badge>
+                    )}
+                  </div>
+
+                  {skillMastery?.needsReview ? (
+                    <Badge variant="warning" size="sm" className="flex items-center gap-1">
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      Perlu Diulang
+                    </Badge>
+                  ) : skillMastery?.status === "mastered" ? (
+                    <Badge variant="success" size="sm" className="flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Dikuasai
+                    </Badge>
+                  ) : isCompleted ? (
                     <Badge variant="success" size="sm" className="flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       Selesai
@@ -101,11 +140,11 @@ export default function AcademyPage() {
                 </span>
                 <Link href={`/academy/${lesson.id}`}>
                   <Button
-                    variant={isCompleted ? "secondary" : "primary"}
+                    variant={isRecommended ? "primary" : isCompleted ? "secondary" : "primary"}
                     size="sm"
                     className="text-xs"
                   >
-                    <span>{isCompleted ? "Ulangi" : "Mulai"}</span>
+                    <span>{isRecommended ? "Mulai Sekarang" : isCompleted ? "Ulangi" : "Mulai"}</span>
                     <ChevronRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>

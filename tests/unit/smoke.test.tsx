@@ -7,6 +7,7 @@ import AcademyPage from "@/app/academy/page";
 import PuzzlesPage from "@/app/puzzles/page";
 import ArchivePage from "@/app/archive/page";
 import SettingsPage from "@/app/settings/page";
+import ProgressPage from "@/app/progress/page";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { saveArchivedGame, CURRENT_SCHEMA_VERSION } from "@/lib/storage/game-archive";
@@ -106,5 +107,12 @@ describe("Smoke Tests: Core Pages and Navigation", () => {
     render(<SettingsPage />);
     expect(screen.getByText("Pengaturan Aplikasi")).toBeInTheDocument();
     expect(screen.getByText("Tema Visual")).toBeInTheDocument();
+  });
+
+  it("renders Progress Page with personal learning overview", () => {
+    render(<ProgressPage />);
+    expect(screen.getByText("Perkembangan Belajar Personal")).toBeInTheDocument();
+    expect(screen.getByText("Saran Langkah Berikutnya")).toBeInTheDocument();
+    expect(screen.getByText(/Keterampilan yang Sudah Dikuasai/i)).toBeInTheDocument();
   });
 });

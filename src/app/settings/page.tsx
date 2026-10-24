@@ -19,6 +19,7 @@ import { clearArchivedGames } from "@/lib/storage/game-archive";
 import { clearAcademyProgress } from "@/features/academy/academy-progress";
 import { clearPuzzleProgress } from "@/features/puzzles/puzzle-progress";
 import { clearAudioCache } from "@/features/tutor/audio-cache";
+import { clearLearningProfile } from "@/features/learning";
 import {
   getTutorPreferences,
   saveTutorPreferences,
@@ -418,7 +419,8 @@ export default function SettingsPage() {
                 } else {
                   clearAcademyProgress();
                   clearPuzzleProgress();
-                  showToast("Progres belajar telah direset.");
+                  clearLearningProfile();
+                  showToast("Progres belajar dan profil perkembangan telah direset.");
                 }
               }}
             >
