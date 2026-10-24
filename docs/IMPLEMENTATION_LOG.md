@@ -476,6 +476,32 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Tahap 2: Pendampingan Aktif telah selesai diimplementasikan, teruji bebas error, dan siap digunakan).
 
-- **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).
+---
 
-- **Langkah berikutnya:** Tahap 2: Pendampingan Aktif (*In-Game AI Co-Pilot: Guided Undo & Socratic Hints*).
+### 2026-10-24 — Perbaikan Kritis: Masalah Petak Terkunci / Langkah Tidak Bisa Diklik pada Papan Catur
+
+- **Gejala / Masalah yang Dilaporkan:**
+  Pengguna melaporkan bahwa saat mengikuti instruksi Guru AI (misalnya pion Putih `d4` memakan pion Hitam di `e5`), bidak pada petak `e5` tidak bisa diklik / dimakan sama sekali seolah-olah "terkunci". Pengguna juga mencatat bahwa dalam permainan sebelumnya, hal serupa sering terjadi dan terasa seperti tidak diberi kebebasan melangkah.
+
+- **Investigasi Akar Masalah (*Root Cause Analysis*):**
+  1. Pada `src/components/chessboard/InteractiveChessboard.tsx`, penanda visual langkah terakhir lawan (`isLastMoveSquare`) sebelumnya menambahkan kelas styling:
+     `after:absolute after:inset-0 after:bg-[rgba(220,175,50,0.42)] pointer-events-none` langsung ke atribut `className` dari elemen pembungkus petak (`div` utama petak papan catur).
+  2. Tailwind CSS mengompilasi `pointer-events-none` langsung pada elemen petak itu sendiri, bukan pada pseudo-elemen `::after`.
+  3. Akibatnya, pada setiap giliran catur, kedua petak yang terlibat dalam langkah terakhir lawan (`lastMove.from` dan `lastMove.to`) secara fisik kehilangan kemampuan menerima interaksi pointer (*click*, *touch*, *dragover*, *drop*).
+  4. Setiap kali lawan menggerakkan bidak (misalnya Hitam memainkan `8... fxe5`), petak `e5` (dan `f6`) langsung menjadi tidak bisa diklik. Akibatnya pemain tidak bisa memakan kembali (*recapture*) bidak lawan di `e5`, dan tidak bisa melangkah ke petak asal `f6`.
+
+- **Solusi & Perbaikan:**
+  1. Menghilangkan kelas `pointer-events-none` dan `after:...` dari container utama petak catur pada `InteractiveChessboard.tsx`.
+  2. Memindahkan penyorot langkah terakhir (`isLastMoveSquare && !isSelected`) menjadi elemen anak terpisah (`<div className="absolute inset-0 bg-[rgba(220,175,50,0.40)] pointer-events-none z-5" />`). Dengan demikian petak catur induk selalu 100% aktif dan dapat diklik/diseret tanpa halangan.
+  3. Menambahkan unit test komprehensif pada `src/components/chessboard/InteractiveChessboard.test.tsx` untuk menguji klik pada petak target pemakanan `lastMove.to`, petak asal `lastMove.from`, klik langsung pada SVG bidak lawan, serta aksi drag-and-drop.
+  4. Menambahkan test case pada `src/features/copilot/blunder-detector.test.ts` untuk memastikan langkah `d4xe5` pada posisi tersebut dinilai aman oleh Co-Pilot.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm test` -> **PASS** (21 test suites, **128 tests lulus 100%**).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses).
+
+- **Gate:** **PASS** (Bug petak terkunci telah diperbaiki tuntas, pemain kini memiliki kebebasan penuh mengeksekusi semua langkah legal).
+
+- **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).

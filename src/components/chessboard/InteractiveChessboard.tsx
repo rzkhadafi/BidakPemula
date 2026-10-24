@@ -323,10 +323,6 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                       ? "ring-4 ring-inset ring-[#C7A66A] !bg-[#C7A66A]/25 animate-pulse z-20"
                       : ""
                   } ${
-                    isLastMoveSquare && !isSelected
-                      ? "after:absolute after:inset-0 after:bg-[rgba(220,175,50,0.42)] pointer-events-none"
-                      : ""
-                  } ${
                     isKingInCheck
                       ? "!bg-[#DC4C44]/80 ring-2 ring-inset ring-[#FF6B6B]"
                       : ""
@@ -345,6 +341,10 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                     }
                   }}
                 >
+                  {/* Indikator langkah terakhir (Last move highlight: Soft warm amber) */}
+                  {isLastMoveSquare && !isSelected && (
+                    <div className="absolute inset-0 bg-[rgba(220,175,50,0.40)] pointer-events-none z-5" />
+                  )}
                   {/* Rank coordinate on first column (top-left inside square) */}
                   {fileIdx === 0 && (
                     <span
