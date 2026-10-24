@@ -366,66 +366,95 @@ export default function PlayPage() {
             </Card>
           )}
 
-          {/* Action Controls */}
-          <Card variant="surface" className="space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-[#353B42]">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#B0B5B9]">
-                Kontrol Pertandingan
-              </h2>
-              {config.isPracticeMode && (
-                <div className="flex items-center gap-1.5">
-                  <ShieldAlert className={`w-3.5 h-3.5 ${coPilotPreferences.blunderSafetyNet ? "text-[#73B894]" : "text-[#8A9299]"}`} />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCoPilotPreferences({
-                        blunderSafetyNet: !coPilotPreferences.blunderSafetyNet,
-                      })
-                    }
-                    className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border transition-all cursor-pointer ${
-                      coPilotPreferences.blunderSafetyNet
-                        ? "bg-[#73B894]/15 border-[#73B894]/40 text-[#73B894]"
-                        : "bg-[#24292E] border-[#353B42] text-[#8A9299]"
-                    }`}
-                    title="Peringatkan sebelum Anda menjalankan langkah blunder fatal"
-                  >
-                    Bantalan Blunder: {coPilotPreferences.blunderSafetyNet ? "ON" : "OFF"}
-                  </button>
+          {/* AI Co-Pilot Companion Card */}
+          <Card variant="surface" className="p-3.5 sm:p-4 space-y-3 border-[#C7A66A]/40 bg-gradient-to-b from-[#1C2024] to-[#141619] shadow-lg">
+            {/* Header with Co-Pilot Persona */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-[#353B42]">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#C7A66A]/20 border border-[#C7A66A]/60 flex items-center justify-center text-[#C7A66A]">
+                  <Bot className="w-4 h-4" />
                 </div>
-              )}
+                <div>
+                  <h2 className="text-xs font-bold text-[#F2F0E8] flex items-center gap-1.5">
+                    <span>Guru Catur AI Co-Pilot</span>
+                    <span className="w-2 h-2 rounded-full bg-[#73B894] animate-pulse" />
+                  </h2>
+                  <span className="text-[10px] text-[#C7A66A]">Pendamping Aktif Ramah Pemula</span>
+                </div>
+              </div>
+
+              {/* Co-Pilot Toggle Switch */}
+              <button
+                type="button"
+                onClick={() =>
+                  setCoPilotPreferences({
+                    blunderSafetyNet: !coPilotPreferences.blunderSafetyNet,
+                  })
+                }
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer ${
+                  coPilotPreferences.blunderSafetyNet
+                    ? "bg-[#73B894]/20 border-[#73B894]/60 text-[#73B894]"
+                    : "bg-[#24292E] border-[#353B42] text-[#8A9299]"
+                }`}
+                title="Nyalakan/matikan perlindungan Bantalan Blunder"
+              >
+                <ShieldAlert className="w-3 h-3" />
+                <span>{coPilotPreferences.blunderSafetyNet ? "Proteksi Aktif" : "Proteksi Mati"}</span>
+              </button>
             </div>
 
-            {/* Undo Feedback Toast / Mentor Guidance */}
+            {/* Live Companion Advice Bubble */}
+            <div className="p-2.5 rounded-xl bg-[#24292E]/80 border border-[#353B42] text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-medium text-[#C7A66A] text-[11px]">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Saran Pendamping:</span>
+              </div>
+              <p className="text-[#B0B5B9] text-xs leading-relaxed">
+                {history.length === 0
+                  ? "Selamat datang! Saya mendampingi setiap langkahmu. Jika bingung memilih langkah awal, tekan tombol Petunjuk Sokrates di bawah."
+                  : botThinking
+                  ? "Bot sedang berpikir... Perhatikan susunan bidakmu sementara menunggu."
+                  : isPlayerTurn
+                  ? "Giliranmu melangkah. Bantalan Blunder aktif melindungimu dari perwira gantung dan skakmat tak terduga."
+                  : "Menunggu langkah bot..."}
+              </p>
+            </div>
+
+            {/* Guided Undo Message Banner (if player just undid a move) */}
             {undoFeedback && (
-              <div className="p-2.5 rounded-lg bg-[#C7A66A]/10 border border-[#C7A66A]/40 text-xs text-[#F2F0E8] flex items-start gap-2 animate-in fade-in">
-                <Sparkles className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
+              <div className="p-2.5 rounded-xl bg-[#C7A66A]/15 border border-[#C7A66A]/50 text-xs text-[#F2F0E8] flex items-start gap-2 animate-in fade-in">
+                <RotateCcw className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="leading-relaxed text-[11px] text-[#B0B5B9]">{undoFeedback}</p>
+                  <span className="font-semibold text-[11px] text-[#C7A66A] block">Langkah Telah Dibatalkan</span>
+                  <p className="leading-relaxed text-[11px] text-[#F2F0E8] mt-0.5">{undoFeedback}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setUndoFeedback(null)}
-                  className="text-[#8A9299] hover:text-[#F2F0E8] text-[10px] cursor-pointer"
+                  className="text-[#8A9299] hover:text-[#F2F0E8] text-xs cursor-pointer px-1"
                 >
                   ✕
                 </button>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2">
-              {/* Petunjuk Sokrates Button */}
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={requestSocraticHint}
-                disabled={gameStatus !== "ongoing" || botThinking || hintLoading}
-                className="col-span-2 bg-[#C7A66A]/20 border border-[#C7A66A] text-[#F2F0E8] hover:bg-[#C7A66A]/30 transition-all font-medium justify-center cursor-pointer"
-                title="Dapatkan bimbingan berpikir bertahap tanpa membocorkan jawaban langsung"
-              >
-                <Lightbulb className="w-4 h-4 mr-1.5 text-[#C7A66A]" />
-                {hintLoading ? "Menganalisis Petunjuk..." : "Minta Petunjuk Guru AI (Sokrates)"}
-              </Button>
+            {/* Primary Action: Socratic Hint Button (ACTIVE IMMEDIATELY on player turn!) */}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={requestSocraticHint}
+              disabled={chess.isGameOver() || botThinking || hintLoading || !isPlayerTurn}
+              className="w-full py-2.5 bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 font-bold text-xs shadow-md transition-all justify-center cursor-pointer disabled:opacity-50"
+              title="Minta bimbingan berpikir bertahap langkah demi langkah"
+            >
+              <Lightbulb className="w-4 h-4 mr-1.5" />
+              {hintLoading
+                ? "Menganalisis Posisi Papan..."
+                : "Minta Petunjuk Guru AI (Sokrates)"}
+            </Button>
 
+            {/* Secondary Controls: Undo, Mulai Ulang, Menyerah, Jelaskan Langkah */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <Button
                 variant="secondary"
                 size="sm"
@@ -434,17 +463,12 @@ export default function PlayPage() {
                   !config.isPracticeMode ||
                   history.length === 0 ||
                   botThinking ||
-                  gameStatus !== "ongoing"
+                  chess.isGameOver()
                 }
-                title={
-                  !config.isPracticeMode
-                    ? "Undo hanya aktif pada Mode Latihan"
-                    : history.length === 0
-                    ? "Belum ada langkah untuk di-undo"
-                    : "Batalkan langkah terakhir"
-                }
+                className="justify-center text-xs"
+                title="Batalkan langkah terakhir dan dapatkan tips mentor"
               >
-                <Undo2 className="w-4 h-4 mr-1 text-[#C7A66A]" />
+                <Undo2 className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
                 Undo
               </Button>
 
@@ -453,9 +477,10 @@ export default function PlayPage() {
                 size="sm"
                 onClick={resetGame}
                 disabled={history.length === 0 && gameStatus === "not_started"}
+                className="justify-center text-xs"
                 title="Mulai ulang pertandingan"
               >
-                <RotateCcw className="w-4 h-4 mr-1 text-[#8A9299]" />
+                <RotateCcw className="w-3.5 h-3.5 mr-1 text-[#8A9299]" />
                 Mulai Ulang
               </Button>
 
@@ -463,11 +488,11 @@ export default function PlayPage() {
                 variant="destructive"
                 size="sm"
                 onClick={resignGame}
-                disabled={gameStatus !== "ongoing" || history.length === 0}
-                className="col-span-2"
+                disabled={history.length === 0 || chess.isGameOver()}
+                className="justify-center text-xs"
                 title="Menyerah pada pertandingan ini"
               >
-                <Flag className="w-4 h-4 mr-1" />
+                <Flag className="w-3.5 h-3.5 mr-1" />
                 Menyerah
               </Button>
 
@@ -476,15 +501,11 @@ export default function PlayPage() {
                 size="sm"
                 onClick={handleOpenTutor}
                 disabled={history.length === 0}
-                className="col-span-2 border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10 transition-colors"
-                title={
-                  history.length === 0
-                    ? "Jalankan langkah terlebih dahulu untuk meminta penjelasan"
-                    : "Minta Guru Catur AI menjelaskan langkah dan posisi saat ini"
-                }
+                className="justify-center text-xs border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10"
+                title="Dengarkan penjelasan suara mendalam mengenai langkah terakhir"
               >
-                <Sparkles className="w-4 h-4 mr-1 text-[#C7A66A]" />
-                Jelaskan Langkah Terakhir (Suara)
+                <Sparkles className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+                Jelaskan Langkah (Suara)
               </Button>
             </div>
           </Card>
