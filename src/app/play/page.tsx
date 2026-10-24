@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   RotateCcw,
@@ -35,6 +35,12 @@ import {
   SocraticHintModal,
   setCoPilotPreferences,
 } from "@/features/copilot";
+import {
+  findGameTurningPoint,
+  TurningPointCard,
+  getPendingTurningPointReplay,
+  clearPendingTurningPointReplay,
+} from "@/features/autopsy";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -99,12 +105,26 @@ export default function PlayPage() {
     resignGame,
     startNewGame,
     resetGame,
+    playFromPosition,
   } = useChessGame({
     playerColor: selectedColor,
     botDifficulty: selectedDifficulty,
     timeControl: selectedTimeControl,
     isPracticeMode: isPracticeMode,
   });
+
+  // Consume any pending replay from turning point (e.g. redirected from archive)
+  useEffect(() => {
+    const pending = getPendingTurningPointReplay();
+    if (pending) {
+      clearPendingTurningPointReplay();
+      playFromPosition(
+        pending.fen,
+        pending.history,
+        pending.playerColor
+      );
+    }
+  }, [playFromPosition]);
 
   // Auto-scroll move list to latest move
   useEffect(() => {
@@ -130,6 +150,20 @@ export default function PlayPage() {
   const isPlayerWhite = config.playerColor === "white";
   const isPlayerTurn =
     (isPlayerWhite && turn === "w") || (!isPlayerWhite && turn === "b");
+  const isPlayerVictory = gameResult === (isPlayerWhite ? "white_win" : "black_win");
+
+  // Hitung Titik Balik (Turning Point) pertandingan saat permainan berakhir
+  const turningPoint = useMemo(() => {
+    if (gameStatus === "ongoing" || gameStatus === "not_started" || history.length === 0) {
+      return null;
+    }
+    return findGameTurningPoint(
+      history,
+      config.playerColor,
+      undefined,
+      isPlayerVictory
+    );
+  }, [config.playerColor, gameStatus, history, isPlayerVictory]);
 
   const [tutorModalOpen, setTutorModalOpen] = useState(false);
   const [tutorRequestContext, setTutorRequestContext] = useState<TutorExplainRequest | null>(null);
@@ -359,6 +393,20 @@ export default function PlayPage() {
                 </Link>
               </div>
             </Card>
+          )}
+
+          {/* Kartu Titik Balik Kesalahan / Kemenangan (Play from Turning Point) */}
+          {gameStatus !== "ongoing" && gameStatus !== "not_started" && turningPoint && (
+            <TurningPointCard
+              turningPoint={turningPoint}
+              onPlayFromHere={() => {
+                playFromPosition(
+                  turningPoint.fenBefore,
+                  turningPoint.historyBefore,
+                  config.playerColor
+                );
+              }}
+            />
           )}
 
           {/* 1. Bantalan Blunder (Peringatan Bahaya Fatal Non-Modal di Panel Samping) */}

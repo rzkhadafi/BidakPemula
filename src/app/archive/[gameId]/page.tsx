@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Chess } from "chess.js";
 import {
   ChevronLeft,
@@ -18,12 +18,18 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import {
+  findGameTurningPoint,
+  TurningPointCard,
+  saveTurningPointReplay,
+} from "@/features/autopsy";
+import {
   getArchivedGames,
   getArchivedGamesServerSnapshot,
   subscribeToArchivedGames,
 } from "@/lib/storage/game-archive";
 
 export default function GameDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
@@ -40,6 +46,34 @@ export default function GameDetailPage() {
 
   const [selectedPly, setSelectedPly] = useState<number | null>(null);
   const [copiedPgn, setCopiedPgn] = useState(false);
+
+  const isVictory = game
+    ? game.result === (game.playerColor === "white" ? "white_win" : "black_win")
+    : false;
+
+  const turningPoint = useMemo(() => {
+    if (!game || game.moves.length === 0) return null;
+    return findGameTurningPoint(
+      game.moves,
+      game.playerColor,
+      game.initialFen || undefined,
+      isVictory
+    );
+  }, [game, isVictory]);
+
+  const handlePlayFromTurningPoint = () => {
+    if (!turningPoint || !game) return;
+    saveTurningPointReplay({
+      fen: turningPoint.fenBefore,
+      plyIndex: turningPoint.plyIndex,
+      moveNumber: turningPoint.moveNumber,
+      history: turningPoint.historyBefore,
+      playerColor: turningPoint.playerColor,
+      sourceGameId: game.id,
+      createdAt: Date.now(),
+    });
+    router.push("/play");
+  };
 
   // If user hasn't explicitly navigated ply, default to final position
   const currentPly =
@@ -262,6 +296,16 @@ export default function GameDetailPage() {
 
         {/* Right Column: Move Table & Match Metadata */}
         <div className="lg:col-span-4 space-y-4 w-full">
+          {/* Kartu Titik Balik Kesalahan / Kemenangan (Play from Turning Point) */}
+          {turningPoint && (
+            <TurningPointCard
+              turningPoint={turningPoint}
+              onPlayFromHere={handlePlayFromTurningPoint}
+              onInspectPly={(ply) => setSelectedPly(ply)}
+              isArchiveView={true}
+            />
+          )}
+
           {/* Game Info Card */}
           <Card variant="surface" className="space-y-2.5">
             <div className="flex items-center justify-between pb-2 border-b border-[#353B42]">

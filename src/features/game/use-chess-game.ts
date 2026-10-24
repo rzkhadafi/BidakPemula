@@ -935,6 +935,83 @@ export function useChessGame(
     startNewGame(config);
   }, [config, startNewGame]);
 
+  // Play from custom position (e.g. Turning Point replay)
+  const playFromPosition = useCallback(
+    (
+      fenToPlay: string,
+      historyPrefix?: ChessMoveRecord[],
+      customPlayerColor?: PlayerColor
+    ) => {
+      currentSearchIdRef.current++;
+      if (engineRef.current) {
+        engineRef.current.stop();
+      }
+
+      let restoredChess: Chess;
+      try {
+        restoredChess = new Chess(fenToPlay);
+      } catch {
+        restoredChess = new Chess();
+      }
+
+      chessRef.current = restoredChess;
+      setChess(restoredChess);
+      setFen(restoredChess.fen());
+      setTurn(restoredChess.turn());
+      setIsCheck(restoredChess.inCheck());
+
+      const newHistory = historyPrefix ? [...historyPrefix] : [];
+      historyRef.current = newHistory;
+      setHistory(newHistory);
+
+      const lastMoveItem = newHistory[newHistory.length - 1];
+      setLastMove(lastMoveItem ? { from: lastMoveItem.from, to: lastMoveItem.to } : null);
+
+      setSelectedSquare(null);
+      setLegalDestinations([]);
+      setPendingPromotion(null);
+      setPendingBlunder(null);
+      setBotThinking(false);
+
+      gameSavedRef.current = false;
+      gameStartTimeRef.current = Date.now();
+      lastTickTimeRef.current = Date.now();
+      gameStatusRef.current = "ongoing";
+      setGameStatus("ongoing");
+      setGameResult("ongoing");
+      setTerminationReason("");
+
+      if (customPlayerColor && customPlayerColor !== config.playerColor) {
+        setConfig((prev) => ({ ...prev, playerColor: customPlayerColor }));
+      }
+
+      const activePlayerColor = customPlayerColor || config.playerColor;
+      const playerColorCode = activePlayerColor === "white" ? "w" : "b";
+
+      setUndoFeedback(
+        "Permainan diputar ulang dari Titik Balik. Silakan coba langkah alternatif yang lebih kokoh!"
+      );
+
+      // Refresh socratic hint if active on restored board position
+      if (isSocraticActiveRef.current && !restoredChess.isGameOver()) {
+        currentHintRequestIdRef.current++;
+        setCurrentHint(null);
+        fetchSocraticHintForFen(restoredChess.fen());
+      } else {
+        setCurrentHint(null);
+      }
+
+      // If it is bot's turn, trigger bot move immediately
+      if (restoredChess.turn() !== playerColorCode && !restoredChess.isGameOver()) {
+        triggerBotMove(
+          restoredChess.fen(),
+          newHistory
+        );
+      }
+    },
+    [config.playerColor, fetchSocraticHintForFen, triggerBotMove]
+  );
+
   return {
     chess,
     fen,
@@ -972,5 +1049,6 @@ export function useChessGame(
     resignGame,
     startNewGame,
     resetGame,
+    playFromPosition,
   };
 }

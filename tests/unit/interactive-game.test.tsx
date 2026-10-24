@@ -6,6 +6,7 @@ import { MockChessEngine } from "@/features/engine/stockfish-adapter";
 import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessboard";
 import { Chess } from "chess.js";
 import { getArchivedGames } from "@/lib/storage/game-archive";
+import { ChessMoveRecord } from "@/types/chess";
 
 describe("Chess Game Hook & Interactive Board (useChessGame)", () => {
   let mockEngine: MockChessEngine;
@@ -284,5 +285,51 @@ describe("Chess Game Hook & Interactive Board (useChessGame)", () => {
     });
     expect(result.current.isSocraticActive).toBe(false);
     expect(result.current.currentHint).toBeNull();
+  });
+
+  it("supports playFromPosition to replay from a turning point", () => {
+    const { result } = renderHook(() =>
+      useChessGame(
+        {
+          playerColor: "white",
+          botDifficulty: "master",
+          timeControl: "5m",
+          isPracticeMode: true,
+        },
+        mockEngine
+      )
+    );
+
+    // Make an initial move to make game ongoing
+    act(() => {
+      result.current.handleSquareClick("e2");
+    });
+    act(() => {
+      result.current.handleSquareClick("e4");
+    });
+    expect(result.current.gameStatus).toBe("ongoing");
+
+    // Resign to end game
+    act(() => {
+      result.current.resignGame();
+    });
+    expect(result.current.gameStatus).toBe("resigned");
+
+    // Replay from Turning Point (e.g. Move 1 e4 e5)
+    const turningPointFen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
+    const historyPrefix: ChessMoveRecord[] = [
+      { ply: 1, from: "e2", to: "e4", san: "e4", uci: "e2e4", piece: "p", fenAfter: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1" },
+      { ply: 2, from: "e7", to: "e5", san: "e5", uci: "e7e5", piece: "p", fenAfter: turningPointFen },
+    ];
+
+    act(() => {
+      result.current.playFromPosition(turningPointFen, historyPrefix, "white");
+    });
+
+    expect(result.current.gameStatus).toBe("ongoing");
+    expect(result.current.turn).toBe("w");
+    expect(result.current.fen).toBe(turningPointFen);
+    expect(result.current.history.length).toBe(2);
+    expect(result.current.lastMove).toEqual({ from: "e7", to: "e5" });
   });
 });

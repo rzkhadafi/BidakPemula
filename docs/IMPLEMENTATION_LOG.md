@@ -784,3 +784,47 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 - **Gate:** **PASS** (Fitur Radar Panah Bidak aktif sempurna tanpa merusak fitur papan catur, kacamata catur, atau interaksi lainnya).
 
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).
+
+---
+
+### Implementasi Fitur: Ide 3 — "Putar Ulang dari Titik Balik Kesalahan" (Play from Turning Point)
+
+- **Latar Belakang & Kebutuhan Pengguna:**
+  Sesuai dengan Roadmap Tahap 3 (*Storytelling Game Review & Play from Turning Point*), saat permainan berakhir (terutama saat pemain kalah karena blunder atau membiarkan skakmat), pemula sering kali tidak mengetahui di mana letak kesalahan fatalnya dan ingin mencoba kembali dari posisi sesaat sebelum kesalahan itu terjadi tanpa harus mengulang seluruh pertandingan dari awal. Fitur ini juga mendukung skenario kemenangan untuk merayakan langkah kunci yang membalikkan keadaan.
+
+- **Perubahan yang Diterapkan:**
+  1. **Tipe Data & Deteksi Titik Balik (`src/features/autopsy/types.ts` & `src/features/autopsy/turning-point.ts`):**
+     - Membangun algoritma `findGameTurningPoint(moves, playerColor, initialFen, isVictory)` yang menganalisis seluruh ply pertandingan:
+       - Memanfaatkan `evaluateMoveSafety` untuk mengidentifikasi langkah pemain yang berstatus fatal (membiarkan skakmat atau menggantung Menteri/Benteng tanpa kompensasi).
+       - Menghitung skor keparahan blunder (*fatal*, *blunder*, *inaccuracy*, *victory_turning_point*).
+       - Secara otomatis mencari langkah legal alternatif yang aman (`suggestedAlternativeSan`).
+       - Memulihkan dan memvalidasi `fenBefore` (keadaan papan 1 langkah sebelum titik balik dieksekusi).
+     - Menyiapkan mekanisme persistensi `sessionStorage` aman (`saveTurningPointReplay`, `getPendingTurningPointReplay`, `clearPendingTurningPointReplay`) untuk transfer data posisi antara halaman arsip dan papan permainan.
+  2. **Komponen Visual Narasi Editorial (`src/features/autopsy/components/TurningPointCard.tsx`):**
+     - Kartu panduan minimalis bertema Dark Graphite yang terintegrasi di panel samping tanpa menutupi papan catur.
+     - Menyajikan badge status taktis, judul langkah kunci, penjelasan bahasa Indonesia yang ramah pemula, perbandingan langkah yang dimainkan vs rekomendasi langkah aman.
+     - Menyediakan tombol aksi utama *"Coba Lagi dari Titik Ini"* dengan ikon putar balik (`RotateCcw`).
+     - Pada layar arsip (`/archive/[gameId]`), dilengkapi tombol *"Lihat Posisi"* (`Eye`) untuk langsung melompat ke ply tersebut di papan tayang ulang.
+  3. **Kemampuan Rewind Interaktif Mesin Catur (`src/features/game/use-chess-game.ts`):**
+     - Menambahkan fungsi `playFromPosition(fenToPlay, historyPrefix, customPlayerColor)`:
+       - Menginisialisasi ulang instansi catur dengan FEN titik balik secara aman.
+       - Memulihkan riwayat langkah sebelumnya (`historyPrefix`) sehingga notasi catur tetap utuh.
+       - Mereset status permainan kembali ke `ongoing`, membersihkan status checkmate/resigned, dan menyinkronkan jam/giliran.
+       - Jika posisi yang dipulihkan adalah giliran bot, langsung memicu bot untuk melangkah.
+       - Memperbarui petunjuk Sokrates secara real-time pada posisi yang baru dipulihkan.
+  4. **Integrasi Halaman Permainan & Arsip (`src/app/play/page.tsx` & `src/app/archive/[gameId]/page.tsx`):**
+     - Pada `/play`: Menghitung `turningPoint` secara memoized saat status permainan selesai, menampilkan `TurningPointCard` di atas kontrol reset/analisis, dan otomatis mengeksekusi replay jika terdapat parameter tersimpan dari arsip.
+     - Pada `/archive/[gameId]`: Menampilkan `TurningPointCard` di panel riwayat ulasan, memungkinkan pengguna meninjau posisi di papan arsip atau mengklik *"Coba Lagi dari Titik Ini"* untuk diarahkan langsung ke `/play` dengan posisi dan riwayat yang tersinkronisasi.
+  5. **Pengujian Komprehensif (Unit & Integration):**
+     - `tests/unit/turning-point.test.ts` (4 tests): Memverifikasi deteksi blunder Scholar's Mate, deteksi kemenangan Fool's Mate, fallback langkah krusial, dan persistensi `sessionStorage`.
+     - `tests/unit/turning-point-ui.test.tsx` (3 tests): Memverifikasi render kartu titik balik, penekanan tombol *"Coba Lagi dari Titik Ini"*, dan aksi *"Lihat Posisi"* di mode arsip.
+     - `tests/unit/interactive-game.test.tsx` (pembaruan): Memverifikasi eksekusi `playFromPosition` dari game resigned kembali menjadi `ongoing` dengan FEN dan riwayat langkah yang tepat.
+     - Total pengujian lulus: **161 tests (27 test suites)**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (27 test suites, **161 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk 42 rute).
+
+- **Gate:** **PASS** (Fitur Putar Ulang dari Titik Balik Kesalahan telah terintegrasi sempurna di `/play` dan `/archive/[gameId]`, tanpa merusak klik papan catur, kacamata catur, radar panah, atau narasi suara).
