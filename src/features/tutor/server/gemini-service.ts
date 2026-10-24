@@ -22,11 +22,11 @@ export class GeminiTutorService {
   }
 
   private static getTutorModel(): string {
-    return process.env.GEMINI_TUTOR_MODEL?.trim() || "gemini-2.5-flash";
+    return process.env.GEMINI_TUTOR_MODEL?.trim() || "gemini-3.8-flash";
   }
 
   private static getTtsModel(): string {
-    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-2.5-flash";
+    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-3.8-flash";
   }
 
   private static getDefaultVoice(): string {
