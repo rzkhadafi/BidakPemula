@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { ACADEMY_LESSONS, getLessonById } from "@/features/academy/academy-catalog";
 import { LessonViewClient } from "@/features/academy/LessonViewClient";
 
@@ -8,7 +8,7 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function LessonDetailPage({
+async function LessonDetailContent({
   params,
 }: {
   params: Promise<{ lessonId: string }>;
@@ -28,5 +28,23 @@ export default async function LessonDetailPage({
       prevLesson={prevLesson}
       nextLesson={nextLesson}
     />
+  );
+}
+
+export default function LessonDetailPage({
+  params,
+}: {
+  params: Promise<{ lessonId: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-12 flex justify-center items-center text-xs text-[#8A9299]">
+          Memuat materi pelajaran...
+        </div>
+      }
+    >
+      <LessonDetailContent params={params} />
+    </Suspense>
   );
 }

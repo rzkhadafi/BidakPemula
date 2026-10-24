@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { PUZZLE_CATALOG, getPuzzleById } from "@/features/puzzles/puzzle-catalog";
 import { PuzzleViewClient } from "@/features/puzzles/PuzzleViewClient";
@@ -9,7 +9,7 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function PuzzleDetailPage({
+async function PuzzleDetailContent({
   params,
 }: {
   params: Promise<{ puzzleId: string }>;
@@ -31,5 +31,23 @@ export default async function PuzzleDetailPage({
       prevPuzzle={prevPuzzle}
       nextPuzzle={nextPuzzle}
     />
+  );
+}
+
+export default function PuzzleDetailPage({
+  params,
+}: {
+  params: Promise<{ puzzleId: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-12 flex justify-center items-center text-xs text-[#8A9299]">
+          Memuat latihan taktik...
+        </div>
+      }
+    >
+      <PuzzleDetailContent params={params} />
+    </Suspense>
   );
 }
