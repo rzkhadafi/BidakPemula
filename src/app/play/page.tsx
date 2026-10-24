@@ -231,35 +231,36 @@ export default function PlayPage() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#353B42]">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-semibold text-[#F2F0E8]">
-              Main Catur vs Bot
-            </h1>
-            <Badge variant="accent">Stockfish 19 Web Worker</Badge>
-          </div>
-          <p className="text-xs sm:text-sm text-[#B0B5B9] mt-0.5">
-            Latihan mandiri dengan validasi aturan catur standar penuh dan penyimpanan lokal.
-          </p>
+    <div className="flex flex-col w-full lg:h-[calc(100dvh-92px)] lg:max-h-[calc(100dvh-92px)] lg:overflow-hidden -my-2 sm:-my-4">
+      {/* Header: Ramping & Hemat Ruang Vertikal */}
+      <div className="flex items-center justify-between gap-3 pb-2 mb-2 sm:mb-2.5 border-b border-[#353B42] shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <h1 className="text-base sm:text-lg font-semibold text-[#F2F0E8] truncate">
+            Main Catur vs Bot
+          </h1>
+          <Badge variant="accent" size="sm" className="hidden sm:inline-flex">
+            Stockfish 19
+          </Badge>
+          <span className="text-xs text-[#8A9299] hidden md:inline truncate">
+            • Latihan mandiri lokal
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             variant="secondary"
             size="sm"
             onClick={toggleSound}
             aria-label={soundOn ? "Matikan Efek Suara" : "Nyalakan Efek Suara"}
             title={soundOn ? "Suara Aktif (Klik untuk Mematikan)" : "Suara Nonaktif (Klik untuk Menyalakan)"}
+            className="h-8 px-2 sm:px-2.5 text-xs"
           >
             {soundOn ? (
-              <Volume2 className="w-4 h-4 text-[#73B894]" />
+              <Volume2 className="w-3.5 h-3.5 text-[#73B894]" />
             ) : (
-              <VolumeX className="w-4 h-4 text-[#8A9299]" />
+              <VolumeX className="w-3.5 h-3.5 text-[#8A9299]" />
             )}
-            <span className="hidden sm:inline ml-1 text-xs">{soundOn ? "Suara" : "Mute"}</span>
+            <span className="hidden sm:inline ml-1">{soundOn ? "Suara" : "Mute"}</span>
           </Button>
 
           <Button
@@ -267,17 +268,18 @@ export default function PlayPage() {
             size="sm"
             onClick={() => setConfigModalOpen(true)}
             aria-label="Atur Parameter Pertandingan"
+            className="h-8 px-2 sm:px-2.5 text-xs"
           >
-            <Settings2 className="w-4 h-4 mr-1.5 text-[#C7A66A]" />
-            Pengaturan Game
+            <Settings2 className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+            <span>Pengaturan Game</span>
           </Button>
         </div>
       </div>
 
       {/* Main Playing Arena */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Chessboard Column (Tetap terpancang di layar desktop agar selalu terlihat) */}
-        <div className="lg:col-span-8 flex flex-col items-center lg:sticky lg:top-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start flex-1 min-h-0">
+        {/* Chessboard Column (Pusat perhatian catur, diam di tempat, muat 100% bersama kedua jam catur) */}
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-center justify-start shrink-0">
           {/* Interactive Chessboard dengan Pill Bot tipis di bilah atas */}
           <InteractiveChessboard
             chess={chess}
@@ -295,23 +297,23 @@ export default function PlayPage() {
             topRightSlot={botPill}
           />
 
-          {/* Player Info Bar (Ramping & Kompak) */}
-          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-1.5 px-3 mt-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#C7A66A]">
+          {/* Player Info Bar (Ramping & Kompak, lebar persis menyatu dengan papan catur) */}
+          <div className="w-full max-w-[min(100%,calc(100dvh-190px))] lg:max-w-[min(600px,calc(100dvh-175px))] xl:max-w-[min(640px,calc(100dvh-170px))] flex items-center justify-between py-1.5 px-3 mt-1.5 rounded-lg bg-[#1C2024] border border-[#353B42] shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#C7A66A] shrink-0">
                 <User className="w-3.5 h-3.5 text-[#C7A66A]" />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-[#F2F0E8]">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-xs font-semibold text-[#F2F0E8] truncate">
                   Anda ({isPlayerWhite ? "Bidak Putih" : "Bidak Hitam"})
                 </span>
                 {config.isPracticeMode && (
-                  <Badge variant="muted" size="sm">
+                  <Badge variant="muted" size="sm" className="hidden sm:inline-flex">
                     Latihan
                   </Badge>
                 )}
               </div>
-              <span className="text-[11px] text-[#C7A66A] hidden sm:inline ml-1">
+              <span className="text-[11px] text-[#C7A66A] hidden sm:inline ml-1 truncate">
                 {gameStatus !== "ongoing" && gameStatus !== "not_started"
                   ? "• Permainan Selesai"
                   : isPlayerTurn
@@ -322,9 +324,9 @@ export default function PlayPage() {
 
             {config.timeControl !== "unlimited" && (
               <div
-                className={`flex items-center gap-1 px-2 py-0.5 rounded border font-mono text-xs tabular-nums ${
+                className={`flex items-center gap-1 px-2.5 py-0.5 rounded border font-mono text-xs tabular-nums shrink-0 ${
                   isPlayerTurn && gameStatus === "ongoing"
-                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8]"
+                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] font-bold shadow-xs"
                     : "bg-[#141619] border-[#353B42] text-[#8A9299]"
                 }`}
               >
@@ -337,8 +339,8 @@ export default function PlayPage() {
           </div>
         </div>
 
-        {/* Side Panel: Controls & Move History (Sejajar dengan bagian atas papan catur) */}
-        <div className="lg:col-span-4 space-y-4 w-full pt-0 lg:pt-[42px]">
+        {/* Side Panel: Controls & Move History (Independently scrollable, papan catur tetap diam) */}
+        <div className="lg:col-span-5 xl:col-span-4 w-full flex flex-col lg:max-h-[calc(100dvh-125px)] lg:overflow-y-auto pr-1 space-y-3.5 pt-0">
           {/* Game Over Banner */}
           {gameStatus !== "ongoing" && gameStatus !== "not_started" && (
             <Card

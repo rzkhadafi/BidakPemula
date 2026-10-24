@@ -46,6 +46,8 @@ interface InteractiveChessboardProps {
   highlightedSquare?: string | null;
   /** Slot di sisi kanan atas (berseberangan dengan tombol Kacamata Catur, misal pill bot & jam) */
   topRightSlot?: React.ReactNode;
+  /** Kelas CSS tambahan untuk kontainer pembungkus papan catur */
+  className?: string;
 }
 
 export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
@@ -66,6 +68,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   defaultRadarEnabled = true,
   highlightedSquare = null,
   topRightSlot,
+  className = "",
 }) => {
   // State Kacamata Catur (Vision Glasses) tersinkronisasi aman SSR & multi-komponen
   const storedVision = useSyncExternalStore(
@@ -185,10 +188,10 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
+    <div className={`w-full max-w-[min(100%,calc(100dvh-190px))] lg:max-w-[min(600px,calc(100dvh-175px))] xl:max-w-[min(640px,calc(100dvh-170px))] mx-auto select-none ${className}`}>
       {/* Utility Bar: Kacamata Catur Toggle, Radar Panah & Right Slot (Bot Pill & Jam) */}
       {(showVisionToggle || showRadarToggle || topRightSlot) && (
-        <div className="relative flex items-center justify-between gap-2 mb-2 px-0.5 min-h-[34px]">
+        <div className="relative flex items-center justify-between gap-2 mb-1.5 px-0.5 min-h-[32px]">
           {/* Left: Button Kacamata Catur & Radar Panah Toggle */}
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
             {showVisionToggle && (

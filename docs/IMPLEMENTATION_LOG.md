@@ -924,3 +924,35 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
 
 - **Gate:** **PASS** (Fitur Lencana & Notifikasi Apresiasi Langkah Pertama aktif sempurna).
+
+---
+
+### Penyempurnaan Tata Letak UI Layar Permainan: Zero-Scroll Board & Independent Side Panel (Ala Chess.com)
+
+- **Latar Belakang & Kebutuhan Pengguna:**
+  1. Sebelumnya pemain harus menggulir (*scroll*) layar ke bawah hanya untuk melihat jam catur sendiri dan status giliran, serta untuk menyesuaikan posisi papan dengan panel samping.
+  2. Papan catur perlu diposisikan pas di tengah layar dan terkunci diam (*stationary*), muat 100% di layar bersama jam bot di atas dan jam pemain di bawah persis seperti tata letak Chess.com yang tanpa scroll halaman (*zero page scroll*).
+  3. Panel kanan (berisi riwayat langkah, saran bimbingan AI, petunjuk Sokrates, dan kontrol) harus memiliki area gulir mandiri (*independent scroll*). Jika pengguna menggulir mouse, hanya panel kanan yang bergeser, sementara papan catur tetap diam terpaku di tengah.
+
+- **Perubahan yang Diterapkan:**
+  1. **Dimensi Papan Catur Responsif Berbasis Tinggi Layar (`InteractiveChessboard.tsx`):**
+     - Mengubah batas lebar dan tinggi papan dari nilai piksel statis menjadi formula dinamis:
+       `max-w-[min(100%,calc(100dvh-190px))] lg:max-w-[min(600px,calc(100dvh-175px))] xl:max-w-[min(640px,calc(100dvh-170px))]`.
+     - Papan catur otomatis menyesuaikan ukuran dengan tinggi area pandang peramban (*viewport height*) secara proporsional.
+     - Bilah atas (jam & bot pill + tombol kacamata catur/radar panah) dan bilah bawah (jam pemain & status giliran) terikat langsung pada lebar papan yang sama persis.
+     - Menjamin bahwa jam bot di atas, seluruh 64 petak catur, dan jam pemain di bawah **100% tampak bersamaan tanpa perlu scroll satu piksel pun**.
+  2. **Header Permainan Ramping & Padat (`src/app/play/page.tsx`):**
+     - Mengubah bilah judul menjadi flex horizontal satu baris yang sangat hemat ruang vertikal (~38px), mengintegrasikan badge bot, tombol suara, dan pengaturan pertandingan.
+  3. **Penguncian Papan & Panel Kanan Independen (`src/app/play/page.tsx`):**
+     - Kontainer utama permainan pada desktop (`lg:`) diberi batasan `lg:h-[calc(100dvh-92px)] lg:max-h-[calc(100dvh-92px)] lg:overflow-hidden`.
+     - Kolom papan catur (`lg:col-span-7 xl:col-span-8`) bersifat diam dan terpusat (*fixed stationary column*).
+     - Kolom panel kanan (`lg:col-span-5 xl:col-span-4`) dilengkapi `lg:max-h-[calc(100dvh-125px)] lg:overflow-y-auto` dengan bilah gulir halus bernuansa dark graphite.
+     - Saat daftar langkah memanjang atau kartu panduan guru AI terbuka, pengguna dapat menggulir panel kanan secara bebas sementara papan catur tidak bergerak sama sekali.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm test` -> **PASS** (29 test suites, **171 tests lulus 100%**).
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (UI layar bermain catur kini 100% bebas scroll halaman di desktop, papan dan kedua jam terlihat penuh, dan panel kanan bergulir secara independen persis seperti Chess.com).
