@@ -46,10 +46,9 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
   const [currentTier, setCurrentTier] = useState<SocraticHintTier>(1);
   const [prevHintFen, setPrevHintFen] = useState<string | null>(null);
 
-  // Otomatis reset ke Tingkat 1 (Observasi) saat petunjuk untuk posisi baru tiba
+  // Perbarui prevHintFen saat petunjuk posisi baru tiba tanpa mereset tingkat yang dipilih pengguna
   if (hint && hint.fen !== prevHintFen) {
     setPrevHintFen(hint.fen);
-    setCurrentTier(1);
   }
 
   // Hentikan suara dan bersihkan sorot petak saat panel ditutup
@@ -62,7 +61,11 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
 
   // Perbarui sorotan petak di papan catur berdasarkan tingkat aktif
   useEffect(() => {
-    if (!isOpen || !hint || isBotThinking || !onHighlightSquare) return;
+    if (!onHighlightSquare) return;
+    if (!isOpen || !hint || isBotThinking) {
+      onHighlightSquare(null);
+      return;
+    }
     if (currentTier === 2) {
       onHighlightSquare(hint.tier2Piece.pieceSquare);
     } else if (currentTier === 3) {
@@ -178,7 +181,6 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
         ].map((item) => {
           const Icon = item.icon;
           const isActive = currentTier === item.tier;
-          const isUnlocked = currentTier >= item.tier;
 
           return (
             <button
@@ -188,9 +190,7 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
               className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                 isActive
                   ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
-                  : isUnlocked
-                  ? "bg-[#1C2024] border-[#353B42] text-[#B0B5B9] hover:text-[#F2F0E8]"
-                  : "bg-[#141619] border-[#2C3238] text-[#8A9299] opacity-60"
+                  : "bg-[#1C2024] border-[#353B42] text-[#B0B5B9] hover:text-[#F2F0E8] hover:border-[#C7A66A]/40"
               }`}
             >
               <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
@@ -286,14 +286,10 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         ) : (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onClose}
-            className="w-full sm:w-auto text-xs"
-          >
-            Saya Paham, Siap Melangkah
-          </Button>
+          <div className="flex items-center gap-1.5 text-xs text-[#73B894] font-medium py-1.5 px-3 rounded-lg bg-[#73B894]/10 border border-[#73B894]/30">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#73B894]" />
+            <span>Solusi Aktif Real-Time</span>
+          </div>
         )}
       </div>
     </Card>

@@ -606,4 +606,38 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Petunjuk Sokrates kini aktif real-time tanpa perlu buka-tutup, dan teks bersih rapi tanpa bintang).
 
+---
+
+### 2026-10-24 — Retensi Tingkat Petunjuk Sokrates Pilihan Pemain (Tier Persistence Across Moves)
+
+- **Tujuan Permintaan Pengguna:**
+  Saat pemain memilih Nomor 2 (Bidak Kunci) atau Nomor 3 (Solusi Lengkap), dan kemudian menjalankan bidak catur di papan, tingkat petunjuk tidak boleh kembali/reset ke Nomor 1 (Observasi). Jika pemain memilih Nomor 3, bimbingan harus tetap di Nomor 3 pada langkah-langkah berikutnya; jika memilih Nomor 2, tetap di Nomor 2.
+
+- **Penyebab:**
+  Pada implementasi sebelumnya di `SocraticHintModal.tsx`, terdapat sinkronisasi FEN:
+  `if (hint && hint.fen !== prevHintFen) { setPrevHintFen(hint.fen); setCurrentTier(1); }`
+  Kode tersebut mereset `currentTier` kembali ke `1` secara paksa setiap kali giliran baru tiba.
+
+- **Perubahan yang Diterapkan:**
+  1. **Retensi Tingkat Pilihan (`src/features/copilot/components/SocraticHintModal.tsx`):**
+     - Menghapus pemanggilan `setCurrentTier(1)` saat FEN baru tiba, sehingga `currentTier` (1, 2, atau 3) yang aktif dipilih pemain dipertahankan terus untuk langkah-langkah berikutnya.
+     - Membersihkan visual tab 1, 2, dan 3 agar semuanya langsung dapat diklik kapan saja tanpa penurunan *opacity*.
+     - Jika pemain memilih Tingkat 3, kartu menampilkan badge status *"Solusi Aktif Real-Time"* dan langsung menyajikan langkah solusi lengkap beserta sorotan petak tujuan di setiap giliran baru.
+     - Jika pemain memilih Tingkat 2, petak bidak kunci langsung menyala di papan pada setiap giliran baru.
+     - Menjamin petak sorotan dibersihkan secara aman saat bot sedang berpikir (`isBotThinking`).
+  2. **Pengujian Unit Tambahan (`tests/unit/socratic-hint-modal.test.tsx`):**
+     - Memverifikasi retensi Tingkat 3 saat petunjuk FEN baru tiba.
+     - Memverifikasi retensi Tingkat 2 saat petunjuk FEN baru tiba.
+     - Memverifikasi pembaruan highlight papan yang sesuai pada masing-masing tingkat.
+     - Memverifikasi status transisi dan pembersihan highlight saat bot berpikir.
+     - Total pengujian meningkat menjadi **136 tests lulus 100%**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (22 test suites, **136 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses, seluruh 42 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Tingkat petunjuk pilihan pemain kini konsisten dipertahankan pada setiap langkah).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).
