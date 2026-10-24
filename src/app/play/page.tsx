@@ -17,6 +17,8 @@ import {
   Volume2,
   VolumeX,
   Sparkles,
+  Lightbulb,
+  ShieldAlert,
 } from "lucide-react";
 import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessboard";
 import { useChessGame } from "@/features/game/use-chess-game";
@@ -28,6 +30,11 @@ import {
 import { getAllDifficulties } from "@/features/engine/difficulty";
 import { PlayTutorModal } from "@/features/tutor/components/PlayTutorModal";
 import { TutorExplainRequest } from "@/features/tutor/types";
+import {
+  BlunderInterceptModal,
+  SocraticHintModal,
+  setCoPilotPreferences,
+} from "@/features/copilot";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -48,6 +55,7 @@ export default function PlayPage() {
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControlId>("5m");
   const [isPracticeMode, setIsPracticeMode] = useState<boolean>(true);
   const [soundOn, setSoundOn] = useState<boolean>(() => chessAudio.isEnabled());
+  const [highlightedSquare, setHighlightedSquare] = useState<string | null>(null);
 
   const moveListContainerRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +81,16 @@ export default function PlayPage() {
     botThinking,
     engineStatus,
     config,
+    coPilotPreferences,
+    pendingBlunder,
+    cancelBlunderMove,
+    proceedBlunderMove,
+    requestSocraticHint,
+    currentHint,
+    clearHint,
+    hintLoading,
+    undoFeedback,
+    setUndoFeedback,
     handleSquareClick,
     confirmPromotion,
     cancelPromotion,
@@ -238,6 +256,7 @@ export default function PlayPage() {
             onSquareClick={handleSquareClick}
             onConfirmPromotion={confirmPromotion}
             onCancelPromotion={cancelPromotion}
+            highlightedSquare={highlightedSquare}
           />
 
           {/* Player Info Bar */}
@@ -349,10 +368,64 @@ export default function PlayPage() {
 
           {/* Action Controls */}
           <Card variant="surface" className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#B0B5B9]">
-              Kontrol Pertandingan
-            </h2>
+            <div className="flex items-center justify-between pb-1 border-b border-[#353B42]">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#B0B5B9]">
+                Kontrol Pertandingan
+              </h2>
+              {config.isPracticeMode && (
+                <div className="flex items-center gap-1.5">
+                  <ShieldAlert className={`w-3.5 h-3.5 ${coPilotPreferences.blunderSafetyNet ? "text-[#73B894]" : "text-[#8A9299]"}`} />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCoPilotPreferences({
+                        blunderSafetyNet: !coPilotPreferences.blunderSafetyNet,
+                      })
+                    }
+                    className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border transition-all cursor-pointer ${
+                      coPilotPreferences.blunderSafetyNet
+                        ? "bg-[#73B894]/15 border-[#73B894]/40 text-[#73B894]"
+                        : "bg-[#24292E] border-[#353B42] text-[#8A9299]"
+                    }`}
+                    title="Peringatkan sebelum Anda menjalankan langkah blunder fatal"
+                  >
+                    Bantalan Blunder: {coPilotPreferences.blunderSafetyNet ? "ON" : "OFF"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Undo Feedback Toast / Mentor Guidance */}
+            {undoFeedback && (
+              <div className="p-2.5 rounded-lg bg-[#C7A66A]/10 border border-[#C7A66A]/40 text-xs text-[#F2F0E8] flex items-start gap-2 animate-in fade-in">
+                <Sparkles className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="leading-relaxed text-[11px] text-[#B0B5B9]">{undoFeedback}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUndoFeedback(null)}
+                  className="text-[#8A9299] hover:text-[#F2F0E8] text-[10px] cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2">
+              {/* Petunjuk Sokrates Button */}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={requestSocraticHint}
+                disabled={gameStatus !== "ongoing" || botThinking || hintLoading}
+                className="col-span-2 bg-[#C7A66A]/20 border border-[#C7A66A] text-[#F2F0E8] hover:bg-[#C7A66A]/30 transition-all font-medium justify-center cursor-pointer"
+                title="Dapatkan bimbingan berpikir bertahap tanpa membocorkan jawaban langsung"
+              >
+                <Lightbulb className="w-4 h-4 mr-1.5 text-[#C7A66A]" />
+                {hintLoading ? "Menganalisis Petunjuk..." : "Minta Petunjuk Guru AI (Sokrates)"}
+              </Button>
+
               <Button
                 variant="secondary"
                 size="sm"
@@ -619,6 +692,22 @@ export default function PlayPage() {
         isOpen={tutorModalOpen}
         onClose={() => setTutorModalOpen(false)}
         requestContext={tutorRequestContext}
+      />
+
+      {/* Bantalan Blunder Intercept Modal */}
+      <BlunderInterceptModal
+        isOpen={Boolean(pendingBlunder)}
+        report={pendingBlunder ? pendingBlunder.report : null}
+        onReconsider={cancelBlunderMove}
+        onProceedAnyway={proceedBlunderMove}
+      />
+
+      {/* Petunjuk Sokrates Bertingkat Modal */}
+      <SocraticHintModal
+        isOpen={Boolean(currentHint)}
+        hint={currentHint}
+        onClose={clearHint}
+        onHighlightSquare={setHighlightedSquare}
       />
     </div>
   );

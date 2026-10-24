@@ -436,4 +436,46 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Tahap 1: "Kacamata Catur" telah selesai diimplementasikan, teruji bebas error, dan siap digunakan).
 
+---
+
+### 2026-10-24 — Fitur Pedagogi Lanjutan: Tahap 2 — Pendampingan Aktif (In-Game AI Co-Pilot: Guided Undo & Socratic Hints)
+
+- **Tujuan:**
+  Membangun sistem pendampingan aktif (*In-Game AI Co-Pilot*) untuk melindungi pemain dari blunder fatal (*blunder safety net*), membimbing langkah pembatalan (*guided undo*), dan memberikan petunjuk berpikir bertingkat (*3-Tier Socratic Hints*) yang didukung pembacaan audio manusiawi (Aoede) serta terintegrasi dengan perekaman profil perkembangan belajar personal.
+
+- **Perubahan utama:**
+  1. **Detektor Blunder Real-Time (`src/features/copilot/blunder-detector.ts`):**
+     - Mengevaluasi keselamatan langkah (`evaluateMoveSafety`) secara lokal dalam < 1 ms sebelum langkah dieksekusi.
+     - Mendeteksi skakmat langsung (*mate in 1*), memindahkan perwira bernilai tinggi (Menteri/Benteng/Kuda/Gajah) ke petak gantung tanpa pengawal, pertukaran merugikan (diserang bidak lawan yang lebih murah), dan perpindahan yang menyebabkan perwira kawan lain kehilangan pengawal.
+  2. **Mesin Petunjuk Sokrates 3 Tingkat (`src/features/copilot/socratic-engine.ts`):**
+     - Mengubah langkah terbaik Stockfish engine menjadi 3 tingkat bimbingan berpikir pedagogis:
+       - *Tingkat 1: Panduan Observasi & Arah Pandang* (mengarahkan mata ke sektor sayap raja, pusat, sayap menteri, atau keamanan raja tanpa membocorkan bidak).
+       - *Tingkat 2: Identifikasi Perwira Kunci* (menyorot perwira yang perlu diperhatikan dan petak asalnya tanpa membocorkan petak tujuan).
+       - *Tingkat 3: Langkah Konkret & Alasan Strategis Penuh* (notasi SAN + penjelasan tujuan taktis/posisional secara lengkap).
+     - Menghasilkan naskah lisan (*spokenText*) siap dibacakan oleh karakter suara Gemini TTS (Aoede).
+  3. **Penyimpanan Preferensi Co-Pilot (`src/features/copilot/copilot-storage.ts`):**
+     - Sinkronisasi preferensi `localStorage` (`chess_archive_copilot_v1`) aman SSR melalui pola React 19 `useSyncExternalStore`.
+  4. **Komponen Dialog Pendampingan (`src/features/copilot/components/`):**
+     - `BlunderInterceptModal.tsx`: Dialog konfirmasi pencegahan blunder dengan pilihan hangat *Pikirkan Lagi (Tarik Langkah)* atau *Tetap Jalankan*.
+     - `SocraticHintModal.tsx`: Dialog interaktif petunjuk bertingkat (Tingkat 1-3), integrasi pemutar suara `TutorAudioPlayer` (Aoede), dan tombol coba langsung di papan.
+  5. **Integrasi ke Papan Catur & Halaman Bermain (`InteractiveChessboard.tsx`, `use-chess-game.ts`, `PlayPage.tsx`):**
+     - Penambahan prop `highlightedSquare` dengan animasi cincin emas berdenyut pada `InteractiveChessboard.tsx`.
+     - Pengaitan intersep langkah blunder pada `handleSquareClick` dan modal promosi pion.
+     - Tombol *Minta Petunjuk Guru AI (Sokrates)* dengan status loading analisis di panel kontrol pertandingan.
+     - Sakelar toggle *Bantalan Blunder* di bilah kontrol pertandingan mode latihan.
+     - Bimbingan mentor pada aksi *Undo* (*Guided Undo*).
+     - Perekaman bukti aktivitas otomatis ke sistem pembelajaran personal (`strategy-king-safety` saat membatalkan blunder dan `strategy-piece-development` saat menggunakan petunjuk).
+  6. **Pengujian Unit & Komprehensif (`tests/unit/copilot.test.ts`):**
+     - 7 unit test baru memvalidasi langkah normal aman, deteksi blunder menteri gantung, deteksi ancaman skakmat lawan 1 langkah, deteksi perwira kawan yang ditinggal tanpa pengawal, 3 tingkat petunjuk Sokrates, petunjuk khusus rokade, dan persistensi preferensi.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings pada seluruh file TypeScript & React).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (19 test suites, **122 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses, seluruh 42 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Tahap 2: Pendampingan Aktif telah selesai diimplementasikan, teruji bebas error, dan siap digunakan).
+
+- **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).
+
 - **Langkah berikutnya:** Tahap 2: Pendampingan Aktif (*In-Game AI Co-Pilot: Guided Undo & Socratic Hints*).

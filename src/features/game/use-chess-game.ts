@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { Chess, Square } from "chess.js";
 import {
   PlayerColor,
@@ -22,6 +22,16 @@ import {
 } from "@/features/engine/stockfish-adapter";
 import { saveArchivedGame, CURRENT_SCHEMA_VERSION } from "@/lib/storage/game-archive";
 import { chessAudio } from "@/lib/audio/chess-audio";
+import {
+  evaluateMoveSafety,
+  generateSocraticHint,
+  getCoPilotPreferences,
+  subscribeCoPilotPreferences,
+  DEFAULT_COPILOT_PREFERENCES,
+  BlunderReport,
+  SocraticHint,
+} from "@/features/copilot";
+import { recordActivityEvidence } from "@/features/learning";
 
 export interface ChessGameConfig {
   playerColor: PlayerColor;
@@ -97,6 +107,22 @@ export function useChessGame(
 
   const [botThinking, setBotThinking] = useState<boolean>(false);
   const [engineStatus, setEngineStatus] = useState<EngineStatus>("loading");
+
+  // In-Game AI Co-Pilot State
+  const coPilotPreferences = useSyncExternalStore(
+    subscribeCoPilotPreferences,
+    getCoPilotPreferences,
+    () => DEFAULT_COPILOT_PREFERENCES
+  );
+  const [pendingBlunder, setPendingBlunder] = useState<{
+    from: Square;
+    to: Square;
+    promotion?: "q" | "r" | "b" | "n";
+    report: BlunderReport;
+  } | null>(null);
+  const [currentHint, setCurrentHint] = useState<SocraticHint | null>(null);
+  const [hintLoading, setHintLoading] = useState<boolean>(false);
+  const [undoFeedback, setUndoFeedback] = useState<string | null>(null);
 
   // Real-time delta clocks
   const initialTime = getInitialTimeMs(initialConfig.timeControl);
@@ -547,6 +573,29 @@ export function useChessGame(
             return;
           }
 
+          // Intersep blunder jika Co-Pilot aktif pada Mode Latihan
+          if (
+            config.isPracticeMode &&
+            coPilotPreferences.enabled &&
+            coPilotPreferences.blunderSafetyNet
+          ) {
+            const safety = evaluateMoveSafety(
+              c,
+              selectedSquare as Square,
+              sq,
+              undefined,
+              config.playerColor === "white" ? "w" : "b"
+            );
+            if (safety.isBlunder && (safety.severity === "blunder" || safety.severity === "fatal")) {
+              setPendingBlunder({
+                from: selectedSquare as Square,
+                to: sq,
+                report: safety,
+              });
+              return;
+            }
+          }
+
           applyPlayerMove(selectedSquare as Square, sq);
           return;
         }
@@ -574,12 +623,45 @@ export function useChessGame(
         setLegalDestinations(moves.map((m) => m.to));
       }
     },
-    [applyPlayerMove, botThinking, config.playerColor, legalDestinations, selectedSquare]
+    [
+      applyPlayerMove,
+      botThinking,
+      coPilotPreferences.blunderSafetyNet,
+      coPilotPreferences.enabled,
+      config.isPracticeMode,
+      config.playerColor,
+      legalDestinations,
+      selectedSquare,
+    ]
   );
 
   const confirmPromotion = useCallback(
     (piece: "q" | "r" | "b" | "n") => {
       if (pendingPromotion) {
+        if (
+          config.isPracticeMode &&
+          coPilotPreferences.enabled &&
+          coPilotPreferences.blunderSafetyNet
+        ) {
+          const safety = evaluateMoveSafety(
+            chessRef.current,
+            pendingPromotion.from as Square,
+            pendingPromotion.to as Square,
+            piece,
+            config.playerColor === "white" ? "w" : "b"
+          );
+          if (safety.isBlunder && (safety.severity === "blunder" || safety.severity === "fatal")) {
+            setPendingBlunder({
+              from: pendingPromotion.from as Square,
+              to: pendingPromotion.to as Square,
+              promotion: piece,
+              report: safety,
+            });
+            setPendingPromotion(null);
+            return;
+          }
+        }
+
         applyPlayerMove(
           pendingPromotion.from as Square,
           pendingPromotion.to as Square,
@@ -590,8 +672,100 @@ export function useChessGame(
         setLegalDestinations([]);
       }
     },
-    [applyPlayerMove, pendingPromotion]
+    [
+      applyPlayerMove,
+      coPilotPreferences.blunderSafetyNet,
+      coPilotPreferences.enabled,
+      config.isPracticeMode,
+      config.playerColor,
+      pendingPromotion,
+    ]
   );
+
+  const cancelBlunderMove = useCallback(() => {
+    if (pendingBlunder) {
+      try {
+        recordActivityEvidence({
+          skillId: "strategy-king-safety",
+          sourceKind: "game",
+          sourceId: `blunder-saved-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          outcome: "success",
+          hintsUsed: 0,
+          weight: 0.8,
+        });
+      } catch {
+        // Abaikan
+      }
+    }
+    setPendingBlunder(null);
+    setSelectedSquare(null);
+    setLegalDestinations([]);
+  }, [pendingBlunder]);
+
+  const proceedBlunderMove = useCallback(() => {
+    if (pendingBlunder) {
+      applyPlayerMove(
+        pendingBlunder.from,
+        pendingBlunder.to,
+        pendingBlunder.promotion
+      );
+      setPendingBlunder(null);
+    }
+  }, [applyPlayerMove, pendingBlunder]);
+
+  const requestSocraticHint = useCallback(async () => {
+    const c = chessRef.current;
+    if (c.isGameOver() || botThinking) return;
+
+    setHintLoading(true);
+    try {
+      let bestMoveUci = "";
+      if (engineRef.current && engineRef.current.getStatus() === "ready") {
+        const searchRes = await engineRef.current.search({
+          fen: c.fen(),
+          depth: 10,
+          moveTimeMs: 400,
+          skillLevel: 10,
+          searchId: `hint-${Date.now()}`,
+        });
+        bestMoveUci = searchRes.bestMoveUci;
+      }
+
+      if (!bestMoveUci) {
+        const legal = c.moves({ verbose: true });
+        if (legal.length > 0) {
+          bestMoveUci = `${legal[0].from}${legal[0].to}${legal[0].promotion || ""}`;
+        }
+      }
+
+      if (bestMoveUci) {
+        const socratic = generateSocraticHint(c, bestMoveUci);
+        setCurrentHint(socratic);
+        try {
+          recordActivityEvidence({
+            skillId: "strategy-piece-development",
+            sourceKind: "game",
+            sourceId: `socratic-hint-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            outcome: "assisted",
+            hintsUsed: 1,
+            weight: 0.5,
+          });
+        } catch {
+          // Abaikan
+        }
+      }
+    } catch (err) {
+      console.error("Gagal meminta petunjuk Sokrates:", err);
+    } finally {
+      setHintLoading(false);
+    }
+  }, [botThinking]);
+
+  const clearHint = useCallback(() => {
+    setCurrentHint(null);
+  }, []);
 
   const cancelPromotion = useCallback(() => {
     setPendingPromotion(null);
@@ -645,6 +819,10 @@ export function useChessGame(
       gameStatusRef.current = "not_started";
       setGameStatus("not_started");
     }
+
+    setUndoFeedback(
+      "Langkah ditarik kembali. Amati petak aman atau pengawalan perwira sebelum melangkah lagi."
+    );
   }, [botThinking, config.isPracticeMode]);
 
   // Start new game
@@ -683,6 +861,9 @@ export function useChessGame(
       setSelectedSquare(null);
       setLegalDestinations([]);
       setPendingPromotion(null);
+      setPendingBlunder(null);
+      setCurrentHint(null);
+      setUndoFeedback(null);
       setBotThinking(false);
 
       const tMs = getInitialTimeMs(resolvedConfig.timeControl);
@@ -720,6 +901,17 @@ export function useChessGame(
     botThinking,
     engineStatus,
     config,
+    // Co-Pilot Pendampingan Aktif
+    coPilotPreferences,
+    pendingBlunder,
+    cancelBlunderMove,
+    proceedBlunderMove,
+    requestSocraticHint,
+    currentHint,
+    clearHint,
+    hintLoading,
+    undoFeedback,
+    setUndoFeedback,
     handleSquareClick,
     confirmPromotion,
     cancelPromotion,

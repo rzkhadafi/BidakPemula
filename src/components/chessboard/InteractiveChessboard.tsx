@@ -31,6 +31,8 @@ interface InteractiveChessboardProps {
   showVisionToggle?: boolean;
   /** Pengaturan awal Kacamata Catur aktif/tidak jika belum ada di localStorage */
   defaultVisionEnabled?: boolean;
+  /** Petak yang disorot oleh petunjuk Sokrates (misal perwira kunci) */
+  highlightedSquare?: string | null;
 }
 
 export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
@@ -47,6 +49,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   onCancelPromotion,
   showVisionToggle = true,
   defaultVisionEnabled = false,
+  highlightedSquare = null,
 }) => {
   // State Kacamata Catur (Vision Glasses) tersinkronisasi aman SSR & multi-komponen
   const storedVision = useSyncExternalStore(
@@ -285,6 +288,8 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 lastMove &&
                 (lastMove.from === squareCoord || lastMove.to === squareCoord);
 
+              const isHighlighted = highlightedSquare === squareCoord;
+
               // Check if king is in check on this square
               const isKingInCheck =
                 isCheck &&
@@ -313,6 +318,10 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                     isLight ? "board-square-light" : "board-square-dark"
                   } ${
                     isSelected ? "!bg-[rgba(235,195,60,0.65)] ring-2 ring-inset ring-[#F5C342]" : ""
+                  } ${
+                    isHighlighted && !isSelected
+                      ? "ring-4 ring-inset ring-[#C7A66A] !bg-[#C7A66A]/25 animate-pulse z-20"
+                      : ""
                   } ${
                     isLastMoveSquare && !isSelected
                       ? "after:absolute after:inset-0 after:bg-[rgba(220,175,50,0.42)] pointer-events-none"
