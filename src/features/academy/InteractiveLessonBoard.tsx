@@ -9,6 +9,7 @@ import { markLessonStepCompleted } from "./academy-progress";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
 import { chessAudio } from "@/lib/audio/chess-audio";
 import { getSkillByLessonId, recordActivityEvidence } from "@/features/learning";
 
@@ -49,6 +50,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   const [status, setStatus] = useState<"idle" | "correct" | "incorrect">("idle");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showHint, setShowHint] = useState<boolean>(false);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
 
   // Sync state during render when step changes (official React pattern)
   const [prevStepId, setPrevStepId] = useState<string>(step.id);
@@ -62,6 +64,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
     setStatus("idle");
     setFeedback(null);
     setShowHint(false);
+    setShowSuccessModal(false);
   }
 
   const executeMove = useCallback(
@@ -89,6 +92,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         if (isExpected) {
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
+          setShowSuccessModal(true);
           chessAudio.playMove();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
 
@@ -138,6 +142,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         if (squareCoord.toLowerCase() === step.targetSquare.toLowerCase()) {
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
+          setShowSuccessModal(true);
           chessAudio.playMove();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
 
@@ -222,6 +227,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   );
 
   const handleNextStep = () => {
+    setShowSuccessModal(false);
     if (currentStepIdx < lesson.steps.length - 1) {
       setCurrentStepIdx((prev) => prev + 1);
     } else {
@@ -239,6 +245,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
     setStatus("idle");
     setFeedback(null);
     setShowHint(false);
+    setShowSuccessModal(false);
   };
 
   return (
@@ -300,22 +307,27 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           </p>
         </div>
 
-        {/* Dynamic Feedback Banner */}
-        {status === "correct" && (
-          <div className="p-3 rounded-lg bg-[#73B894]/15 border border-[#73B894]/40 text-xs text-[#73B894] space-y-2 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2 font-medium">
+        {/* Fallback Banner jika Modal Ditutup Sementara */}
+        {status === "correct" && !showSuccessModal && (
+          <div className="p-3 rounded-lg bg-[#73B894]/15 border border-[#73B894]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 text-xs text-[#73B894] font-medium">
               <CheckCircle2 className="w-4 h-4 shrink-0 text-[#73B894]" />
-              <span>Langkah Benar!</span>
+              <span>Langkah Benar! Tantangan selesai.</span>
             </div>
-            <p className="text-[#F2F0E8] leading-relaxed">
-              {feedback}
-            </p>
-            <div className="pt-1">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSuccessModal(true)}
+                className="text-xs text-[#73B894] hover:text-[#F2F0E8] h-7 px-2"
+              >
+                Lihat Penjelasan
+              </Button>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleNextStep}
-                className="w-full sm:w-auto text-xs"
+                className="w-full sm:w-auto text-xs py-1.5 px-3 font-semibold"
               >
                 <span>
                   {currentStepIdx < lesson.steps.length - 1
@@ -378,6 +390,64 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           </div>
         )}
       </Card>
+
+      {/* Pop-up Modal Keberhasilan Langkah (Ramah Pemula, Tanpa Perlu Scroll) */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Langkah Benar!"
+        description={`Tantangan ${currentStepIdx + 1} dari ${lesson.steps.length} Berhasil Diselesaikan`}
+      >
+        <div className="space-y-4 pt-1">
+          {/* Celebratory Banner with Explanation */}
+          <div className="p-4 rounded-xl bg-[#73B894]/15 border border-[#73B894]/40 flex items-start gap-3.5 text-[#F2F0E8] animate-in fade-in">
+            <div className="w-9 h-9 rounded-full bg-[#73B894]/25 border border-[#73B894]/60 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 className="w-5 h-5 text-[#73B894]" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#73B894] block">
+                Penjelasan Langkah:
+              </span>
+              <p className="text-xs sm:text-sm text-[#F2F0E8] leading-relaxed">
+                {feedback || step.explanationOnSuccess}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons - Big, Obvious, and Accessible */}
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setShowSuccessModal(false);
+                handleResetStep();
+              }}
+              className="w-full sm:w-auto text-xs"
+              title="Coba ulangi tantangan ini sekali lagi"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              <span>Ulangi Tantangan</span>
+            </Button>
+
+            <Button
+              variant="primary"
+              size="sm"
+              autoFocus
+              onClick={handleNextStep}
+              className="w-full sm:w-auto py-2.5 px-4 font-bold text-xs bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 shadow-md cursor-pointer"
+              title="Lanjutkan ke langkah materi berikutnya"
+            >
+              <span>
+                {currentStepIdx < lesson.steps.length - 1
+                  ? "Lanjut ke Tantangan Berikutnya"
+                  : "Selesaikan Pelajaran Ini"}
+              </span>
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

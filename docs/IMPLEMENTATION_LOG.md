@@ -640,4 +640,35 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Tingkat petunjuk pilihan pemain kini konsisten dipertahankan pada setiap langkah).
 
+---
+
+### 2026-10-24 — Pop-up Modal Keberhasilan Langkah Akademi (Zero-Scroll Learning Flow)
+
+- **Tujuan Permintaan Pengguna:**
+  Pada modul Belajar (Akademi), saat pemain selesai melakukan gerakan sesuai arahan pada setiap tantangan materi, hapus kotak hijau yang sebelumnya berada di bawah kartu instruksi dan gantikan dengan **pop-up modal interaktif** tepat di tengah layar. Di dalam pop-up tersebut disajikan penjelasan keberhasilan dan tombol *"Lanjut ke Tantangan Berikutnya"*, sehingga pemain langsung paham dan tidak perlu melakukan *scrolling* ke bawah sama sekali—sangat ramah untuk pemula yang baru pertama kali menggunakan komputer atau membuka situs catur.
+
+- **Perubahan yang Diterapkan:**
+  1. **Integrasi Pop-up Modal Keberhasilan (`src/features/academy/InteractiveLessonBoard.tsx`):**
+     - Mengganti banner hijau statis di bawah papan dengan dialog `Modal` terpusat yang otomatis muncul begitu petak sasaran atau langkah catur yang diharapkan berhasil dilakukan.
+     - Pop-up modal menampilkan:
+       - Header jelas: *"Langkah Benar!"* beserta nomor progres tantangan (contoh: *Tantangan 1 dari 3 Berhasil Diselesaikan*).
+       - Penjelasan edukatif mengapa langkah tersebut tepat (`explanationOnSuccess`).
+       - Tombol aksi primer terfokus otomatis (`autoFocus`): *"Lanjut ke Tantangan Berikutnya"* (atau *"Selesaikan Pelajaran Ini"* pada langkah terakhir). Pengguna keyboard di PC cukup menekan `Enter` atau `Space` untuk langsung melanjutkan.
+       - Tombol sekunder: *"Ulangi Tantangan"* bagi pemain yang ingin berlatih kembali.
+     - Jika pemain menutup pop-up modal untuk mengamati papan, disediakan bar tipis minimal sebagai penanda bahwa tantangan telah selesai dan dapat dilanjutkan kapan saja.
+  2. **Pengujian Unit Komprehensif (`tests/unit/interactive-lesson-board.test.tsx`):**
+     - Memverifikasi bahwa modal pop-up tidak aktif di awal.
+     - Memverifikasi bahwa pop-up muncul secara otomatis begitu petak target (`e4`) diklik.
+     - Memverifikasi navigasi ke tantangan berikutnya dan penutupan modal.
+     - Memverifikasi penyelesaian seluruh pelajaran (`onLessonComplete`) saat langkah terakhir dikonfirmasi.
+     - Total pengujian lulus meningkat menjadi **140 tests (23 test suites)**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (23 test suites, **140 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (Alur belajar kini zero-scroll dan otomatis memandu pemula lewat pop-up yang jelas).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).
