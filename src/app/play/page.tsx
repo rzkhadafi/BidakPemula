@@ -133,6 +133,11 @@ export default function PlayPage() {
   const [tutorModalOpen, setTutorModalOpen] = useState(false);
   const [tutorRequestContext, setTutorRequestContext] = useState<TutorExplainRequest | null>(null);
 
+  // Turunan petak sorot: utamakan petak bahaya saat blunder terdeteksi tanpa efek cascading
+  const effectiveHighlightedSquare = pendingBlunder
+    ? (pendingBlunder.report.hangingSquare || pendingBlunder.to || highlightedSquare)
+    : highlightedSquare;
+
   const handleOpenTutor = () => {
     const lastMoveItem = history[history.length - 1];
     const req: TutorExplainRequest = {
@@ -194,8 +199,8 @@ export default function PlayPage() {
 
       {/* Main Playing Arena */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Chessboard Column */}
-        <div className="lg:col-span-8 flex flex-col items-center">
+        {/* Chessboard Column (Tetap terpancang di layar desktop agar selalu terlihat) */}
+        <div className="lg:col-span-8 flex flex-col items-center lg:sticky lg:top-4">
           {/* Opponent Info Bar */}
           <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-2.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
             <div className="flex items-center gap-2.5">
@@ -256,7 +261,7 @@ export default function PlayPage() {
             onSquareClick={handleSquareClick}
             onConfirmPromotion={confirmPromotion}
             onCancelPromotion={cancelPromotion}
-            highlightedSquare={highlightedSquare}
+            highlightedSquare={effectiveHighlightedSquare}
           />
 
           {/* Player Info Bar */}
@@ -366,149 +371,190 @@ export default function PlayPage() {
             </Card>
           )}
 
-          {/* AI Co-Pilot Companion Card */}
-          <Card variant="surface" className="p-3.5 sm:p-4 space-y-3 border-[#C7A66A]/40 bg-gradient-to-b from-[#1C2024] to-[#141619] shadow-lg">
-            {/* Header with Co-Pilot Persona */}
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#353B42]">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#C7A66A]/20 border border-[#C7A66A]/60 flex items-center justify-center text-[#C7A66A]">
-                  <Bot className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-xs font-bold text-[#F2F0E8] flex items-center gap-1.5">
-                    <span>Guru Catur AI Co-Pilot</span>
-                    <span className="w-2 h-2 rounded-full bg-[#73B894] animate-pulse" />
-                  </h2>
-                  <span className="text-[10px] text-[#C7A66A]">Pendamping Aktif Ramah Pemula</span>
-                </div>
-              </div>
+          {/* 1. Bantalan Blunder (Peringatan Bahaya Fatal Non-Modal di Panel Samping) */}
+          <BlunderInterceptModal
+            isOpen={Boolean(pendingBlunder)}
+            report={pendingBlunder ? pendingBlunder.report : null}
+            onReconsider={() => {
+              cancelBlunderMove();
+              setHighlightedSquare(null);
+            }}
+            onProceedAnyway={() => {
+              proceedBlunderMove();
+              setHighlightedSquare(null);
+            }}
+          />
 
-              {/* Co-Pilot Toggle Switch */}
-              <button
-                type="button"
-                onClick={() =>
-                  setCoPilotPreferences({
-                    blunderSafetyNet: !coPilotPreferences.blunderSafetyNet,
-                  })
-                }
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer ${
-                  coPilotPreferences.blunderSafetyNet
-                    ? "bg-[#73B894]/20 border-[#73B894]/60 text-[#73B894]"
-                    : "bg-[#24292E] border-[#353B42] text-[#8A9299]"
-                }`}
-                title="Nyalakan/matikan perlindungan Bantalan Blunder"
-              >
-                <ShieldAlert className="w-3 h-3" />
-                <span>{coPilotPreferences.blunderSafetyNet ? "Proteksi Aktif" : "Proteksi Mati"}</span>
-              </button>
-            </div>
+          {/* 2. Petunjuk Sokrates Bertingkat (Non-Modal di Panel Samping) */}
+          <SocraticHintModal
+            isOpen={Boolean(currentHint)}
+            hint={currentHint}
+            onClose={() => {
+              clearHint();
+              setHighlightedSquare(null);
+            }}
+            onHighlightSquare={setHighlightedSquare}
+          />
 
-            {/* Live Companion Advice Bubble */}
-            <div className="p-2.5 rounded-xl bg-[#24292E]/80 border border-[#353B42] text-xs space-y-1">
-              <div className="flex items-center gap-1.5 font-medium text-[#C7A66A] text-[11px]">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Saran Pendamping:</span>
-              </div>
-              <p className="text-[#B0B5B9] text-xs leading-relaxed">
-                {history.length === 0
-                  ? "Selamat datang! Saya mendampingi setiap langkahmu. Jika bingung memilih langkah awal, tekan tombol Petunjuk Sokrates di bawah."
-                  : botThinking
-                  ? "Bot sedang berpikir... Perhatikan susunan bidakmu sementara menunggu."
-                  : isPlayerTurn
-                  ? "Giliranmu melangkah. Bantalan Blunder aktif melindungimu dari perwira gantung dan skakmat tak terduga."
-                  : "Menunggu langkah bot..."}
-              </p>
-            </div>
+          {/* 3. Bimbingan Guru Catur AI (Penjelasan Langkah Suara Non-Modal di Panel Samping) */}
+          <PlayTutorModal
+            isOpen={tutorModalOpen}
+            onClose={() => {
+              setTutorModalOpen(false);
+              setHighlightedSquare(null);
+            }}
+            requestContext={tutorRequestContext}
+            onHighlightMove={(uci) => {
+              const targetSq = uci.slice(2, 4);
+              setHighlightedSquare(targetSq);
+            }}
+          />
 
-            {/* Guided Undo Message Banner (if player just undid a move) */}
-            {undoFeedback && (
-              <div className="p-2.5 rounded-xl bg-[#C7A66A]/15 border border-[#C7A66A]/50 text-xs text-[#F2F0E8] flex items-start gap-2 animate-in fade-in">
-                <RotateCcw className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <span className="font-semibold text-[11px] text-[#C7A66A] block">Langkah Telah Dibatalkan</span>
-                  <p className="leading-relaxed text-[11px] text-[#F2F0E8] mt-0.5">{undoFeedback}</p>
+          {/* 4. AI Co-Pilot Companion Card (Ditampilkan saat tidak ada sesi bimbingan khusus di atas) */}
+          {!pendingBlunder && !currentHint && !tutorModalOpen && (
+            <Card variant="surface" className="p-3.5 sm:p-4 space-y-3 border-[#C7A66A]/40 bg-gradient-to-b from-[#1C2024] to-[#141619] shadow-lg">
+              {/* Header with Co-Pilot Persona */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-[#353B42]">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#C7A66A]/20 border border-[#C7A66A]/60 flex items-center justify-center text-[#C7A66A]">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-xs font-bold text-[#F2F0E8] flex items-center gap-1.5">
+                      <span>Guru Catur AI Co-Pilot</span>
+                      <span className="w-2 h-2 rounded-full bg-[#73B894] animate-pulse" />
+                    </h2>
+                    <span className="text-[10px] text-[#C7A66A]">Pendamping Aktif Ramah Pemula</span>
+                  </div>
                 </div>
+
+                {/* Co-Pilot Toggle Switch */}
                 <button
                   type="button"
-                  onClick={() => setUndoFeedback(null)}
-                  className="text-[#8A9299] hover:text-[#F2F0E8] text-xs cursor-pointer px-1"
+                  onClick={() =>
+                    setCoPilotPreferences({
+                      blunderSafetyNet: !coPilotPreferences.blunderSafetyNet,
+                    })
+                  }
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer ${
+                    coPilotPreferences.blunderSafetyNet
+                      ? "bg-[#73B894]/20 border-[#73B894]/60 text-[#73B894]"
+                      : "bg-[#24292E] border-[#353B42] text-[#8A9299]"
+                  }`}
+                  title="Nyalakan/matikan perlindungan Bantalan Blunder"
                 >
-                  ✕
+                  <ShieldAlert className="w-3 h-3" />
+                  <span>{coPilotPreferences.blunderSafetyNet ? "Proteksi Aktif" : "Proteksi Mati"}</span>
                 </button>
               </div>
-            )}
 
-            {/* Primary Action: Socratic Hint Button (ACTIVE IMMEDIATELY on player turn!) */}
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={requestSocraticHint}
-              disabled={chess.isGameOver() || botThinking || hintLoading || !isPlayerTurn}
-              className="w-full py-2.5 bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 font-bold text-xs shadow-md transition-all justify-center cursor-pointer disabled:opacity-50"
-              title="Minta bimbingan berpikir bertahap langkah demi langkah"
-            >
-              <Lightbulb className="w-4 h-4 mr-1.5" />
-              {hintLoading
-                ? "Menganalisis Posisi Papan..."
-                : "Minta Petunjuk Guru AI (Sokrates)"}
-            </Button>
+              {/* Live Companion Advice Bubble */}
+              <div className="p-2.5 rounded-xl bg-[#24292E]/80 border border-[#353B42] text-xs space-y-1">
+                <div className="flex items-center gap-1.5 font-medium text-[#C7A66A] text-[11px]">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Saran Pendamping:</span>
+                </div>
+                <p className="text-[#B0B5B9] text-xs leading-relaxed">
+                  {history.length === 0
+                    ? "Selamat datang! Saya mendampingi setiap langkahmu. Jika bingung memilih langkah awal, tekan tombol Petunjuk Sokrates di bawah."
+                    : botThinking
+                    ? "Bot sedang berpikir... Perhatikan susunan bidakmu sementara menunggu."
+                    : isPlayerTurn
+                    ? "Giliranmu melangkah. Bantalan Blunder aktif melindungimu dari perwira gantung dan skakmat tak terduga."
+                    : "Menunggu langkah bot..."}
+                </p>
+              </div>
 
-            {/* Secondary Controls: Undo, Mulai Ulang, Menyerah, Jelaskan Langkah */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+              {/* Guided Undo Message Banner (if player just undid a move) */}
+              {undoFeedback && (
+                <div className="p-2.5 rounded-xl bg-[#C7A66A]/15 border border-[#C7A66A]/50 text-xs text-[#F2F0E8] flex items-start gap-2 animate-in fade-in">
+                  <RotateCcw className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-semibold text-[11px] text-[#C7A66A] block">Langkah Telah Dibatalkan</span>
+                    <p className="leading-relaxed text-[11px] text-[#F2F0E8] mt-0.5">{undoFeedback}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUndoFeedback(null)}
+                    className="text-[#8A9299] hover:text-[#F2F0E8] text-xs cursor-pointer px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Primary Action: Socratic Hint Button (ACTIVE IMMEDIATELY on player turn!) */}
               <Button
-                variant="secondary"
+                variant="primary"
                 size="sm"
-                onClick={undoMove}
-                disabled={
-                  !config.isPracticeMode ||
-                  history.length === 0 ||
-                  botThinking ||
-                  chess.isGameOver()
-                }
-                className="justify-center text-xs"
-                title="Batalkan langkah terakhir dan dapatkan tips mentor"
+                onClick={requestSocraticHint}
+                disabled={chess.isGameOver() || botThinking || hintLoading || !isPlayerTurn}
+                className="w-full py-2.5 bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 font-bold text-xs shadow-md transition-all justify-center cursor-pointer disabled:opacity-50"
+                title="Minta bimbingan berpikir bertahap langkah demi langkah"
               >
-                <Undo2 className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
-                Undo
+                <Lightbulb className="w-4 h-4 mr-1.5" />
+                {hintLoading
+                  ? "Menganalisis Posisi Papan..."
+                  : "Minta Petunjuk Guru AI (Sokrates)"}
               </Button>
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={resetGame}
-                disabled={history.length === 0 && gameStatus === "not_started"}
-                className="justify-center text-xs"
-                title="Mulai ulang pertandingan"
-              >
-                <RotateCcw className="w-3.5 h-3.5 mr-1 text-[#8A9299]" />
-                Mulai Ulang
-              </Button>
+              {/* Secondary Controls: Undo, Mulai Ulang, Menyerah, Jelaskan Langkah */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={undoMove}
+                  disabled={
+                    !config.isPracticeMode ||
+                    history.length === 0 ||
+                    botThinking ||
+                    chess.isGameOver()
+                  }
+                  className="justify-center text-xs"
+                  title="Batalkan langkah terakhir dan dapatkan tips mentor"
+                >
+                  <Undo2 className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+                  Undo
+                </Button>
 
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={resignGame}
-                disabled={history.length === 0 || chess.isGameOver()}
-                className="justify-center text-xs"
-                title="Menyerah pada pertandingan ini"
-              >
-                <Flag className="w-3.5 h-3.5 mr-1" />
-                Menyerah
-              </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={resetGame}
+                  disabled={history.length === 0 && gameStatus === "not_started"}
+                  className="justify-center text-xs"
+                  title="Mulai ulang pertandingan"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1 text-[#8A9299]" />
+                  Mulai Ulang
+                </Button>
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleOpenTutor}
-                disabled={history.length === 0}
-                className="justify-center text-xs border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10"
-                title="Dengarkan penjelasan suara mendalam mengenai langkah terakhir"
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
-                Jelaskan Langkah (Suara)
-              </Button>
-            </div>
-          </Card>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={resignGame}
+                  disabled={history.length === 0 || chess.isGameOver()}
+                  className="justify-center text-xs"
+                  title="Menyerah pada pertandingan ini"
+                >
+                  <Flag className="w-3.5 h-3.5 mr-1" />
+                  Menyerah
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleOpenTutor}
+                  disabled={history.length === 0}
+                  className="justify-center text-xs border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10"
+                  title="Dengarkan penjelasan suara mendalam mengenai langkah terakhir"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+                  Jelaskan Langkah (Suara)
+                </Button>
+              </div>
+            </Card>
+          )}
 
           {/* Move History Table */}
           <Card variant="surface" className="space-y-3">
@@ -708,28 +754,6 @@ export default function PlayPage() {
           </div>
         </div>
       </Modal>
-      {/* Guru Catur AI Modal */}
-      <PlayTutorModal
-        isOpen={tutorModalOpen}
-        onClose={() => setTutorModalOpen(false)}
-        requestContext={tutorRequestContext}
-      />
-
-      {/* Bantalan Blunder Intercept Modal */}
-      <BlunderInterceptModal
-        isOpen={Boolean(pendingBlunder)}
-        report={pendingBlunder ? pendingBlunder.report : null}
-        onReconsider={cancelBlunderMove}
-        onProceedAnyway={proceedBlunderMove}
-      />
-
-      {/* Petunjuk Sokrates Bertingkat Modal */}
-      <SocraticHintModal
-        isOpen={Boolean(currentHint)}
-        hint={currentHint}
-        onClose={clearHint}
-        onHighlightSquare={setHighlightedSquare}
-      />
     </div>
   );
 }

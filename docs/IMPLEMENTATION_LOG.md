@@ -504,4 +504,34 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Bug petak terkunci telah diperbaiki tuntas, pemain kini memiliki kebebasan penuh mengeksekusi semua langkah legal).
 
+---
+
+### 2026-10-24 — Penyempurnaan UX Pedagogis: Menghilangkan Pop-up Modal yang Menutupi Papan Catur
+
+- **Prinsip Utama:**
+  Pemain (khususnya pemula) harus selalu dapat melihat papan catur secara utuh saat mendengarkan narasi suara AI maupun membaca analisis dan petunjuk berpikir. Fitur bimbingan tidak boleh menutupi papan dengan lapisan gelap (*backdrop modal*), agar pemain tidak dipaksa mengingat-ingat letak bidak secara abstrak.
+
+- **Perubahan yang Diterapkan:**
+  1. **Migrasi `PlayTutorModal` ke Panel Samping Tersemat (*Docked Side Panel*):**
+     - Mengubah komponen dari pembungkus `Modal` (yang sebelumnya menggunakan `fixed inset-0 bg-black/75` di tengah layar) menjadi kartu pendamping tersemat di panel kanan layar (`src/features/tutor/components/PlayTutorModal.tsx`).
+     - Menyediakan tombol tutup `✕` dan tombol "Tutup Penjelasan & Lanjut Main" yang langsung menghentikan suara audio Aoede (`tutorSpeech.stop()`).
+     - Mengaitkan penyorotan langkah interaktif (`onHighlightMove`) agar saat pemain memilih langkah kandidat, petak sasaran langsung menyala berdenyut di papan catur di sebelah kiri.
+  2. **Migrasi `SocraticHintModal` ke Panel Samping Tersemat:**
+     - Mengubah dialog petunjuk Sokrates 3 tingkat (`src/features/copilot/components/SocraticHintModal.tsx`) menjadi kartu tersemat non-modal.
+     - Pemain kini dapat mengklik Tingkat 1 (Observasi), Tingkat 2 (Bidak Kunci), dan Tingkat 3 (Solusi Lengkap) sambil **melihat perwira kunci dan petak tujuan yang menyala di papan secara langsung tanpa terhalang apa pun**.
+  3. **Migrasi `BlunderInterceptModal` ke Peringatan Bahaya Non-Modal:**
+     - Mengubah intersep blunder fatal (`src/features/copilot/components/BlunderInterceptModal.tsx`) menjadi kartu peringatan darurat beraksen merah/oranye di panel samping.
+     - Petak bidak yang terancam gantung (`hangingSquare`) otomatis disorot di papan catur tanpa menutupi papan dengan lapisan modal.
+  4. **Penyematan Sticky Papan Desktop (`lg:sticky lg:top-4`):**
+     - Kolom papan catur diatur terpancang (*sticky*) sehingga jika pengguna menggulir teks penjelasan panjang di panel kanan, papan catur di sebelah kiri selalu berada tepat di depan mata pemain.
+     - Pada perangkat seluler (*mobile*), papan berada di bagian atas dan kartu bimbingan tepat di bawahnya tanpa ada pop-up penutup.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (21 test suites, **128 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses, seluruh 42 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Papan catur kini selalu 100% terlihat tanpa terhalang pop-up pada seluruh fitur bimbingan AI).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).
