@@ -956,3 +956,32 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
 
 - **Gate:** **PASS** (UI layar bermain catur kini 100% bebas scroll halaman di desktop, papan dan kedua jam terlihat penuh, dan panel kanan bergulir secara independen persis seperti Chess.com).
+
+---
+
+### Perbaikan: Integrasi Langsung Jam Pemain (`bottomSlot`) & Pencegahan Terpotong (Zero-Clip Display)
+
+- **Latar Belakang & Masalah:**
+  Pengguna melaporkan: *"sudah bagus tapi waktu pemain tidak ada cuma ada waktu bot"*.
+  - Penyebab: Elemen bilah pemain dan jam catur sebelumnya ditempatkan di luar komponen `InteractiveChessboard` di bawahnya. Ketika batas tinggi area pandang (`calc(100dvh - 190px)`) diterapkan bersama `lg:overflow-hidden`, elemen bilah pemain terdorong sekitar ~30px melewati batas bawah layar peramban dan terpotong (*clipped*) sehingga jam pemain tidak tampak di layar, sementara jam bot yang berada di bilah atas papan tetap terlihat jelas.
+
+- **Perubahan yang Diterapkan:**
+  1. **Penambahan Prop `bottomSlot` pada `InteractiveChessboard.tsx`:**
+     - Mengintegrasikan slot bilah bawah langsung ke dalam satu kesatuan kontainer papan catur (`InteractiveChessboard`), persis di bawah 64 petak catur (`mt-1.5 shrink-0`).
+     - Menyesuaikan formula pembatas tinggi maksimum papan menjadi `calc(100dvh-230px)` pada mobile/tablet dan `calc(100dvh-215px)` pada desktop agar seluruh 3 elemen (Bilah Bot & Jam + Papan Catur 1:1 + Bilah Pemain & Jam) memiliki ruang vertikal yang lega dan dijamin muat 100% di layar.
+  2. **Penyempurnaan Bilah Pemain & Jam di `src/app/play/page.tsx`:**
+     - Memasukkan `playerBar` melalui prop `bottomSlot={playerBar}` ke dalam `<InteractiveChessboard />`.
+     - Menghapus kontainer pemain lama yang terpisah di luar papan untuk mengeliminasi duplikasi dan risiko terpotong.
+     - Menghapus pembatas `lg:overflow-hidden` pada kontainer halaman utama agar tidak ada elemen antarmuka yang terpotong.
+     - Mempertegas tampilan jam pemain:
+       - Mode Waktu Terbatas: Menampilkan hitung mundur waktu (`10:00`, `09:59`, dll.) dengan bingkai emas berkedip lembut (`bg-[#C7A66A]/20 border-[#C7A66A] font-bold shadow-xs`) saat giliran pemain aktif.
+       - Mode Tanpa Batas: Menampilkan simbol tak hingga (`∞`) yang bersih dan elegan.
+       - Desain jam pemain dan jam bot kini simetris, selaras, dan keduanya 100% tampak bersamaan di layar tanpa perlu digulir (*zero-scroll*).
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm test` -> **PASS** (29 test suites, **171 tests lulus 100%**).
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (Jam pemain kini selalu tampil jelas tepat di bawah papan catur bersama jam bot di atasnya tanpa terpotong).

@@ -221,17 +221,63 @@ export default function PlayPage() {
         />
       </div>
 
-      {config.timeControl !== "unlimited" && (
-        <div className="flex items-center gap-1 pl-2 border-l border-[#353B42] font-mono text-[11px] text-[#C7A66A] tabular-nums">
-          <Clock className="w-3 h-3 text-[#8A9299]" />
-          <span>{formatClock(isPlayerWhite ? blackClockMs : whiteClockMs)}</span>
+      <div className="flex items-center gap-1.5 pl-2 border-l border-[#353B42] font-mono text-xs tabular-nums text-[#C7A66A]">
+        <Clock className={`w-3.5 h-3.5 ${!isPlayerTurn && gameStatus === "ongoing" ? "text-[#C7A66A] animate-pulse" : "text-[#8A9299]"}`} />
+        <span className="font-semibold">
+          {config.timeControl === "unlimited"
+            ? "∞"
+            : formatClock(isPlayerWhite ? blackClockMs : whiteClockMs)}
+        </span>
+      </div>
+    </div>
+  );
+
+  // Player Bar yang kompak dan selalu tampil persis di bawah papan
+  const playerBar = (
+    <div className="w-full flex items-center justify-between py-1.5 px-3 rounded-lg bg-[#1C2024] border border-[#353B42] shadow-xs select-none">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="w-6 h-6 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#C7A66A] shrink-0">
+          <User className="w-3.5 h-3.5 text-[#C7A66A]" />
         </div>
-      )}
+        <div className="flex items-center gap-1.5 truncate">
+          <span className="text-xs font-semibold text-[#F2F0E8] truncate">
+            Anda ({isPlayerWhite ? "Bidak Putih" : "Bidak Hitam"})
+          </span>
+          {config.isPracticeMode && (
+            <Badge variant="muted" size="sm" className="hidden sm:inline-flex text-[10px] py-0 px-1.5">
+              Latihan
+            </Badge>
+          )}
+        </div>
+        <span className="text-[11px] text-[#C7A66A] hidden sm:inline ml-1 truncate">
+          {gameStatus !== "ongoing" && gameStatus !== "not_started"
+            ? "• Permainan Selesai"
+            : isPlayerTurn
+            ? "• Giliran Anda"
+            : "• Menunggu bot..."}
+        </span>
+      </div>
+
+      {/* Jam Pemain: Jelas, Menonjol & Kontras Tinggi */}
+      <div
+        className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border font-mono text-xs tabular-nums shrink-0 transition-colors ${
+          isPlayerTurn && gameStatus === "ongoing"
+            ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] font-bold shadow-xs"
+            : "bg-[#141619] border-[#353B42] text-[#B0B5B9]"
+        }`}
+      >
+        <Clock className={`w-3.5 h-3.5 ${isPlayerTurn && gameStatus === "ongoing" ? "text-[#C7A66A] animate-pulse" : "text-[#8A9299]"}`} />
+        <span className="font-semibold text-xs sm:text-sm">
+          {config.timeControl === "unlimited"
+            ? "∞"
+            : formatClock(isPlayerWhite ? whiteClockMs : blackClockMs)}
+        </span>
+      </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col w-full lg:h-[calc(100dvh-92px)] lg:max-h-[calc(100dvh-92px)] lg:overflow-hidden -my-2 sm:-my-4">
+    <div className="flex flex-col w-full -my-2 sm:-my-4">
       {/* Header: Ramping & Hemat Ruang Vertikal */}
       <div className="flex items-center justify-between gap-3 pb-2 mb-2 sm:mb-2.5 border-b border-[#353B42] shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -280,7 +326,7 @@ export default function PlayPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start flex-1 min-h-0">
         {/* Chessboard Column (Pusat perhatian catur, diam di tempat, muat 100% bersama kedua jam catur) */}
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col items-center justify-start shrink-0">
-          {/* Interactive Chessboard dengan Pill Bot tipis di bilah atas */}
+          {/* Interactive Chessboard dengan Pill Bot tipis di bilah atas & Bar Jam Pemain di bilah bawah */}
           <InteractiveChessboard
             chess={chess}
             orientation={config.playerColor}
@@ -295,48 +341,8 @@ export default function PlayPage() {
             onCancelPromotion={cancelPromotion}
             highlightedSquare={effectiveHighlightedSquare}
             topRightSlot={botPill}
+            bottomSlot={playerBar}
           />
-
-          {/* Player Info Bar (Ramping & Kompak, lebar persis menyatu dengan papan catur) */}
-          <div className="w-full max-w-[min(100%,calc(100dvh-190px))] lg:max-w-[min(600px,calc(100dvh-175px))] xl:max-w-[min(640px,calc(100dvh-170px))] flex items-center justify-between py-1.5 px-3 mt-1.5 rounded-lg bg-[#1C2024] border border-[#353B42] shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#C7A66A] shrink-0">
-                <User className="w-3.5 h-3.5 text-[#C7A66A]" />
-              </div>
-              <div className="flex items-center gap-1.5 truncate">
-                <span className="text-xs font-semibold text-[#F2F0E8] truncate">
-                  Anda ({isPlayerWhite ? "Bidak Putih" : "Bidak Hitam"})
-                </span>
-                {config.isPracticeMode && (
-                  <Badge variant="muted" size="sm" className="hidden sm:inline-flex">
-                    Latihan
-                  </Badge>
-                )}
-              </div>
-              <span className="text-[11px] text-[#C7A66A] hidden sm:inline ml-1 truncate">
-                {gameStatus !== "ongoing" && gameStatus !== "not_started"
-                  ? "• Permainan Selesai"
-                  : isPlayerTurn
-                  ? "• Giliran Anda"
-                  : "• Menunggu bot..."}
-              </span>
-            </div>
-
-            {config.timeControl !== "unlimited" && (
-              <div
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded border font-mono text-xs tabular-nums shrink-0 ${
-                  isPlayerTurn && gameStatus === "ongoing"
-                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] font-bold shadow-xs"
-                    : "bg-[#141619] border-[#353B42] text-[#8A9299]"
-                }`}
-              >
-                <Clock className="w-3 h-3 text-[#8A9299]" />
-                <span>
-                  {formatClock(isPlayerWhite ? whiteClockMs : blackClockMs)}
-                </span>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Side Panel: Controls & Move History (Independently scrollable, papan catur tetap diam) */}

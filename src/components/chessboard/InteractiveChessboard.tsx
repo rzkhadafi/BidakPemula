@@ -46,6 +46,8 @@ interface InteractiveChessboardProps {
   highlightedSquare?: string | null;
   /** Slot di sisi kanan atas (berseberangan dengan tombol Kacamata Catur, misal pill bot & jam) */
   topRightSlot?: React.ReactNode;
+  /** Slot di bagian bawah papan catur (misal bilah informasi pemain & jam catur) */
+  bottomSlot?: React.ReactNode;
   /** Kelas CSS tambahan untuk kontainer pembungkus papan catur */
   className?: string;
 }
@@ -68,6 +70,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   defaultRadarEnabled = true,
   highlightedSquare = null,
   topRightSlot,
+  bottomSlot,
   className = "",
 }) => {
   // State Kacamata Catur (Vision Glasses) tersinkronisasi aman SSR & multi-komponen
@@ -188,10 +191,12 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-[min(100%,calc(100dvh-190px))] lg:max-w-[min(600px,calc(100dvh-175px))] xl:max-w-[min(640px,calc(100dvh-170px))] mx-auto select-none ${className}`}>
+    <div
+      className={`w-full max-w-[min(100%,calc(100dvh-230px))] lg:max-w-[min(560px,calc(100dvh-215px))] xl:max-w-[min(620px,calc(100dvh-200px))] mx-auto select-none flex flex-col items-center ${className}`}
+    >
       {/* Utility Bar: Kacamata Catur Toggle, Radar Panah & Right Slot (Bot Pill & Jam) */}
       {(showVisionToggle || showRadarToggle || topRightSlot) && (
-        <div className="relative flex items-center justify-between gap-2 mb-1.5 px-0.5 min-h-[32px]">
+        <div className="w-full relative flex items-center justify-between gap-2 mb-1.5 px-0.5 min-h-[32px] shrink-0">
           {/* Left: Button Kacamata Catur & Radar Panah Toggle */}
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
             {showVisionToggle && (
@@ -534,6 +539,13 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
           />
         )}
       </div>
+
+      {/* Bottom Slot (Bilah Informasi & Jam Pemain) */}
+      {bottomSlot && (
+        <div className="w-full mt-1.5 shrink-0">
+          {bottomSlot}
+        </div>
+      )}
 
       {/* Pawn Promotion Modal */}
       <Modal
