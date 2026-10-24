@@ -153,6 +153,43 @@ export default function PlayPage() {
     setTutorModalOpen(true);
   };
 
+  // Pill Bot tipis berseberangan dengan Kacamata Catur di bilah atas papan
+  const botPill = (
+    <div
+      className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium border bg-[#1C2024] border-[#353B42] text-[#F2F0E8] shadow-xs select-none"
+      title={
+        botThinking
+          ? "Bot sedang berpikir..."
+          : !isPlayerTurn && gameStatus === "ongoing"
+          ? "Giliran bot melangkah"
+          : "Menunggu giliran"
+      }
+    >
+      <div className="flex items-center gap-1.5">
+        <Bot className="w-3.5 h-3.5 text-[#73B894]" />
+        <span className="font-semibold text-xs text-[#F2F0E8]">
+          Bot ({currentDiff?.label || "Santai"})
+        </span>
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${
+            engineStatus === "error"
+              ? "bg-[#E17C78]"
+              : botThinking
+              ? "bg-[#E3B66F] animate-pulse"
+              : "bg-[#73B894]"
+          }`}
+        />
+      </div>
+
+      {config.timeControl !== "unlimited" && (
+        <div className="flex items-center gap-1 pl-2 border-l border-[#353B42] font-mono text-[11px] text-[#C7A66A] tabular-nums">
+          <Clock className="w-3 h-3 text-[#8A9299]" />
+          <span>{formatClock(isPlayerWhite ? blackClockMs : whiteClockMs)}</span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -201,54 +238,7 @@ export default function PlayPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Chessboard Column (Tetap terpancang di layar desktop agar selalu terlihat) */}
         <div className="lg:col-span-8 flex flex-col items-center lg:sticky lg:top-4">
-          {/* Opponent Info Bar */}
-          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-2.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#B0B5B9]">
-                <Bot className="w-4 h-4 text-[#73B894]" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-[#F2F0E8]">
-                    Bot ({currentDiff?.label || "Pemula"})
-                  </span>
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      engineStatus === "error"
-                        ? "bg-[#E17C78]"
-                        : botThinking
-                        ? "bg-[#E3B66F] animate-pulse"
-                        : "bg-[#73B894]"
-                    }`}
-                  />
-                </div>
-                <span className="text-[11px] text-[#8A9299]">
-                  {botThinking
-                    ? "Bot sedang berpikir..."
-                    : !isPlayerTurn && gameStatus === "ongoing"
-                    ? "Giliran bot melangkah"
-                    : "Menunggu giliran"}
-                </span>
-              </div>
-            </div>
-
-            {config.timeControl !== "unlimited" && (
-              <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border font-mono text-xs tabular-nums ${
-                  !isPlayerTurn && gameStatus === "ongoing"
-                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8]"
-                    : "bg-[#141619] border-[#353B42] text-[#8A9299]"
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 text-[#8A9299]" />
-                <span>
-                  {formatClock(isPlayerWhite ? blackClockMs : whiteClockMs)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Interactive Chessboard */}
+          {/* Interactive Chessboard dengan Pill Bot tipis di bilah atas */}
           <InteractiveChessboard
             chess={chess}
             orientation={config.playerColor}
@@ -262,44 +252,43 @@ export default function PlayPage() {
             onConfirmPromotion={confirmPromotion}
             onCancelPromotion={cancelPromotion}
             highlightedSquare={effectiveHighlightedSquare}
+            topRightSlot={botPill}
           />
 
-          {/* Player Info Bar */}
-          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-2.5 px-3 mt-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#B0B5B9]">
-                <User className="w-4 h-4 text-[#C7A66A]" />
+          {/* Player Info Bar (Ramping & Kompak) */}
+          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-1.5 px-3 mt-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#24292E] border border-[#353B42] flex items-center justify-center text-[#C7A66A]">
+                <User className="w-3.5 h-3.5 text-[#C7A66A]" />
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-[#F2F0E8]">
-                    Anda ({isPlayerWhite ? "Bidak Putih" : "Bidak Hitam"})
-                  </span>
-                  {config.isPracticeMode && (
-                    <Badge variant="muted" size="sm">
-                      Mode Latihan
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-[11px] text-[#C7A66A]">
-                  {gameStatus !== "ongoing" && gameStatus !== "not_started"
-                    ? "Permainan Selesai"
-                    : isPlayerTurn
-                    ? "Giliran Anda melangkah"
-                    : "Menunggu langkah bot..."}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-[#F2F0E8]">
+                  Anda ({isPlayerWhite ? "Bidak Putih" : "Bidak Hitam"})
                 </span>
+                {config.isPracticeMode && (
+                  <Badge variant="muted" size="sm">
+                    Latihan
+                  </Badge>
+                )}
               </div>
+              <span className="text-[11px] text-[#C7A66A] hidden sm:inline ml-1">
+                {gameStatus !== "ongoing" && gameStatus !== "not_started"
+                  ? "• Permainan Selesai"
+                  : isPlayerTurn
+                  ? "• Giliran Anda"
+                  : "• Menunggu bot..."}
+              </span>
             </div>
 
             {config.timeControl !== "unlimited" && (
               <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded border font-mono text-xs tabular-nums ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded border font-mono text-xs tabular-nums ${
                   isPlayerTurn && gameStatus === "ongoing"
                     ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8]"
                     : "bg-[#141619] border-[#353B42] text-[#8A9299]"
                 }`}
               >
-                <Clock className="w-3.5 h-3.5 text-[#8A9299]" />
+                <Clock className="w-3 h-3 text-[#8A9299]" />
                 <span>
                   {formatClock(isPlayerWhite ? whiteClockMs : blackClockMs)}
                 </span>
@@ -308,8 +297,8 @@ export default function PlayPage() {
           </div>
         </div>
 
-        {/* Side Panel: Controls & Move History */}
-        <div className="lg:col-span-4 space-y-4 w-full">
+        {/* Side Panel: Controls & Move History (Sejajar dengan bagian atas papan catur) */}
+        <div className="lg:col-span-4 space-y-4 w-full pt-0 lg:pt-[42px]">
           {/* Game Over Banner */}
           {gameStatus !== "ongoing" && gameStatus !== "not_started" && (
             <Card

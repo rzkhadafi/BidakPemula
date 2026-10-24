@@ -534,4 +534,35 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Papan catur kini selalu 100% terlihat tanpa terhalang pop-up pada seluruh fitur bimbingan AI).
 
+---
+
+### 2026-10-24 — Penataan Layout Ramping: Kotak Bot Sejajar Kacamata Catur & Panel Kanan Sejajar Papan
+
+- **Tujuan Permintaan Pengguna:**
+  Menghilangkan kotak lawan (*Opponent Info Bar*) yang sebelumnya tebal dan berada di atas papan catur, memindahkannya menjadi pill ramping di bilah atas papan berseberangan dengan tombol "Kacamata Catur", serta meratakan garis atas (*align top*) panel kanan dengan bagian atas papan catur agar pemain tidak perlu melakukan *scrolling* dan dapat fokus bolak-balik antara petunjuk dan papan catur secara nyaman.
+
+- **Perubahan yang Diterapkan:**
+  1. **Slot Kanan Atas Bilah Papan (`topRightSlot` pada `InteractiveChessboard.tsx`):**
+     - Menambahkan prop `topRightSlot?: React.ReactNode` pada `InteractiveChessboardProps`.
+     - Mengubah kontainer bilah atas utilitas papan menjadi satu baris kompak (`min-h-[34px]`) dengan `items-center justify-between`:
+       - Sisi Kiri: Tombol "Kacamata Catur [OFF/ON]" + Tombol "Panduan".
+       - Sisi Kanan: Pill tipis informasi Bot & Jam catur (`topRightSlot`).
+  2. **Pill Bot Tipis Berseberangan dengan Kacamata Catur (`PlayPage.tsx`):**
+     - Menghapus kotak lawan (*Opponent Info Bar*) yang sebelumnya setinggi ~60px di atas papan catur.
+     - Menggantinya dengan pill tipis bergaya identik dengan Kacamata Catur (`px-2.5 py-1 rounded-lg text-xs font-medium border bg-[#1C2024] border-[#353B42]`): menampilkan ikon bot mini, nama level bot ("Bot (Santai)"), titik indikator status (hijau / kuning berkedip saat bot berpikir), dan jam catur lawan (jika bermain dengan jam).
+  3. **Penyelarasan Presisi Garis Atas Panel Kanan (`lg:pt-[42px]`):**
+     - Bilah tipis utilitas papan di kolom kiri memiliki tinggi 34px + 8px margin bawah = 42px sebelum papan catur 8x8 dimulai.
+     - Kolom kanan panel samping diberi padding atas `pt-0 lg:pt-[42px]` sehingga garis batas atas kartu petunjuk di panel kanan berada tepat sejajar horizontal pada piksel yang sama dengan garis batas atas papan catur.
+     - Pemain tidak perlu menggulir (*zero scroll*), mata pemain bergerak secara natural horizontal dari papan ke petunjuk.
+  4. **Penyusutan Bar Pemain Bawah (`Player Info Bar`):**
+     - Memperamping padding dari `py-2.5` ke `py-1.5` dan avatar dari `w-8` ke `w-6` untuk menghemat ruang vertikal tambahan.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (21 test suites, **128 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses, seluruh 42 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Layout arena catur kini ramping, sejajar presisi, dan bebas scroll).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).

@@ -33,6 +33,8 @@ interface InteractiveChessboardProps {
   defaultVisionEnabled?: boolean;
   /** Petak yang disorot oleh petunjuk Sokrates (misal perwira kunci) */
   highlightedSquare?: string | null;
+  /** Slot di sisi kanan atas (berseberangan dengan tombol Kacamata Catur, misal pill bot & jam) */
+  topRightSlot?: React.ReactNode;
 }
 
 export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
@@ -50,6 +52,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   showVisionToggle = true,
   defaultVisionEnabled = false,
   highlightedSquare = null,
+  topRightSlot,
 }) => {
   // State Kacamata Catur (Vision Glasses) tersinkronisasi aman SSR & multi-komponen
   const storedVision = useSyncExternalStore(
@@ -145,50 +148,54 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
-      {/* Utility Bar: Kacamata Catur Toggle & Live Radar Ticker (Zero Page Scroll) */}
-      {showVisionToggle && (
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2 px-0.5 min-h-[34px]">
+      {/* Utility Bar: Kacamata Catur Toggle & Right Slot (Bot Pill & Jam) */}
+      {(showVisionToggle || topRightSlot) && (
+        <div className="relative flex items-center justify-between gap-2 mb-2 px-0.5 min-h-[34px]">
           {/* Left: Button Kacamata Catur & Mobile Guide Toggle */}
-          <div className="flex items-center justify-between sm:justify-start gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={handleToggleVision}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-                visionEnabled
-                  ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
-                  : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
-              }`}
-              title="Nyalakan/matikan Kacamata Catur (melihat bidak terancam & peluang secara visual)"
-              aria-label={`Kacamata Catur ${visionEnabled ? "Aktif" : "Nonaktif"}`}
-              aria-pressed={visionEnabled}
-            >
-              <Glasses className={`w-3.5 h-3.5 ${visionEnabled ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
-              <span className="font-semibold">Kacamata Catur</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                  visionEnabled ? "bg-[#C7A66A] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
-                }`}
-              >
-                {visionEnabled ? "ON" : "OFF"}
-              </span>
-            </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {showVisionToggle && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleToggleVision}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                    visionEnabled
+                      ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
+                      : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
+                  }`}
+                  title="Nyalakan/matikan Kacamata Catur (melihat bidak terancam & peluang secara visual)"
+                  aria-label={`Kacamata Catur ${visionEnabled ? "Aktif" : "Nonaktif"}`}
+                  aria-pressed={visionEnabled}
+                >
+                  <Glasses className={`w-3.5 h-3.5 ${visionEnabled ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
+                  <span className="font-semibold">Kacamata Catur</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                      visionEnabled ? "bg-[#C7A66A] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
+                    }`}
+                  >
+                    {visionEnabled ? "ON" : "OFF"}
+                  </span>
+                </button>
 
-            {visionEnabled && (
-              <button
-                type="button"
-                onClick={() => setShowLegend((prev) => !prev)}
-                className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-md bg-[#1C2024] border border-[#353B42] text-[#8A9299] text-[11px] cursor-pointer"
-                title="Panduan simbol visual"
-              >
-                <HelpCircle className="w-3 h-3" />
-                <span>Panduan</span>
-              </button>
+                {visionEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => setShowLegend((prev) => !prev)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1C2024] border border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] text-[11px] cursor-pointer"
+                    title="Panduan simbol visual"
+                  >
+                    <HelpCircle className="w-3 h-3" />
+                    <span className="hidden sm:inline">Panduan</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
 
-          {/* Right: Live Radar Alert/Summary (Zero Page Scroll, tepat di atas papan) */}
-          {visionEnabled && (
-            <div className="flex items-center gap-1.5 flex-1 sm:justify-end min-w-0">
+          {/* Right: Injected Right Slot (Bot Pill Box) or Live Radar Alert */}
+          <div className="flex items-center gap-2 justify-end shrink-0 min-w-0">
+            {visionEnabled && !topRightSlot && (
               <div
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border truncate max-w-full transition-all ${
                   inspectedReport?.status === "hanging_friendly" || (!inspectedReport && urgentHangingCount > 0)
@@ -221,21 +228,15 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                     : "Posisi aman. Arahkan mouse ke petak mana pun untuk melihat penjaganya."}
                 </span>
               </div>
+            )}
 
-              <button
-                type="button"
-                onClick={() => setShowLegend((prev) => !prev)}
-                className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#1C2024] border border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] text-[11px] shrink-0 cursor-pointer"
-                title="Panduan simbol visual Kacamata Catur"
-              >
-                <span>{showLegend ? "Tutup" : "Panduan"}</span>
-              </button>
-            </div>
-          )}
+            {/* Injected Right Slot (Bot Pill Box) */}
+            {topRightSlot}
+          </div>
 
           {/* Floating Popover Legend (Zero layout shift, absolute overlay di atas papan) */}
           {visionEnabled && showLegend && (
-            <div className="absolute right-0 top-full mt-1.5 w-72 p-3 rounded-xl bg-[#1C2024] border border-[#353B42] shadow-2xl z-40 text-xs space-y-2 animate-in fade-in slide-in-from-top-1">
+            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-72 p-3 rounded-xl bg-[#1C2024] border border-[#353B42] shadow-2xl z-40 text-xs space-y-2 animate-in fade-in slide-in-from-top-1">
               <div className="flex items-center justify-between pb-1.5 border-b border-[#353B42]">
                 <span className="font-semibold text-[#F2F0E8] text-xs">Panduan Simbol Kacamata</span>
                 <button
