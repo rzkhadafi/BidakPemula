@@ -122,6 +122,9 @@ export function useChessGame(
   } | null>(null);
   const [currentHint, setCurrentHint] = useState<SocraticHint | null>(null);
   const [hintLoading, setHintLoading] = useState<boolean>(false);
+  const [isSocraticActive, setIsSocraticActive] = useState<boolean>(false);
+  const isSocraticActiveRef = useRef<boolean>(false);
+  const currentHintRequestIdRef = useRef<number>(0);
   const [undoFeedback, setUndoFeedback] = useState<string | null>(null);
 
   // Real-time delta clocks
@@ -212,6 +215,10 @@ export function useChessGame(
       setGameResult(result);
       setTerminationReason(reason);
       setBotThinking(false);
+      setIsSocraticActive(false);
+      isSocraticActiveRef.current = false;
+      currentHintRequestIdRef.current++;
+      setCurrentHint(null);
 
       if (clockIntervalRef.current) {
         clearInterval(clockIntervalRef.current);
@@ -301,6 +308,64 @@ export function useChessGame(
       }
     };
   }, [config.timeControl, gameStatus, recordGameOver]);
+
+  // Helper to fetch Socratic hint for a specific FEN position
+  const fetchSocraticHintForFen = useCallback(
+    async (targetFen?: string) => {
+      const c = chessRef.current;
+      if (c.isGameOver()) return;
+
+      const requestId = ++currentHintRequestIdRef.current;
+      const fenToAnalyze = targetFen || c.fen();
+      setHintLoading(true);
+      try {
+        let bestMoveUci = "";
+        if (engineRef.current && engineRef.current.getStatus() === "ready") {
+          const searchRes = await engineRef.current.search({
+            fen: fenToAnalyze,
+            depth: 10,
+            moveTimeMs: 400,
+            skillLevel: 10,
+            searchId: `hint-${Date.now()}`,
+          });
+          bestMoveUci = searchRes.bestMoveUci;
+        }
+
+        let socratic = bestMoveUci ? generateSocraticHint(c, bestMoveUci) : null;
+        if (!socratic) {
+          const legal = c.moves({ verbose: true });
+          if (legal.length > 0) {
+            const fallbackUci = `${legal[0].from}${legal[0].to}${legal[0].promotion || ""}`;
+            socratic = generateSocraticHint(c, fallbackUci);
+          }
+        }
+
+        if (socratic && requestId === currentHintRequestIdRef.current) {
+          setCurrentHint(socratic);
+          try {
+            recordActivityEvidence({
+              skillId: "strategy-piece-development",
+              sourceKind: "game",
+              sourceId: `socratic-hint-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              outcome: "assisted",
+              hintsUsed: 1,
+              weight: 0.5,
+            });
+          } catch {
+            // Abaikan
+          }
+        }
+      } catch (err) {
+        console.error("Gagal meminta petunjuk Sokrates:", err);
+      } finally {
+        if (requestId === currentHintRequestIdRef.current) {
+          setHintLoading(false);
+        }
+      }
+    },
+    []
+  );
 
   // Execute bot move with natural thinking delay & clock ticking
   const triggerBotMove = useCallback(
@@ -407,6 +472,8 @@ export function useChessGame(
         const term = evaluateGameTermination();
         if (term) {
           recordGameOver(term.status, term.result, term.reason, updatedHistory);
+        } else if (isSocraticActiveRef.current) {
+          fetchSocraticHintForFen(newFen);
         }
       } catch (err) {
         console.error("Bot search failed, falling back to safe legal move:", err);
@@ -458,13 +525,15 @@ export function useChessGame(
             const term = evaluateGameTermination();
             if (term) {
               recordGameOver(term.status, term.result, term.reason, updatedHistory);
+            } else if (isSocraticActiveRef.current) {
+              fetchSocraticHintForFen(newFen);
             }
           }
         }
         setBotThinking(false);
       }
     },
-    [config.botDifficulty, customEngine, evaluateGameTermination, recordGameOver]
+    [config.botDifficulty, customEngine, evaluateGameTermination, fetchSocraticHintForFen, recordGameOver]
   );
 
   // Apply player move
@@ -513,6 +582,12 @@ export function useChessGame(
       setLastMove({ from: moveRes.from, to: moveRes.to });
       setSelectedSquare(null);
       setLegalDestinations([]);
+
+      // Invalidate in-flight hint and reset active hint to null while bot responds
+      currentHintRequestIdRef.current++;
+      if (isSocraticActiveRef.current) {
+        setCurrentHint(null);
+      }
 
       // Sound effect
       if (checkState) {
@@ -718,53 +793,17 @@ export function useChessGame(
     const c = chessRef.current;
     if (c.isGameOver() || botThinking) return;
 
-    setHintLoading(true);
-    try {
-      let bestMoveUci = "";
-      if (engineRef.current && engineRef.current.getStatus() === "ready") {
-        const searchRes = await engineRef.current.search({
-          fen: c.fen(),
-          depth: 10,
-          moveTimeMs: 400,
-          skillLevel: 10,
-          searchId: `hint-${Date.now()}`,
-        });
-        bestMoveUci = searchRes.bestMoveUci;
-      }
-
-      if (!bestMoveUci) {
-        const legal = c.moves({ verbose: true });
-        if (legal.length > 0) {
-          bestMoveUci = `${legal[0].from}${legal[0].to}${legal[0].promotion || ""}`;
-        }
-      }
-
-      if (bestMoveUci) {
-        const socratic = generateSocraticHint(c, bestMoveUci);
-        setCurrentHint(socratic);
-        try {
-          recordActivityEvidence({
-            skillId: "strategy-piece-development",
-            sourceKind: "game",
-            sourceId: `socratic-hint-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            outcome: "assisted",
-            hintsUsed: 1,
-            weight: 0.5,
-          });
-        } catch {
-          // Abaikan
-        }
-      }
-    } catch (err) {
-      console.error("Gagal meminta petunjuk Sokrates:", err);
-    } finally {
-      setHintLoading(false);
-    }
-  }, [botThinking]);
+    setIsSocraticActive(true);
+    isSocraticActiveRef.current = true;
+    await fetchSocraticHintForFen(c.fen());
+  }, [botThinking, fetchSocraticHintForFen]);
 
   const clearHint = useCallback(() => {
+    setIsSocraticActive(false);
+    isSocraticActiveRef.current = false;
+    currentHintRequestIdRef.current++;
     setCurrentHint(null);
+    setHintLoading(false);
   }, []);
 
   const cancelPromotion = useCallback(() => {
@@ -820,10 +859,19 @@ export function useChessGame(
       setGameStatus("not_started");
     }
 
+    // Refresh socratic hint if active on restored board position
+    if (isSocraticActiveRef.current && !c.isGameOver()) {
+      currentHintRequestIdRef.current++;
+      setCurrentHint(null);
+      fetchSocraticHintForFen(c.fen());
+    } else {
+      setCurrentHint(null);
+    }
+
     setUndoFeedback(
       "Langkah ditarik kembali. Amati petak aman atau pengawalan perwira sebelum melangkah lagi."
     );
-  }, [botThinking, config.isPracticeMode]);
+  }, [botThinking, config.isPracticeMode, fetchSocraticHintForFen]);
 
   // Start new game
   const startNewGame = useCallback(
@@ -862,7 +910,11 @@ export function useChessGame(
       setLegalDestinations([]);
       setPendingPromotion(null);
       setPendingBlunder(null);
+      setIsSocraticActive(false);
+      isSocraticActiveRef.current = false;
+      currentHintRequestIdRef.current++;
       setCurrentHint(null);
+      setHintLoading(false);
       setUndoFeedback(null);
       setBotThinking(false);
 
@@ -903,6 +955,7 @@ export function useChessGame(
     config,
     // Co-Pilot Pendampingan Aktif
     coPilotPreferences,
+    isSocraticActive,
     pendingBlunder,
     cancelBlunderMove,
     proceedBlunderMove,

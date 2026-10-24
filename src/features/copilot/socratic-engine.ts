@@ -95,10 +95,10 @@ export function generateSocraticHint(
   let tier2Spoken = "";
 
   if (isCastling) {
-    tier2Clue = `Fokuskan pada **${pieceName}** di petak **${from.toUpperCase()}**. Perhatikan hak rokade yang masih kamu miliki.`;
+    tier2Clue = `Fokuskan pada ${pieceName} di petak ${from.toUpperCase()}. Perhatikan hak rokade yang masih kamu miliki.`;
     tier2Spoken = `Fokuskan pada ${pieceName} di petak ${from.toUpperCase()}. Kamu bisa melakukan rokade sekarang.`;
   } else {
-    tier2Clue = `Bidak kunci yang perlu kamu perhatikan adalah **${pieceName}** di petak **${from.toUpperCase()}**. Pikirkan ke mana perwira ini paling bermanfaat untuk melangkah.`;
+    tier2Clue = `Bidak kunci yang perlu kamu perhatikan adalah ${pieceName} di petak ${from.toUpperCase()}. Pikirkan ke mana perwira ini paling bermanfaat untuk melangkah.`;
     tier2Spoken = `Perhatikan perwiramu yaitu ${pieceName} di petak ${from.toUpperCase()}. Pikirkan petak terbaik yang bisa dijangkau oleh ${pieceName} ini.`;
   }
 
@@ -116,7 +116,7 @@ export function generateSocraticHint(
     rationale = `Langkah ini meningkatkan mobilitas ${pieceName} ke petak aktif ${to.toUpperCase()} dan memperkuat struktur posisi.`;
   }
 
-  const tier3Clue = `Langkahkan **${pieceName}** dari **${from.toUpperCase()}** ke **${to.toUpperCase()}** (\`${san}\`). ${rationale}`;
+  const tier3Clue = `Langkahkan ${pieceName} dari ${from.toUpperCase()} ke ${to.toUpperCase()} (${san}). ${rationale}`;
   const tier3Spoken = `Langkah yang direkomendasikan adalah melangkahkan ${pieceName} ke ${to.toUpperCase()}, atau notasi ${san}. ${rationale}`;
 
   return {

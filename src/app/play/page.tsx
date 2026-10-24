@@ -82,6 +82,7 @@ export default function PlayPage() {
     engineStatus,
     config,
     coPilotPreferences,
+    isSocraticActive,
     pendingBlunder,
     cancelBlunderMove,
     proceedBlunderMove,
@@ -374,10 +375,12 @@ export default function PlayPage() {
             }}
           />
 
-          {/* 2. Petunjuk Sokrates Bertingkat (Non-Modal di Panel Samping) */}
+          {/* 2. Petunjuk Sokrates Bertingkat (Real-Time Companion di Panel Samping) */}
           <SocraticHintModal
-            isOpen={Boolean(currentHint)}
+            isOpen={isSocraticActive || Boolean(currentHint)}
             hint={currentHint}
+            isBotThinking={botThinking}
+            isLoadingNewHint={hintLoading}
             onClose={() => {
               clearHint();
               setHighlightedSquare(null);
@@ -400,7 +403,7 @@ export default function PlayPage() {
           />
 
           {/* 4. AI Co-Pilot Companion Card (Ditampilkan saat tidak ada sesi bimbingan khusus di atas) */}
-          {!pendingBlunder && !currentHint && !tutorModalOpen && (
+          {!pendingBlunder && !isSocraticActive && !currentHint && !tutorModalOpen && (
             <Card variant="surface" className="p-3.5 sm:p-4 space-y-3 border-[#C7A66A]/40 bg-gradient-to-b from-[#1C2024] to-[#141619] shadow-lg">
               {/* Header with Co-Pilot Persona */}
               <div className="flex items-center justify-between pb-2.5 border-b border-[#353B42]">

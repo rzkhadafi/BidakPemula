@@ -112,6 +112,27 @@ describe("In-Game AI Co-Pilot: Blunder Detector & Socratic Hints", () => {
       expect(hint.tier2Piece.clue).toContain("rokade");
       expect(hint.tier3Concrete.rationale).toContain("Rokade");
     });
+
+    it("ensures clean typography without raw markdown asterisks or backticks", () => {
+      const chess = new Chess();
+      const hint = generateSocraticHint(chess, "b1c3");
+      expect(hint).not.toBeNull();
+      if (!hint) return;
+
+      expect(hint.tier1Observation.clue).not.toContain("**");
+      expect(hint.tier1Observation.clue).not.toContain("`");
+      expect(hint.tier2Piece.clue).not.toContain("**");
+      expect(hint.tier2Piece.clue).not.toContain("`");
+      expect(hint.tier3Concrete.clue).not.toContain("**");
+      expect(hint.tier3Concrete.clue).not.toContain("`");
+      expect(hint.tier3Concrete.rationale).not.toContain("**");
+      expect(hint.tier3Concrete.rationale).not.toContain("`");
+
+      // Check specific natural Bahasa Indonesia text formatting without asterisks
+      expect(hint.tier2Piece.clue).toContain("Kuda");
+      expect(hint.tier2Piece.clue).toContain("B1");
+      expect(hint.tier3Concrete.clue).toContain("Langkahkan Kuda dari B1 ke C3 (Nc3)");
+    });
   });
 
   describe("Co-Pilot Storage Preferences", () => {

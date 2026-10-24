@@ -565,4 +565,45 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Layout arena catur kini ramping, sejajar presisi, dan bebas scroll).
 
+---
+
+### 2026-10-24 — Petunjuk Sokrates Real-Time & Tipografi Bersih Bebas Tanda Bintang
+
+- **Tujuan Permintaan Pengguna:**
+  1. **Petunjuk Sokrates Bertingkat Real-Time:** Menjadikan petunjuk bertingkat sebagai pendamping langsung (*real-time companion*). Begitu pemain menjalankan langkah yang diinstruksikan dan bot membalas langkah tersebut, petunjuk otomatis menyesuaikan ke langkah selanjutnya secara real-time tanpa mengharuskan pemain menutup lalu membuka panel kembali.
+  2. **Tipografi Bersih Tanpa Bintang Markdown:** Menghilangkan tanda bintang ganda (`**`) atau backtick (`` ` ``) pada teks petunjuk seperti `**Kuda** dari **B1** ke **C3**` agar format teks rapi, bersih, dan ramah pemula.
+
+- **Perubahan yang Diterapkan:**
+  1. **Pembersihan Teks Generator (`src/features/copilot/socratic-engine.ts`):**
+     - Menghilangkan semua format raw markdown asterisks (`**`) dan backticks (`` ` ``) pada pembuatan string `tier2Clue` dan `tier3Clue`.
+     - Teks kini dihasilkan dalam Bahasa Indonesia alami: misal `Langkahkan Kuda dari B1 ke C3 (Nc3)`.
+  2. **Sanitasi Tipografi & Status Transisi Real-Time (`src/features/copilot/components/SocraticHintModal.tsx`):**
+     - Menyediakan fungsi sanitasi `cleanClue(text)` yang secara otomatis membuang sisa tanda `**` atau backtick.
+     - Menerima prop `isBotThinking?: boolean` dan `isLoadingNewHint?: boolean`.
+     - Saat bot sedang merespons langkah pemain, kartu di panel samping menampilkan status transisi yang elegan dan menenangkan: *"Bot sedang merespons langkahmu... Papan catur diperbarui. Petunjuk langkah berikutnya akan otomatis muncul begitu giliranmu tiba."*
+     - Begitu petunjuk posisi baru tiba (`hint.fen !== prevHintFen`), kartu otomatis mereset tingkat ke Tingkat 1 (Observasi) untuk langkah selanjutnya.
+  3. **Manajemen Siklus Hidup Pendamping di Game Hook (`src/features/game/use-chess-game.ts`):**
+     - Menambahkan state `isSocraticActive`, ref `isSocraticActiveRef`, dan `currentHintRequestIdRef`.
+     - Mengimplementasikan `fetchSocraticHintForFen(targetFen)` yang asinkron dan tahan uji: jika mesin mengembalikan langkah di luar giliran atau tidak legal, sistem secara defensif memilih langkah legal pertama pemain.
+     - Pada `triggerBotMove`: saat bot selesai melangkah, jika `isSocraticActiveRef.current && !c.isGameOver()`, sistem secara otomatis memanggil `fetchSocraticHintForFen(newFen)` untuk giliran berikutnya.
+     - Pada `applyPlayerMove`: saat pemain melangkah, in-flight hint di-cancel dan `currentHint` disetel `null` sementara bot merespons.
+     - Pada `undoMove`: petunjuk otomatis disegarkan kembali ke posisi yang dipulihkan.
+     - Pada `clearHint` (saat pemain menekan tombol Tutup `✕`): `isSocraticActive` disetel `false`, bimbingan berhenti dengan rapi.
+     - Mengekspor `isSocraticActive` dalam return hook.
+  4. **Penyambungan Layar Bermain (`src/app/play/page.tsx`):**
+     - Menghubungkan `isSocraticActive` dari `useChessGame` ke `SocraticHintModal`.
+     - Panel Sokrates tetap aktif di panel samping selama mode bimbingan diaktifkan (`isOpen={isSocraticActive || Boolean(currentHint)}`).
+     - Kartu Co-Pilot standar otomatis disembunyikan saat pendamping Sokrates sedang aktif, dan kembali secara mulus saat pendamping ditutup.
+  5. **Pengujian Unit & Pencegahan Regresi:**
+     - `tests/unit/copilot.test.ts`: Pengujian baru memastikan seluruh tingkat petunjuk Sokrates bebas dari tanda `**` dan backticks.
+     - `tests/unit/interactive-game.test.tsx`: Pengujian siklus hidup real-time memastikan petunjuk otomatis terbarui saat pemain melangkah dan bot membalas.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (21 test suites, **130 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses, seluruh 42 rute statis & dynamic berhasil dibuat).
+
+- **Gate:** **PASS** (Petunjuk Sokrates kini aktif real-time tanpa perlu buka-tutup, dan teks bersih rapi tanpa bintang).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lightbulb, ArrowRight, Eye, Crosshair, CheckCircle2, X } from "lucide-react";
+import { Lightbulb, ArrowRight, Eye, Crosshair, CheckCircle2, X, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -16,12 +16,23 @@ interface SocraticHintModalProps {
   onApplyHintMove?: (from: string, to: string) => void;
   onHighlightSquare?: (square: string | null) => void;
   className?: string;
+  isBotThinking?: boolean;
+  isLoadingNewHint?: boolean;
 }
 
 /**
- * Panel Petunjuk Sokrates Bertingkat (Non-Modal / Docked Side Panel)
- * Ditampilkan langsung di panel samping agar papan catur selalu terlihat jelas
- * saat pemain memperhatikan perwira dan petak yang disorot oleh petunjuk AI.
+ * Membersihkan tanda markdown seperti bintang ganda (**) atau backtick (`)
+ * agar teks petunjuk terbaca rapi, bersih, dan ramah pemula.
+ */
+function cleanClue(text: string): string {
+  if (!text) return "";
+  return text.replace(/\*\*/g, "").replace(/`/g, "");
+}
+
+/**
+ * Panel Petunjuk Sokrates Bertingkat (Real-Time Interactive Companion)
+ * Berjalan secara real-time di panel samping: otomatis menyesuaikan ke langkah selanjutnya
+ * saat pemain dan bot sudah melangkah, tanpa perlu buka-tutup panel secara manual.
  */
 export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
   hint,
@@ -29,17 +40,19 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
   onClose,
   onHighlightSquare,
   className = "",
+  isBotThinking = false,
+  isLoadingNewHint = false,
 }) => {
   const [currentTier, setCurrentTier] = useState<SocraticHintTier>(1);
   const [prevHintFen, setPrevHintFen] = useState<string | null>(null);
 
-  // Sync tier to 1 during render when a new hint arrives (official React pattern)
+  // Otomatis reset ke Tingkat 1 (Observasi) saat petunjuk untuk posisi baru tiba
   if (hint && hint.fen !== prevHintFen) {
     setPrevHintFen(hint.fen);
     setCurrentTier(1);
   }
 
-  // Stop active speech playback and clear board highlight when modal closes
+  // Hentikan suara dan bersihkan sorot petak saat panel ditutup
   useEffect(() => {
     if (!isOpen) {
       tutorSpeech.stop();
@@ -47,9 +60,9 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
     }
   }, [isOpen, onHighlightSquare]);
 
-  // Update board highlight based on current tier
+  // Perbarui sorotan petak di papan catur berdasarkan tingkat aktif
   useEffect(() => {
-    if (!isOpen || !hint || !onHighlightSquare) return;
+    if (!isOpen || !hint || isBotThinking || !onHighlightSquare) return;
     if (currentTier === 2) {
       onHighlightSquare(hint.tier2Piece.pieceSquare);
     } else if (currentTier === 3) {
@@ -57,9 +70,62 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
     } else {
       onHighlightSquare(null);
     }
-  }, [currentTier, hint, isOpen, onHighlightSquare]);
+  }, [currentTier, hint, isBotThinking, isOpen, onHighlightSquare]);
 
-  if (!isOpen || !hint) return null;
+  if (!isOpen) return null;
+
+  // Tampilan transisi saat bot sedang berpikir atau sedang menganalisis langkah berikutnya
+  const isPendingNextTurn = isBotThinking || (isLoadingNewHint && !hint);
+
+  if (isPendingNextTurn || !hint) {
+    return (
+      <Card
+        variant="surface"
+        className={`p-4 space-y-3.5 border border-[#C7A66A]/60 bg-gradient-to-b from-[#1C2024] to-[#141619] shadow-xl rounded-2xl animate-in fade-in ${className}`}
+        role="region"
+        aria-label="Panel Petunjuk Sokrates Bertingkat"
+      >
+        <div className="flex items-start justify-between pb-2.5 border-b border-[#353B42]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#C7A66A]/20 border border-[#C7A66A]/60 flex items-center justify-center text-[#C7A66A] shrink-0">
+              <Lightbulb className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[#F2F0E8] flex items-center gap-1.5">
+                <span>Petunjuk Sokrates Real-Time</span>
+                <span className="w-2 h-2 rounded-full bg-[#E3B66F] animate-pulse" />
+              </h2>
+              <p className="text-[11px] text-[#C7A66A]">
+                Menyesuaikan bimbingan secara otomatis ke langkah selanjutnya.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup Petunjuk"
+            className="text-[#8A9299] hover:text-[#F2F0E8] hover:bg-[#24292E] p-1.5 rounded-lg transition-colors cursor-pointer"
+            title="Tutup pendamping Sokrates"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-8 rounded-xl bg-[#1C2024] border border-[#353B42] flex flex-col items-center justify-center text-center space-y-2.5">
+          <Loader2 className="w-6 h-6 animate-spin text-[#C7A66A]" />
+          <span className="text-xs font-semibold text-[#F2F0E8]">
+            {isBotThinking
+              ? "Bot sedang merespons langkahmu..."
+              : "Menyiapkan petunjuk langkah selanjutnya..."}
+          </span>
+          <p className="text-[11px] text-[#8A9299] max-w-xs leading-relaxed">
+            Papan catur diperbarui. Petunjuk langkah berikutnya akan otomatis muncul begitu giliranmu tiba.
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   const currentSpokenText =
     currentTier === 1
@@ -154,7 +220,7 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
         {currentTier === 1 && (
           <div className="space-y-2">
             <p className="text-xs sm:text-sm text-[#F2F0E8] leading-relaxed">
-              {hint.tier1Observation.clue}
+              {cleanClue(hint.tier1Observation.clue)}
             </p>
             <p className="text-[11px] text-[#8A9299] italic">
               Tips Mentor: Amati papan catur di sebelah kiri. Coba temukan sendiri perwira yang paling cocok digerakkan sebelum meminta petunjuk berikutnya.
@@ -166,7 +232,7 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
         {currentTier === 2 && (
           <div className="space-y-2">
             <p className="text-xs sm:text-sm text-[#F2F0E8] leading-relaxed">
-              {hint.tier2Piece.clue}
+              {cleanClue(hint.tier2Piece.clue)}
             </p>
             <p className="text-[11px] text-[#8A9299] italic">
               Tips Mentor: Petak perwira kunci ({hint.tier2Piece.pieceSquare.toUpperCase()}) telah ditandai bercahaya di papan. Ke petak mana ia harus melangkah?
@@ -178,11 +244,11 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
         {currentTier === 3 && (
           <div className="space-y-2">
             <p className="text-xs sm:text-sm text-[#F2F0E8] leading-relaxed">
-              {hint.tier3Concrete.clue}
+              {cleanClue(hint.tier3Concrete.clue)}
             </p>
             <div className="p-2.5 rounded-lg bg-[#24292E] border border-[#353B42] text-xs text-[#B0B5B9]">
               <strong className="text-[#C7A66A]">Alasan Strategis: </strong>
-              {hint.tier3Concrete.rationale}
+              {cleanClue(hint.tier3Concrete.rationale)}
             </div>
           </div>
         )}

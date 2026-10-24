@@ -217,4 +217,72 @@ describe("Chess Game Hook & Interactive Board (useChessGame)", () => {
     fireEvent.click(screen.getByText("Menteri"));
     expect(handleConfirmPromotion).toHaveBeenCalledWith("q");
   });
+
+  it("auto-updates socratic hints in real-time when player moves and bot responds", async () => {
+    mockEngine.setMockMove("e2e4");
+    const { result } = renderHook(() =>
+      useChessGame(
+        {
+          playerColor: "white",
+          botDifficulty: "master",
+          timeControl: "5m",
+          isPracticeMode: true,
+        },
+        mockEngine
+      )
+    );
+
+    // Initial state: socratic not active
+    expect(result.current.isSocraticActive).toBe(false);
+    expect(result.current.currentHint).toBeNull();
+
+    // 1. User requests Socratic hint for starting move
+    await act(async () => {
+      await result.current.requestSocraticHint();
+    });
+
+    expect(result.current.isSocraticActive).toBe(true);
+    expect(result.current.currentHint).not.toBeNull();
+    const firstHintFen = result.current.currentHint?.fen;
+
+    // Set engine reply for bot move (e7e5) and then subsequent White hint (g1f3)
+    mockEngine.setMockMove("e7e5");
+
+    // 2. Player executes move e2e4
+    act(() => {
+      result.current.handleSquareClick("e2");
+    });
+    await act(async () => {
+      result.current.handleSquareClick("e4");
+    });
+
+    // While bot responds, companion remains active
+    expect(result.current.isSocraticActive).toBe(true);
+
+    // 3. Wait for bot reply (e7e5)
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 80));
+    });
+
+    expect(result.current.history.length).toBe(2);
+    expect(result.current.history[1].san).toBe("e5");
+
+    // 4. Wait for real-time automatic Socratic hint fetch on White's new turn
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 80));
+    });
+
+    // Companion automatically updated hint for White's new turn in real time!
+    expect(result.current.isSocraticActive).toBe(true);
+    expect(result.current.currentHint).not.toBeNull();
+    expect(result.current.currentHint?.fen).not.toBe(firstHintFen);
+    expect(result.current.turn).toBe("w");
+
+    // 5. User closes hint
+    act(() => {
+      result.current.clearHint();
+    });
+    expect(result.current.isSocraticActive).toBe(false);
+    expect(result.current.currentHint).toBeNull();
+  });
 });
