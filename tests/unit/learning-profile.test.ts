@@ -7,6 +7,7 @@ import {
   generateNextRecommendation,
   recordActivityEvidence,
   getLearningProfile,
+  getLearningProfileServerSnapshot,
   clearLearningProfile,
   ALL_SKILL_IDS,
 } from "@/features/learning";
@@ -31,6 +32,12 @@ describe("Adaptive Learning System — Mastery Evaluator & Skills", () => {
       expect(s.successCount).toBe(0);
       expect(s.mistakesCount).toBe(0);
     }
+  });
+
+  it("returns a stable cached reference from getLearningProfileServerSnapshot to avoid infinite loops in React", () => {
+    const snap1 = getLearningProfileServerSnapshot();
+    const snap2 = getLearningProfileServerSnapshot();
+    expect(snap1).toBe(snap2); // Strict identity equality
   });
 
   it("differentiates independent success from assisted solve (viewing solution)", () => {

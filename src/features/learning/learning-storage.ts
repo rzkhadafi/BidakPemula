@@ -35,8 +35,20 @@ function notifyListeners(): void {
 
 export function subscribeToLearningProfile(callback: () => void): () => void {
   listeners.add(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY) {
+      memoryCache = null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
   return () => {
     listeners.delete(callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
   };
 }
 
@@ -54,8 +66,11 @@ export function createDefaultProfile(): LearningProfile {
   return profile;
 }
 
+// Cached immutable server snapshot to satisfy React's useSyncExternalStore rule
+const SERVER_DEFAULT_PROFILE: LearningProfile = createDefaultProfile();
+
 export function getLearningProfileServerSnapshot(): LearningProfile {
-  return createDefaultProfile();
+  return SERVER_DEFAULT_PROFILE;
 }
 
 export function getLearningProfileSnapshot(): LearningProfile {
@@ -68,7 +83,7 @@ export function getLearningProfileSnapshot(): LearningProfile {
  */
 export function getLearningProfile(): LearningProfile {
   if (typeof window === "undefined") {
-    return createDefaultProfile();
+    return SERVER_DEFAULT_PROFILE;
   }
 
   if (memoryCache !== null) {
