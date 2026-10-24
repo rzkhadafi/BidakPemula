@@ -8,146 +8,336 @@ interface ChessPieceProps {
 }
 
 /**
- * Standard crisp vector SVG chess pieces with high contrast on dark & light squares.
- * Designed to occupy ~80-85% of each square with strong outlines.
+ * Neo-Wood 3D Chess Pieces.
+ * Faithfully recreates the warm, tactile Staunton Wood set from the reference image.
+ * Uses high-precision vector SVG with linear & radial gradients, specular highlights,
+ * and ambient drop shadows.
  */
 export const ChessPiece: React.FC<ChessPieceProps> = ({
   type,
   color,
-  className = "w-full h-full p-1",
+  className = "w-full h-full p-0.5",
 }) => {
   const isWhite = color === "w";
-  const fill = isWhite ? "#F7F5F0" : "#181B1F";
-  const stroke = isWhite ? "#24292E" : "#E2DFD2";
-  const accent = isWhite ? "#24292E" : "#E2DFD2";
+  const idPrefix = isWhite ? "w" : "b";
+
+  // Gradient & color definitions
+  const bodyGradId = `${idPrefix}-wood-body`;
+  const headGradId = `${idPrefix}-wood-head`;
+  const highlightGradId = `${idPrefix}-wood-highlight`;
+  const baseGradId = `${idPrefix}-wood-base`;
+  const shadowFilterId = `${idPrefix}-piece-shadow`;
+
+  const strokeColor = isWhite ? "#261E16" : "#0D0B0A";
+  const innerLineColor = isWhite ? "rgba(90, 65, 35, 0.45)" : "rgba(255, 255, 255, 0.18)";
+  const specularDotColor = isWhite ? "#FFFFFF" : "rgba(255, 255, 255, 0.75)";
+
+  const renderDefs = () => (
+    <defs>
+      {/* Ambient shadow filter */}
+      <filter id={shadowFilterId} x="-20%" y="-20%" width="140%" height="145%">
+        <feDropShadow dx="0" dy="1.8" stdDeviation="1.2" floodColor="#000000" floodOpacity={isWhite ? "0.45" : "0.6"} />
+      </filter>
+
+      {/* Body Gradient: Light from top-left to bottom-right */}
+      {isWhite ? (
+        <>
+          <linearGradient id={bodyGradId} x1="20%" y1="10%" x2="85%" y2="95%">
+            <stop offset="0%" stopColor="#FFFDF7" />
+            <stop offset="25%" stopColor="#F7EEDD" />
+            <stop offset="65%" stopColor="#E5D2B4" />
+            <stop offset="100%" stopColor="#CDB48E" />
+          </linearGradient>
+
+          <radialGradient id={headGradId} cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="35%" stopColor="#F9F2E4" />
+            <stop offset="75%" stopColor="#E6D3B6" />
+            <stop offset="100%" stopColor="#C9AF87" />
+          </radialGradient>
+
+          <linearGradient id={baseGradId} x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stopColor="#FAF2E3" />
+            <stop offset="50%" stopColor="#E2CFAe" />
+            <stop offset="100%" stopColor="#BD9F74" />
+          </linearGradient>
+
+          <linearGradient id={highlightGradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+        </>
+      ) : (
+        <>
+          <linearGradient id={bodyGradId} x1="20%" y1="10%" x2="85%" y2="95%">
+            <stop offset="0%" stopColor="#554F49" />
+            <stop offset="30%" stopColor="#3A3530" />
+            <stop offset="70%" stopColor="#24201D" />
+            <stop offset="100%" stopColor="#141110" />
+          </linearGradient>
+
+          <radialGradient id={headGradId} cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stopColor="#6C655F" />
+            <stop offset="35%" stopColor="#453F3A" />
+            <stop offset="75%" stopColor="#282320" />
+            <stop offset="100%" stopColor="#131110" />
+          </radialGradient>
+
+          <linearGradient id={baseGradId} x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stopColor="#46403A" />
+            <stop offset="50%" stopColor="#2A2522" />
+            <stop offset="100%" stopColor="#110F0E" />
+          </linearGradient>
+
+          <linearGradient id={highlightGradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+        </>
+      )}
+    </defs>
+  );
 
   switch (type) {
-    case "p": // Pawn
+    // ==========================================
+    // PAWN (Pion)
+    // ==========================================
+    case "p":
       return (
         <svg viewBox="0 0 45 45" className={className} aria-label={isWhite ? "Pion Putih" : "Pion Hitam"}>
-          <path
-            d="m 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 l 23,0 c 0,-7.92 -4.41,-12.41 -7.41,-13.47 C 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z"
-            style={{
-              fill,
-              stroke,
-              strokeWidth: 1.5,
-              strokeLinecap: "round",
-            }}
-          />
+          {renderDefs()}
+          <g filter={`url(#${shadowFilterId})`}>
+            {/* Base */}
+            <path
+              d="M 11 39.5 L 34 39.5 C 34 38 33 36.5 31.5 35.5 C 29 34 27.5 32 26.5 29 C 25.5 26 25 24 25.5 22.5 L 19.5 22.5 C 20 24 19.5 26 18.5 29 C 17.5 32 16 34 13.5 35.5 C 12 36.5 11 38 11 39.5 Z"
+              fill={`url(#${bodyGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Stepped Base Lip */}
+            <path
+              d="M 9.5 39.5 C 9.5 37.5 13 36.5 22.5 36.5 C 32 36.5 35.5 37.5 35.5 39.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.4"
+            />
+            {/* Waist Ring */}
+            <ellipse cx="22.5" cy="22.5" rx="5" ry="1.6" fill={`url(#${baseGradId})`} stroke={strokeColor} strokeWidth="1.3" />
+            {/* Spherical Head */}
+            <circle cx="22.5" cy="14" r="6.8" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.5" />
+            {/* Specular Highlight on Head */}
+            <ellipse cx="20.5" cy="11.5" rx="2.5" ry="1.8" fill={specularDotColor} opacity={isWhite ? "0.8" : "0.35"} />
+          </g>
         </svg>
       );
 
-    case "r": // Rook
+    // ==========================================
+    // ROOK (Benteng)
+    // ==========================================
+    case "r":
       return (
         <svg viewBox="0 0 45 45" className={className} aria-label={isWhite ? "Benteng Putih" : "Benteng Hitam"}>
-          <g
-            style={{
-              fill,
-              stroke,
-              strokeWidth: 1.5,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-            }}
-          >
-            <path d="M 9,39 L 36,39 L 36,36 L 9,36 L 9,39 z" />
-            <path d="M 12,36 L 12,32 L 33,32 L 33,36 L 12,36 z" />
-            <path d="M 11,14 L 11,9 L 15,9 L 15,11 L 20,11 L 20,9 L 25,9 L 25,11 L 30,11 L 30,9 L 34,9 L 34,14" />
-            <path d="M 34,14 L 31,17 L 14,17 L 11,14" />
-            <path d="M 31,17 L 31,29.5 L 14,29.5 L 14,17" />
-            <path d="M 31,29.5 L 32.5,32 L 12.5,32 L 14,29.5" />
-            <path d="M 11,14 L 34,14" stroke={accent} strokeWidth={1} />
+          {renderDefs()}
+          <g filter={`url(#${shadowFilterId})`}>
+            {/* Main Castle Body & Parapets */}
+            <path
+              d="M 10 39.5 L 35 39.5 C 35 37.5 33.5 35.5 32 34 L 30 18 L 34 14.5 L 34 8.5 L 30 8.5 L 30 11.5 L 25 11.5 L 25 8.5 L 20 8.5 L 20 11.5 L 15 11.5 L 15 8.5 L 11 8.5 L 11 14.5 L 15 18 L 13 34 C 11.5 35.5 10 37.5 10 39.5 Z"
+              fill={`url(#${bodyGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Cornice Line below parapet */}
+            <path d="M 11 14.5 L 34 14.5" stroke={strokeColor} strokeWidth="1.4" />
+            <path d="M 13 18 L 32 18" stroke={strokeColor} strokeWidth="1.4" />
+            {/* Middle Shading Bands */}
+            <path d="M 14.5 33 L 30.5 33" stroke={innerLineColor} strokeWidth="1.2" />
+            {/* Base Platform */}
+            <path
+              d="M 9 39.5 C 9 37.5 13 36 22.5 36 C 32 36 36 37.5 36 39.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.4"
+            />
+            {/* Top Lip Highlight */}
+            <path d="M 12 10 L 14 10" stroke={specularDotColor} strokeWidth="1" strokeLinecap="round" />
+            <path d="M 21 10 L 24 10" stroke={specularDotColor} strokeWidth="1" strokeLinecap="round" />
+            <path d="M 31 10 L 33 10" stroke={specularDotColor} strokeWidth="1" strokeLinecap="round" />
           </g>
         </svg>
       );
 
-    case "n": // Knight
+    // ==========================================
+    // KNIGHT (Kuda)
+    // ==========================================
+    case "n":
       return (
         <svg viewBox="0 0 45 45" className={className} aria-label={isWhite ? "Kuda Putih" : "Kuda Hitam"}>
-          <path
-            d="m 22,10 c 10.5,1 16.5,8 16,29 L 15,39 C 15,30 9.65,24.58 6,19 c 4,-1 8.5,1 12,1 0,-3.5 -4.5,-8 -4.5,-8 0,0 7,-4.5 8.5,-2 z"
-            style={{
-              fill,
-              stroke,
-              strokeWidth: 1.5,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-            }}
-          />
-          <path
-            d="m 24,18 c 0.38,2.91 -5.55,7.37 -8,9 -3,2 -2.82,4.34 -5,4 -1.04,-0.94 -1.48,-1.74 -1,-3 1.5,-4 3,-4 3,-6 0,-2 2.5,-4.5 4,-6 1.5,-1.5 2,-2.5 3.5,-3 1.5,-0.5 3,0.5 3.5,5 z"
-            style={{
-              fill: isWhite ? "#ECE8DF" : "#2C3138",
-              stroke,
-              strokeWidth: 1.2,
-            }}
-          />
-          {/* Eye */}
-          <circle cx="9.5" cy="18" r="1.2" fill={accent} />
+          {renderDefs()}
+          <g filter={`url(#${shadowFilterId})`}>
+            {/* Sculpted Horse Head with Mane Crests */}
+            <path
+              d="M 11.5 39.5 L 34.5 39.5 C 34 35 34.5 28 36 23 C 35.5 22 34 21 34 19.5 C 35.5 18 36 15 35 13 C 34 12 32.5 12 32 10 C 31 7.5 28 6.5 26 6 C 25.5 6 24.5 7 24 8.5 C 23 8.5 20.5 8 18 10 C 15.5 12 13 13 9 14.5 C 7 15.5 6 17.5 6.5 20 C 7 21.5 8.5 22 11 22.5 C 13.5 23 15 24 14.5 26 C 14 27.5 12 28.5 11 30.5 C 10 32.5 10 36 11.5 39.5 Z"
+              fill={`url(#${bodyGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Stepped Pedestal Base */}
+            <path
+              d="M 10 39.5 C 10 37.5 14 36 23 36 C 32 36 36 37.5 36 39.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.4"
+            />
+            {/* Mane Tufts / Notches */}
+            <path d="M 28 6 C 26 10 28 14 31 16" stroke={innerLineColor} strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M 31 16 C 30 19 31 22 34 24" stroke={innerLineColor} strokeWidth="1.2" strokeLinecap="round" />
+            {/* Cheek & Jaw Muscle Curve */}
+            <path
+              d="M 14.5 26 C 16.5 23.5 21 21 24.5 21 C 27 21 28 22.5 28 24 C 28 27.5 22 32 16 33.5"
+              fill="none"
+              stroke={innerLineColor}
+              strokeWidth="1.3"
+              strokeLinecap="round"
+            />
+            {/* Almond Eye with Catchlight */}
+            <ellipse cx="14" cy="14.5" rx="1.8" ry="2.2" fill={strokeColor} transform="rotate(-15 14 14.5)" />
+            <circle cx="13.5" cy="13.8" r="0.7" fill={specularDotColor} />
+            {/* Nostril Slit */}
+            <path d="M 8.5 18 C 9 19 10 19.2 10.5 18.5" fill="none" stroke={strokeColor} strokeWidth="1.2" strokeLinecap="round" />
+            {/* Mouth Indent */}
+            <path d="M 8 21.5 C 9.5 21.8 11.5 21.8 12.5 21" fill="none" stroke={strokeColor} strokeWidth="1.2" strokeLinecap="round" />
+            {/* Crest Light Highlight */}
+            <path d="M 24 9 C 26 9 29 11 31 14" fill="none" stroke={specularDotColor} strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+          </g>
         </svg>
       );
 
-    case "b": // Bishop
+    // ==========================================
+    // BISHOP (Gajah)
+    // ==========================================
+    case "b":
       return (
         <svg viewBox="0 0 45 45" className={className} aria-label={isWhite ? "Gajah Putih" : "Gajah Hitam"}>
-          <g
-            style={{
-              fill,
-              stroke,
-              strokeWidth: 1.5,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-            }}
-          >
-            <path d="M 9,36 C 12.39,35.03 19.11,36.43 22.5,34 C 25.89,36.43 32.61,35.03 36,36 C 36,36 37.65,36.54 39,38 C 38.32,38.97 37.35,38.99 36,38.5 C 32.61,37.53 25.89,38.96 22.5,37.5 C 19.11,38.96 12.39,37.53 9,38.5 C 7.646,38.99 6.677,38.97 6,38 C 7.354,36.54 9,36 9,36 z" />
-            <path d="M 15,32 C 17.5,34.5 27.5,34.5 30,32 C 30.5,30.5 30,30 30,30 C 30,27.5 27.5,26 27.5,26 C 33,24.5 33.5,14.5 22.5,10.5 C 11.5,14.5 12,24.5 17.5,26 C 17.5,26 15,27.5 15,30 C 15,30 14.5,30.5 15,32 z" />
-            <path d="m 25 8 a 2.5 2.5 0 1 1 -5 0 a 2.5 2.5 0 1 1 5 0 z" />
-            {/* Cross / Cut */}
-            <path d="m 17.5,16 10,0 M 22.5,12 22.5,20" stroke={accent} strokeWidth={1.2} />
+          {renderDefs()}
+          <g filter={`url(#${shadowFilterId})`}>
+            {/* Main Tapered Body & Rounded Hood */}
+            <path
+              d="M 12 39.5 L 33 39.5 C 33 37.5 31.5 36 30 35 C 28.5 34 27 32 26 29 C 25 26 25 23.5 27 21 C 30 17.5 30 11.5 22.5 8 C 15 11.5 15 17.5 18 21 C 20 23.5 20 26 19 29 C 18 32 16.5 34 15 35 C 13.5 36 12 37.5 12 39.5 Z"
+              fill={`url(#${bodyGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Stepped Pedestal Base */}
+            <path
+              d="M 10 39.5 C 10 37.5 14 36 22.5 36 C 31 36 35 37.5 35 39.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.4"
+            />
+            {/* Distinctive Curved Ribbon Collar (like a mustache ribbon at base of neck) */}
+            <path
+              d="M 14 26 C 18 28.5 27 28.5 31 26 C 29 24.5 26 24 22.5 24 C 19 24 16 24.5 14 26 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.3"
+            />
+            {/* Finial Ball & Cross at Top */}
+            <circle cx="22.5" cy="6.5" r="2.2" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.2" />
+            <path d="M 22.5 5.5 L 22.5 7.5 M 21.5 6.5 L 23.5 6.5" stroke={strokeColor} strokeWidth="0.8" />
+            {/* Miter Slash Cut */}
+            <path d="M 22.5 10 L 28 15.5" stroke={strokeColor} strokeWidth="1.6" strokeLinecap="round" />
+            <circle cx="22.5" cy="17" r="1.2" fill={strokeColor} />
+            {/* Light Highlight on Left Dome */}
+            <ellipse cx="19" cy="13" rx="2" ry="3.5" fill={specularDotColor} opacity={isWhite ? "0.6" : "0.25"} transform="rotate(-15 19 13)" />
           </g>
         </svg>
       );
 
-    case "q": // Queen
+    // ==========================================
+    // QUEEN (Menteri)
+    // ==========================================
+    case "q":
       return (
         <svg viewBox="0 0 45 45" className={className} aria-label={isWhite ? "Menteri Putih" : "Menteri Hitam"}>
-          <g
-            style={{
-              fill,
-              stroke,
-              strokeWidth: 1.5,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-            }}
-          >
-            <path d="M 9 26 C 17.5 24.5 30 24.5 36 26 L 38 14 L 31 25 L 22.5 12 L 14 25 L 7 14 L 9 26 z" />
-            <path d="M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 10.5,36 10.5,36 C 9,37.5 11,38.5 11,38.5 C 17.5,39.5 27.5,39.5 34,38.5 C 34,38.5 35.5,37.5 34.5,36 C 34.5,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 27.5,24.5 17.5,24.5 9,26 z" />
-            <circle cx="6" cy="12" r="2" />
-            <circle cx="14" cy="9" r="2" />
-            <circle cx="22.5" cy="8" r="2" />
-            <circle cx="31" cy="9" r="2" />
-            <circle cx="39" cy="12" r="2" />
+          {renderDefs()}
+          <g filter={`url(#${shadowFilterId})`}>
+            {/* Main Regal Gown & Body */}
+            <path
+              d="M 11.5 39.5 L 33.5 39.5 C 33.5 37 32 35 30.5 33.5 C 29 32 27.5 29 27 26 C 26.5 24 27.5 23 28.5 22 L 34.5 15 L 28 20 L 22.5 12 L 17 20 L 10.5 15 L 16.5 22 C 17.5 23 18.5 24 18 26 C 17.5 29 16 32 14.5 33.5 C 13 35 11.5 37 11.5 39.5 Z"
+              fill={`url(#${bodyGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Stepped Pedestal Base */}
+            <path
+              d="M 10 39.5 C 10 37.5 14 36 22.5 36 C 31 36 35 37.5 35 39.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.4"
+            />
+            {/* Waist Ribbed Ring */}
+            <path d="M 17 25 C 20.5 26.5 24.5 26.5 28 25" stroke={strokeColor} strokeWidth="1.3" fill="none" />
+            <path d="M 15 31 C 20 33 25 33 30 31" stroke={innerLineColor} strokeWidth="1.2" fill="none" />
+            {/* 5 Crown Pearls */}
+            <circle cx="10.5" cy="14" r="1.8" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.2" />
+            <circle cx="16.5" cy="11" r="1.8" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.2" />
+            <circle cx="22.5" cy="9.5" r="2.1" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.3" />
+            <circle cx="28.5" cy="11" r="1.8" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.2" />
+            <circle cx="34.5" cy="14" r="1.8" fill={`url(#${headGradId})`} stroke={strokeColor} strokeWidth="1.2" />
+            {/* Crown Base Band */}
+            <ellipse cx="22.5" cy="22" rx="7.5" ry="1.8" fill={`url(#${baseGradId})`} stroke={strokeColor} strokeWidth="1.2" />
           </g>
         </svg>
       );
 
-    case "k": // King
+    // ==========================================
+    // KING (Raja)
+    // ==========================================
+    case "k":
       return (
         <svg viewBox="0 0 45 45" className={className} aria-label={isWhite ? "Raja Putih" : "Raja Hitam"}>
-          <g
-            style={{
-              fill,
-              stroke,
-              strokeWidth: 1.5,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-            }}
-          >
-            <path d="M 22.5,11.63 L 22.5,6" />
-            <path d="M 20,8 L 25,8" />
-            <path d="M 22.5,25 C 22.5,25 27,17.5 25.5,14.5 C 24,11.5 21,11.5 19.5,14.5 C 18,17.5 22.5,25 22.5,25" />
-            <path d="M 11.5,37 C 17,40.5 28,40.5 33.5,37 C 33.5,34.5 31,32.5 31,32.5 C 35.5,30 35,22 28.5,19 C 28.5,19 26.5,22 22.5,22 C 18.5,22 16.5,19 16.5,19 C 10,22 9.5,30 14,32.5 C 14,32.5 11.5,34.5 11.5,37 z" />
-            <path d="M 11.5,30 C 17,27 28,27 33.5,30" stroke={accent} strokeWidth={1.2} />
-            <path d="M 11.5,33.5 C 17,30.5 28,30.5 33.5,33.5" stroke={accent} strokeWidth={1.2} />
+          {renderDefs()}
+          <g filter={`url(#${shadowFilterId})`}>
+            {/* Main Imperial Robe Body & Crown Dome */}
+            <path
+              d="M 11.5 39.5 L 33.5 39.5 C 33.5 37 32 35 30.5 33.5 C 29 32 27.5 29 27 26 C 26.5 24 28 22 30 20.5 C 32 19 33 16 32 13.5 C 31 11 28 10 26 10 L 26 9 C 26 9 24.5 9 22.5 9 C 20.5 9 19 9 19 9 L 19 10 C 17 10 14 11 13 13.5 C 12 16 13 19 15 20.5 C 17 22 18.5 24 18 26 C 17.5 29 16 32 14.5 33.5 C 13 35 11.5 37 11.5 39.5 Z"
+              fill={`url(#${bodyGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            {/* Stepped Pedestal Base */}
+            <path
+              d="M 9.5 39.5 C 9.5 37.5 13.5 36 22.5 36 C 31.5 36 35.5 37.5 35.5 39.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.4"
+            />
+            {/* Crown Gem Band */}
+            <path
+              d="M 15 17.5 C 19 19 26 19 30 17.5 C 29 16 26.5 15.5 22.5 15.5 C 18.5 15.5 16 16 15 17.5 Z"
+              fill={`url(#${baseGradId})`}
+              stroke={strokeColor}
+              strokeWidth="1.2"
+            />
+            {/* Body Collar Rings */}
+            <path d="M 17 24 C 20.5 25.5 24.5 25.5 28 24" stroke={innerLineColor} strokeWidth="1.2" fill="none" />
+            <path d="M 14.5 31 C 19.5 33 25.5 33 30.5 31" stroke={innerLineColor} strokeWidth="1.2" fill="none" />
+            {/* Regal Imperial Latin Cross Finial on Top */}
+            <path
+              d="M 21.5 3.5 L 23.5 3.5 L 23.5 5.5 L 25.5 5.5 L 25.5 7 L 23.5 7 L 23.5 10 L 21.5 10 L 21.5 7 L 19.5 7 L 19.5 5.5 L 21.5 5.5 Z"
+              fill={isWhite ? "#F7EEDD" : "#3A3530"}
+              stroke={strokeColor}
+              strokeWidth="1.1"
+              strokeLinejoin="miter"
+            />
+            {/* Crown Specular Highlights */}
+            <ellipse cx="18" cy="13.5" rx="2.5" ry="1.5" fill={specularDotColor} opacity={isWhite ? "0.6" : "0.25"} transform="rotate(-15 18 13.5)" />
           </g>
         </svg>
       );

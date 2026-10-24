@@ -76,7 +76,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   return (
     <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
       <div
-        className="relative aspect-square w-full rounded-xl overflow-hidden border border-[#353B42] shadow-2xl bg-[#141619]"
+        className="relative aspect-square w-full rounded-2xl overflow-hidden border-[5px] sm:border-[7px] border-[#382414] shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[#24170D] ring-1 ring-white/10"
         role="region"
         aria-label="Papan catur interaktif"
       >
@@ -110,16 +110,16 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, squareCoord)}
                   className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 ${
-                    isLight ? "bg-[#E8E3D8]" : "bg-[#68716F]"
+                    isLight ? "board-square-light" : "board-square-dark"
                   } ${
-                    isSelected ? "!bg-[#C7A66A]/75 ring-2 ring-inset ring-[#C7A66A]" : ""
+                    isSelected ? "!bg-[rgba(235,195,60,0.65)] ring-2 ring-inset ring-[#F5C342]" : ""
                   } ${
                     isLastMoveSquare && !isSelected
-                      ? "after:absolute after:inset-0 after:bg-[rgba(199,166,106,0.35)]"
+                      ? "after:absolute after:inset-0 after:bg-[rgba(220,175,50,0.42)] pointer-events-none"
                       : ""
                   } ${
                     isKingInCheck
-                      ? "!bg-[#E17C78]/80 ring-2 ring-inset ring-[#E17C78]"
+                      ? "!bg-[#DC4C44]/80 ring-2 ring-inset ring-[#FF6B6B]"
                       : ""
                   }`}
                   role="button"
@@ -136,22 +136,22 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                     }
                   }}
                 >
-                  {/* Rank coordinate on first column */}
+                  {/* Rank coordinate on first column (top-left inside square) */}
                   {fileIdx === 0 && (
                     <span
-                      className={`absolute top-0.5 left-1 text-[11px] font-mono font-semibold pointer-events-none select-none z-10 ${
-                        isLight ? "text-[#68716F]" : "text-[#E8E3D8]"
+                      className={`absolute top-0.5 left-1 text-[11px] sm:text-[12px] font-sans font-semibold pointer-events-none select-none z-10 ${
+                        isLight ? "text-[#73471F]" : "text-[#E8D4B8]"
                       }`}
                     >
                       {rank}
                     </span>
                   )}
 
-                  {/* File coordinate on bottom row */}
+                  {/* File coordinate on bottom row (bottom-right inside square) */}
                   {rankIdx === 7 && (
                     <span
-                      className={`absolute bottom-0.5 right-1 text-[11px] font-mono font-semibold pointer-events-none select-none z-10 ${
-                        isLight ? "text-[#68716F]" : "text-[#E8E3D8]"
+                      className={`absolute bottom-0.5 right-1 text-[11px] sm:text-[12px] font-sans font-semibold pointer-events-none select-none z-10 ${
+                        isLight ? "text-[#73471F]" : "text-[#E8D4B8]"
                       }`}
                     >
                       {file}
@@ -163,7 +163,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                     <div
                       draggable={!disabled && piece.color === chess.turn()}
                       onDragStart={(e) => handleDragStart(e, squareCoord)}
-                      className="w-[82%] h-[82%] flex items-center justify-center select-none z-10 drop-shadow-md transition-transform duration-150 active:scale-95"
+                      className="w-[88%] h-[88%] flex items-center justify-center select-none z-10 drop-shadow-md transition-transform duration-150 active:scale-95"
                     >
                       <ChessPiece type={piece.type} color={piece.color} />
                     </div>
@@ -172,12 +172,12 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   {/* Legal move indicator (Empty square = Central Dot, Capture = Refined Ring) */}
                   {isLegal && !piece && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                      <div className="w-4 h-4 rounded-full bg-[#141619]/40 border border-[#F2F0E8]/30 shadow-xs" />
+                      <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#1E140B]/40 border border-[#FFF0D0]/30 shadow-xs" />
                     </div>
                   )}
 
                   {isLegal && piece && (
-                    <div className="absolute inset-1 border-[3px] border-[#C7A66A] rounded-full pointer-events-none z-20 animate-pulse" />
+                    <div className="absolute inset-1 border-[3px] sm:border-4 border-[#E2B13C]/80 rounded-full pointer-events-none z-20 animate-pulse" />
                   )}
                 </div>
               );
@@ -205,7 +205,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 key={p.id}
                 type="button"
                 onClick={() => onConfirmPromotion(p.id as "q" | "r" | "b" | "n")}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-[#24292E] border border-[#353B42] hover:border-[#C7A66A] hover:bg-[#2C3238] transition-all group focus-visible:outline-2 focus-visible:outline-[#C7A66A]"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-[#1C2024] border border-[#382414] hover:border-[#D4A017] hover:bg-[#2A1F16] transition-all group focus-visible:outline-2 focus-visible:outline-[#D4A017]"
               >
                 <div className="w-12 h-12 mb-1 group-hover:scale-105 transition-transform">
                   <ChessPiece

@@ -278,3 +278,42 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
     - `POST /api/tutor/speech` -> Status 503 fallback terkelola aman saat tanpa kunci API (`fallbackToWebSpeech: true`).
 
 - **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 3 terpenuhi secara penuh).
+
+---
+
+### 2026-10-24 — Penyempurnaan Visual: Papan Catur Klasik Wood & Bidak 3D Staunton Neo
+
+- **Tujuan:**
+  Mengimplementasikan set visual papan catur kayu klasik ("Neo-Wood") dan set bidak 3D Staunton bergradien kaya secara default di seluruh antarmuka aplikasi (`/play`, `/academy`, `/puzzles`, `/archive`, dan beranda) sesuai gambar referensi pengguna.
+
+- **Perubahan utama:**
+  1. **Visual Papan Kayu Alami (CSS Multi-Layer Texture):**
+     - Memperbarui token warna di `src/app/globals.css`: `--board-light: #dfba87` (blonde maple) dan `--board-dark: #8f5d32` (rich walnut).
+     - Menambahkan kelas tekstur serat kayu alami `.board-square-light` dan `.board-square-dark` menggunakan CSS `repeating-linear-gradient` bertingkat (serat vertikal 90deg, pori horizontal 0deg, dan pencahayaan diagonal 135deg). Zero external asset overhead.
+     - Memperbarui bingkai papan catur dengan bezel kayu gelap berlapis (`border-[5px] sm:border-[7px] border-[#382414] shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[#24170D]`).
+  2. **Bidak Vektor 3D Staunton Neo (`ChessPieces.tsx`):**
+     - Mengembangkan kembali representasi SVG untuk seluruh 6 bidak (Pawn, Rook, Knight, Bishop, Queen, King) dengan bayangan kontur ambien (`filter: feDropShadow`), gradien radial/linear multi-stop untuk badan, kepala, dan dasar tumpuan, garis aksen interior kayu, serta titik kilau specular.
+     - Pion: Kepala bulat bergradien dengan specular dot, leher bergelang cincin ganda, dan dudukan berundak.
+     - Benteng: Parapet berigi 3 takik bergaris cornice tajam dan siluet badan kokoh.
+     - Kuda: Siluet leher melengkung dengan 3 jambul surai berundak, garis pipi/otot rahang, lubang hidung, dan mata ber-catchlight.
+     - Gajah: Siluet topi miter dengan belahan diagonal khas, pita leher melengkung, serta bola finial mini.
+     - Menteri: Mahkota anggun bermahkota 5 mutiara bergradien, pinggang ramping, dan gaun berundak.
+     - Raja: Jubah imperial dengan sabuk permata, kubah mahkota, serta salib Latin tegak di puncaknya.
+  3. **Tipografi & Kontras Koordinat Petak:**
+     - Menempatkan koordinat lajur (a-h) di sudut kanan bawah dan koordinat baris (1-8) di sudut kiri atas petak terluar secara in-square.
+     - Warna koordinat menyesuaikan kontras petak: `#73471F` pada petak terang, `#E8D4B8` pada petak gelap.
+  4. **Harmonisasi Sorotan Gerakan & Modal Promosi:**
+     - Sorotan petak terpilih (`rgba(235, 195, 60, 0.65)` dengan ring `#F5C342`) dan langkah terakhir (`rgba(220, 175, 50, 0.42)`).
+     - Indikator langkah legal petak kosong menggunakan titik gelap berbingkai halus (`bg-[#1E140B]/40 border-[#FFF0D0]/30`), dan pemukulan menggunakan cincin kuning amber berdenyut (`border-[#E2B13C]/80`).
+     - Modal promosi pion mengadopsi palet kayu dan menampilkan bidak 3D secara konsisten.
+  5. **Penyesuaian Komponen Terkait:**
+     - `InteractiveChessboard.tsx` dan `ChessboardPlaceholder.tsx` disinkronkan ke set visual baru.
+     - Test unit `responsive-and-accessibility.test.tsx` disesuaikan untuk memvalidasi token warna papan kayu baru.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (16 test suites, **95 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 41 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Set visual kayu klasik dan bidak 3D Staunton Neo telah terpasang rapi di seluruh aplikasi).

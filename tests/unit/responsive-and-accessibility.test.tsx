@@ -20,8 +20,8 @@ describe("Accessibility and Design Tokens Verification", () => {
     expect(cssContent).toContain("--color-border: #353B42");
     expect(cssContent).toContain("--color-text: #F2F0E8");
     expect(cssContent).toContain("--color-accent: #C7A66A");
-    expect(cssContent).toContain("--board-light: #E8E3D8");
-    expect(cssContent).toContain("--board-dark: #68716F");
+    expect(cssContent).toContain("--board-light: #dfba87");
+    expect(cssContent).toContain("--board-dark: #8f5d32");
     expect(cssContent).toContain("prefers-reduced-motion");
   });
 

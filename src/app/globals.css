@@ -15,11 +15,12 @@
   --color-warning: #E3B66F;
   --color-danger: #E17C78;
 
-  --board-light: #E8E3D8;
-  --board-dark: #68716F;
-  --board-last-move: rgba(199, 166, 106, 0.38);
-  --board-selected: rgba(230, 190, 94, 0.55);
-  --board-legal-dot: rgba(20, 22, 25, 0.30);
+  /* Neo-Wood Natural Board Colors */
+  --board-light: #dfba87;
+  --board-dark: #8f5d32;
+  --board-last-move: rgba(220, 175, 50, 0.42);
+  --board-selected: rgba(235, 195, 60, 0.65);
+  --board-legal-dot: rgba(30, 20, 10, 0.35);
 }
 
 @theme {
@@ -89,4 +90,59 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* =========================================================================
+   Neo-Wood Classical Chessboard Texture
+   Natural warm maple blonde & rich walnut wood grain with subtle fiber striations
+   ========================================================================= */
+
+.board-square-light {
+  background-color: var(--board-light);
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 0px,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(135, 85, 30, 0.05) 0px,
+      rgba(135, 85, 30, 0.05) 2px,
+      transparent 2px,
+      transparent 10px
+    ),
+    linear-gradient(
+      135deg,
+      #ecd3ad 0%,
+      #dfba87 50%,
+      #d4ae7b 100%
+    );
+}
+
+.board-square-dark {
+  background-color: var(--board-dark);
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.14) 0px,
+      rgba(0, 0, 0, 0.14) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.04) 0px,
+      rgba(255, 255, 255, 0.04) 2px,
+      transparent 2px,
+      transparent 9px
+    ),
+    linear-gradient(
+      135deg,
+      #9e6737 0%,
+      #8f5d32 50%,
+      #7d4d24 100%
+    );
 }

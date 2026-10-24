@@ -26,7 +26,7 @@ export const ChessboardPlaceholder: React.FC<ChessboardPlaceholderProps> = ({
 
   return (
     <div className="w-full max-w-[640px] mx-auto select-none">
-      <div className="relative aspect-square w-full rounded-xl overflow-hidden border border-[#353B42] shadow-xl bg-[#141619]">
+      <div className="relative aspect-square w-full rounded-2xl overflow-hidden border-[5px] sm:border-[7px] border-[#382414] shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[#24170D] ring-1 ring-white/10">
         <div className="grid grid-cols-8 grid-rows-8 w-full h-full">
           {ranks.map((rank, rankIdx) =>
             files.map((file, fileIdx) => {
@@ -38,15 +38,15 @@ export const ChessboardPlaceholder: React.FC<ChessboardPlaceholderProps> = ({
                 <div
                   key={squareCoord}
                   className={`relative flex items-center justify-center transition-colors ${
-                    isLight ? "bg-[#E8E3D8]" : "bg-[#68716F]"
+                    isLight ? "board-square-light" : "board-square-dark"
                   }`}
                   data-square={squareCoord}
                 >
                   {/* File label on bottom row */}
                   {rankIdx === 7 && (
                     <span
-                      className={`absolute bottom-0.5 right-1 text-[10px] font-mono font-medium ${
-                        isLight ? "text-[#68716F]" : "text-[#E8E3D8]"
+                      className={`absolute bottom-0.5 right-1 text-[11px] sm:text-[12px] font-sans font-semibold pointer-events-none select-none z-10 ${
+                        isLight ? "text-[#73471F]" : "text-[#E8D4B8]"
                       }`}
                     >
                       {file}
@@ -56,8 +56,8 @@ export const ChessboardPlaceholder: React.FC<ChessboardPlaceholderProps> = ({
                   {/* Rank label on leftmost column */}
                   {fileIdx === 0 && (
                     <span
-                      className={`absolute top-0.5 left-1 text-[10px] font-mono font-medium ${
-                        isLight ? "text-[#68716F]" : "text-[#E8E3D8]"
+                      className={`absolute top-0.5 left-1 text-[11px] sm:text-[12px] font-sans font-semibold pointer-events-none select-none z-10 ${
+                        isLight ? "text-[#73471F]" : "text-[#E8D4B8]"
                       }`}
                     >
                       {rank}
@@ -66,7 +66,7 @@ export const ChessboardPlaceholder: React.FC<ChessboardPlaceholderProps> = ({
 
                   {/* Piece */}
                   {piece && (
-                    <div className="w-[82%] h-[82%] flex items-center justify-center select-none drop-shadow-md">
+                    <div className="w-[88%] h-[88%] flex items-center justify-center select-none drop-shadow-md">
                       <ChessPiece type={piece.type} color={piece.color} />
                     </div>
                   )}
@@ -77,12 +77,12 @@ export const ChessboardPlaceholder: React.FC<ChessboardPlaceholderProps> = ({
         </div>
 
         {!interactive && (
-          <div className="absolute inset-x-0 bottom-0 py-1.5 px-3 bg-[#141619]/85 border-t border-[#353B42] flex items-center justify-between text-xs text-[#B0B5B9]">
+          <div className="absolute inset-x-0 bottom-0 py-1.5 px-3 bg-[#18110B]/90 border-t border-[#382414] flex items-center justify-between text-xs text-[#D8C7B5]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#C7A66A]" />
-              Visual Papan Catur 2D Chess Archive
+              <span className="w-2 h-2 rounded-full bg-[#D4A017]" />
+              Visual Papan Catur 2D Klasik Wood
             </span>
-            <span className="text-[#8A9299]">Posisi Standar Catur</span>
+            <span className="text-[#A89885]">Posisi Standar Catur</span>
           </div>
         )}
       </div>
