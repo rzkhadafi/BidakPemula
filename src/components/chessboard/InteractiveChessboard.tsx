@@ -2,10 +2,11 @@
 
 import React, { useState, useMemo, useCallback, useSyncExternalStore } from "react";
 import { Chess, Square } from "chess.js";
-import { Glasses, AlertTriangle, Shield, Target, HelpCircle } from "lucide-react";
+import { Glasses, AlertTriangle, Shield, Target, HelpCircle, Navigation } from "lucide-react";
 import { PlayerColor } from "@/types/chess";
 import { Modal } from "@/components/ui/Modal";
 import { ChessPiece } from "./ChessPieces";
+import { RadarArrowsOverlay } from "./RadarArrowsOverlay";
 import {
   computeBoardThreats,
   computePieceScope,
@@ -14,6 +15,12 @@ import {
   setVisionGlassesSetting,
   subscribeVisionGlasses,
 } from "@/features/chessboard/square-threats";
+import {
+  getRadarArrowsSetting,
+  setRadarArrowsSetting,
+  subscribeRadarArrows,
+  computeRadarArrows,
+} from "@/features/chessboard/radar-arrows";
 
 interface InteractiveChessboardProps {
   chess: Chess;
@@ -31,6 +38,10 @@ interface InteractiveChessboardProps {
   showVisionToggle?: boolean;
   /** Pengaturan awal Kacamata Catur aktif/tidak jika belum ada di localStorage */
   defaultVisionEnabled?: boolean;
+  /** Tampilkan tombol toggle Mode Garis Radar Panah Bidak di atas papan (default true) */
+  showRadarToggle?: boolean;
+  /** Pengaturan awal Radar Panah Bidak aktif/tidak jika belum ada di localStorage */
+  defaultRadarEnabled?: boolean;
   /** Petak yang disorot oleh petunjuk Sokrates (misal perwira kunci) */
   highlightedSquare?: string | null;
   /** Slot di sisi kanan atas (berseberangan dengan tombol Kacamata Catur, misal pill bot & jam) */
@@ -51,6 +62,8 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   onCancelPromotion,
   showVisionToggle = true,
   defaultVisionEnabled = false,
+  showRadarToggle = true,
+  defaultRadarEnabled = true,
   highlightedSquare = null,
   topRightSlot,
 }) => {
@@ -63,6 +76,15 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   const [visionOverride, setVisionOverride] = useState<boolean | null>(null);
   const visionEnabled = visionOverride !== null ? visionOverride : storedVision;
 
+  // State Mode Garis Radar Panah Bidak (Ghost Aim Arrows)
+  const storedRadar = useSyncExternalStore(
+    subscribeRadarArrows,
+    getRadarArrowsSetting,
+    () => defaultRadarEnabled
+  );
+  const [radarOverride, setRadarOverride] = useState<boolean | null>(null);
+  const radarArrowsEnabled = radarOverride !== null ? radarOverride : storedRadar;
+
   const [showLegend, setShowLegend] = useState<boolean>(false);
   const [hoveredSquare, setHoveredSquare] = useState<Square | null>(null);
 
@@ -71,6 +93,12 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     setVisionGlassesSetting(next);
     setVisionOverride(next);
   }, [visionEnabled]);
+
+  const handleToggleRadarArrows = useCallback(() => {
+    const next = !radarArrowsEnabled;
+    setRadarArrowsSetting(next);
+    setRadarOverride(next);
+  }, [radarArrowsEnabled]);
 
   const playerColorCode = orientation === "white" ? "w" : "b";
 
@@ -85,6 +113,16 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     if (!visionEnabled || !selectedSquare) return null;
     return computePieceScope(chess, selectedSquare as Square);
   }, [chess, selectedSquare, visionEnabled]);
+
+  // Hitung garis radar panah lintasan & sasaran bidak yang dipilih
+  const radarArrows = useMemo(() => {
+    if (!radarArrowsEnabled) return [];
+    return computeRadarArrows(
+      chess,
+      selectedSquare as Square | null,
+      legalDestinations
+    );
+  }, [chess, legalDestinations, radarArrowsEnabled, selectedSquare]);
 
   // Ringkasan bahaya & peluang papan untuk indikator status
   const { urgentHangingCount, opponentOpportunityCount } = useMemo(() => {
@@ -148,11 +186,11 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
-      {/* Utility Bar: Kacamata Catur Toggle & Right Slot (Bot Pill & Jam) */}
-      {(showVisionToggle || topRightSlot) && (
+      {/* Utility Bar: Kacamata Catur Toggle, Radar Panah & Right Slot (Bot Pill & Jam) */}
+      {(showVisionToggle || showRadarToggle || topRightSlot) && (
         <div className="relative flex items-center justify-between gap-2 mb-2 px-0.5 min-h-[34px]">
-          {/* Left: Button Kacamata Catur & Mobile Guide Toggle */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Left: Button Kacamata Catur & Radar Panah Toggle */}
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
             {showVisionToggle && (
               <>
                 <button
@@ -190,6 +228,31 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   </button>
                 )}
               </>
+            )}
+
+            {showRadarToggle && (
+              <button
+                type="button"
+                onClick={handleToggleRadarArrows}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                  radarArrowsEnabled
+                    ? "bg-[#73B894]/20 border-[#73B894] text-[#F2F0E8] shadow-xs"
+                    : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
+                }`}
+                title="Nyalakan/matikan Garis Radar Panah Bidak (melihat lintasan langkah & sasaran saat perwira diklik)"
+                aria-label={`Radar Panah ${radarArrowsEnabled ? "Aktif" : "Nonaktif"}`}
+                aria-pressed={radarArrowsEnabled}
+              >
+                <Navigation className={`w-3.5 h-3.5 ${radarArrowsEnabled ? "text-[#73B894]" : "text-[#8A9299]"}`} />
+                <span className="font-semibold">Radar Panah</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                    radarArrowsEnabled ? "bg-[#73B894] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
+                  }`}
+                >
+                  {radarArrowsEnabled ? "ON" : "OFF"}
+                </span>
+              </button>
             )}
           </div>
 
@@ -458,6 +521,15 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
             })
           )}
         </div>
+
+        {/* Ghost Aim Radar Arrows Overlay */}
+        {radarArrowsEnabled && radarArrows.length > 0 && (
+          <RadarArrowsOverlay
+            arrows={radarArrows}
+            files={files}
+            ranks={ranks}
+          />
+        )}
       </div>
 
       {/* Pawn Promotion Modal */}

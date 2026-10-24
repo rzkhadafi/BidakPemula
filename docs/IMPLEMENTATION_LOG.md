@@ -745,4 +745,42 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Audio AI kini 100% monolitik, bebas tumpang tindih, dan langsung berhenti saat melangkah cepat).
 
+---
+
+### Implementasi Fitur: Ide 2 — "Mode Garis Radar Panah Bidak" (Ghost Aim Arrows on Click)
+
+- **Latar Belakang & Kebutuhan Pengguna:**
+  Pemula sering mengalami kesulitan menghafal pola jangkauan perwira (seperti gerakan 'L' pada Kuda, jangkauan diagonal Gajah, atau lajur serang Benteng). Diperlukan fitur visual elegan yang intuitif (*zero cognitive load*) di mana saat sebuah bidak diklik, muncul garis panah lintasan semi-transparan yang memperlihatkan ke mana saja perwira tersebut bisa menjangkau dan petak mana yang sedang ia incar/bisa ditangkap.
+
+- **Perubahan yang Diterapkan:**
+  1. **Modul Logika & State Radar Panah (`src/features/chessboard/radar-arrows.ts`):**
+     - Fungsi `computeRadarArrows(chess, selectedSquare, legalDestinations)`:
+       - Memetakan setiap petak tujuan legal menjadi struktur data `RadarArrow`.
+       - Mendeteksi penangkapan perwira lawan (*capture*) vs petak kosong aman (*safe destination*), termasuk aturan khusus *en passant*.
+       - Mengidentifikasi bidak Kuda (`isKnight`) untuk perlakuan lintasan kurva trajektori 'L'.
+     - Manajemen preferensi tersimpan di `localStorage` (`chess_archive_radar_arrows_v1`) dengan event listener sinkronisasi SSR & multi-komponen (`useSyncExternalStore`), aktif secara default (*ON*).
+  2. **Lapisan Visual SVG Polished (`src/components/chessboard/RadarArrowsOverlay.tsx`):**
+     - Kanvas SVG resolusi tinggi (`viewBox="0 0 800 800"`) dengan atribut `pointer-events-none` agar tidak mengganggu klik petak atau drag-and-drop bidak.
+     - Lintasan lurus/diagonal presisi untuk Pion, Benteng, Gajah, Menteri, dan Raja dengan jarak penyesuaian tepi (*offset*) agar tidak menutupi ikon bidak.
+     - Lintasan kurva berbentuk 'L' halus (*smooth bezier elbow turn*) khusus perwira Kuda, memvisualisasikan aturan klasik "2 petak lurus lalu 1 petak belok".
+     - Pembedaan warna taktil ramah Dark Graphite Archive:
+       - **Langkah Aman (Petak Kosong)**: Garis hijau emerald lembut (`#73B894`) dengan panah arah (`marker-end`).
+       - **Langkah Menangkap (Bidak Lawan)**: Garis ruby red (`#E17C78`) tebal dengan retikel sasaran putus-putus (*dashed target ring*).
+       - Titik pusat lingkaran aksen emas di petak asal bidak yang dipilih.
+  3. **Integrasi Papan Catur & Pengaturan (`src/components/chessboard/InteractiveChessboard.tsx` & `src/app/settings/page.tsx`):**
+     - Menambahkan tombol kontrol cepat *"Radar Panah (ON/OFF)"* berdampingan dengan *"Kacamata Catur"* di bilah alat utilitas atas papan catur.
+     - Menyediakan toggle preferensi pengguna di halaman Pengaturan (`/settings`) pada bagian *Preferensi Papan Catur*.
+  4. **Pengujian Unit & Komponen Komprehensif:**
+     - `tests/unit/radar-arrows.test.ts` (7 tests): Memverifikasi kalkulasi panah langkah pion, jangkauan Kuda 'L', penangkapan bidak lawan, penangkapan en passant, dan persistensi preferensi.
+     - `src/components/chessboard/InteractiveChessboard.test.tsx` (6 tests): Memverifikasi render tombol toggle Radar Panah, interaksi klik ON/OFF, serta keberadaan elemen SVG overlay panah radar dengan `pointer-events-none`.
+     - Total pengujian lulus: **153 tests (25 test suites)**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (25 test suites, **153 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk 42 rute).
+
+- **Gate:** **PASS** (Fitur Radar Panah Bidak aktif sempurna tanpa merusak fitur papan catur, kacamata catur, atau interaksi lainnya).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).

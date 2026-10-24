@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Layers,
   Volume2,
+  Navigation,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -25,11 +26,16 @@ import {
   saveTutorPreferences,
 } from "@/features/tutor/tutor-preferences";
 import { chessAudio } from "@/lib/audio/chess-audio";
+import {
+  getRadarArrowsSetting,
+  setRadarArrowsSetting,
+} from "@/features/chessboard/radar-arrows";
 
 export default function SettingsPage() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">("white");
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(() => chessAudio.isEnabled());
+  const [radarArrowsEnabled, setRadarArrowsEnabled] = useState(() => getRadarArrowsSetting());
   const [tutorAutoplay, setTutorAutoplay] = useState(() => getTutorPreferences().autoplay);
   const [tutorSpeed, setTutorSpeed] = useState(() => getTutorPreferences().speed);
   const [tutorVoice, setTutorVoice] = useState(() => getTutorPreferences().voice);
@@ -37,6 +43,11 @@ export default function SettingsPage() {
   const handleSoundToggle = (enabled: boolean) => {
     setSoundEnabled(enabled);
     chessAudio.setEnabled(enabled);
+  };
+
+  const handleRadarArrowsToggle = (enabled: boolean) => {
+    setRadarArrowsEnabled(enabled);
+    setRadarArrowsSetting(enabled);
   };
 
   const handleAutoplayToggle = (checked: boolean) => {
@@ -200,6 +211,27 @@ export default function SettingsPage() {
                 Hitam
               </button>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-[#353B42]">
+            <div className="flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-[#73B894]" />
+              <div>
+                <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
+                  Mode Garis Radar Panah Bidak (Ghost Aim)
+                </span>
+                <span className="text-xs text-[#8A9299]">
+                  Menampilkan garis panah visual lintasan aman dan sasaran tangkap saat mengeklik perwira
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={radarArrowsEnabled}
+              onChange={(e) => handleRadarArrowsToggle(e.target.checked)}
+              className="accent-[#73B894] w-4 h-4 cursor-pointer"
+              aria-label="Toggle Mode Garis Radar Panah Bidak"
+            />
           </div>
         </Card>
 

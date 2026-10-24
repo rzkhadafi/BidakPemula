@@ -116,4 +116,52 @@ describe("InteractiveChessboard lastMove clickability and captures", () => {
 
     expect(onSquareClick).toHaveBeenCalledWith("e5");
   });
+
+  it("renders Radar Panah toggle button and toggles its state on click", () => {
+    const chess = new Chess();
+    render(
+      <InteractiveChessboard
+        {...defaultProps}
+        chess={chess}
+        selectedSquare={null}
+        legalDestinations={[]}
+        lastMove={null}
+        onSquareClick={vi.fn()}
+      />
+    );
+
+    const radarBtn = screen.getByRole("button", { name: /Radar Panah/i });
+    expect(radarBtn).toBeDefined();
+    expect(radarBtn.textContent).toContain("Radar Panah");
+
+    // Click to toggle
+    fireEvent.click(radarBtn);
+    expect(radarBtn.getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(radarBtn);
+    expect(radarBtn.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("renders RadarArrowsOverlay SVG with pointer-events-none when a piece is selected", () => {
+    const chess = new Chess();
+    const { container } = render(
+      <InteractiveChessboard
+        {...defaultProps}
+        chess={chess}
+        selectedSquare="e2"
+        legalDestinations={["e3", "e4"]}
+        lastMove={null}
+        onSquareClick={vi.fn()}
+      />
+    );
+
+    // Look for SVG with radar-arrow markers or viewBox 0 0 800 800
+    const radarSvg = container.querySelector("svg[viewBox='0 0 800 800']");
+    expect(radarSvg).not.toBeNull();
+    expect(radarSvg?.getAttribute("class")).toContain("pointer-events-none");
+
+    // Check that path markers exist for safe move
+    const markerSafe = container.querySelector("#radar-arrow-safe");
+    expect(markerSafe).not.toBeNull();
+  });
 });
