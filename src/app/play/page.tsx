@@ -16,6 +16,7 @@ import {
   Archive,
   Volume2,
   VolumeX,
+  Sparkles,
 } from "lucide-react";
 import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessboard";
 import { useChessGame } from "@/features/game/use-chess-game";
@@ -25,6 +26,8 @@ import {
   TimeControlId,
 } from "@/types/chess";
 import { getAllDifficulties } from "@/features/engine/difficulty";
+import { PlayTutorModal } from "@/features/tutor/components/PlayTutorModal";
+import { TutorExplainRequest } from "@/features/tutor/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -108,6 +111,24 @@ export default function PlayPage() {
   const isPlayerWhite = config.playerColor === "white";
   const isPlayerTurn =
     (isPlayerWhite && turn === "w") || (!isPlayerWhite && turn === "b");
+
+  const [tutorModalOpen, setTutorModalOpen] = useState(false);
+  const [tutorRequestContext, setTutorRequestContext] = useState<TutorExplainRequest | null>(null);
+
+  const handleOpenTutor = () => {
+    const lastMoveItem = history[history.length - 1];
+    const req: TutorExplainRequest = {
+      fen: chess.fen(),
+      sideToMove: chess.turn(),
+      learnerLevel: config.botDifficulty === "casual" ? "santai" : "pemula",
+      mode: "play",
+      lastMoveUci: lastMoveItem?.uci,
+      lastMoveSan: lastMoveItem?.san,
+      recentMovesSan: history.slice(-8).map((h) => h.san),
+    };
+    setTutorRequestContext(req);
+    setTutorModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -376,6 +397,22 @@ export default function PlayPage() {
                 <Flag className="w-4 h-4 mr-1" />
                 Menyerah
               </Button>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleOpenTutor}
+                disabled={history.length === 0}
+                className="col-span-2 border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10 transition-colors"
+                title={
+                  history.length === 0
+                    ? "Jalankan langkah terlebih dahulu untuk meminta penjelasan"
+                    : "Minta Guru Catur AI menjelaskan langkah dan posisi saat ini"
+                }
+              >
+                <Sparkles className="w-4 h-4 mr-1 text-[#C7A66A]" />
+                Jelaskan Langkah Terakhir (Suara)
+              </Button>
             </div>
           </Card>
 
@@ -577,6 +614,12 @@ export default function PlayPage() {
           </div>
         </div>
       </Modal>
+      {/* Guru Catur AI Modal */}
+      <PlayTutorModal
+        isOpen={tutorModalOpen}
+        onClose={() => setTutorModalOpen(false)}
+        requestContext={tutorRequestContext}
+      />
     </div>
   );
 }

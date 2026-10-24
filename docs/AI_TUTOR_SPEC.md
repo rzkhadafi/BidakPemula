@@ -146,3 +146,23 @@ Status HTTP dipilih secara konsisten. Jangan menampilkan provider raw error kepa
 - Output tidak dapat mengubah board/game state.
 - API key tidak terlihat di client bundle, HTML, logs, response, atau source map.
 - Penjelasan dibandingkan dengan konteks engine agar tidak membicarakan langkah yang tidak diberikan.
+
+## 11. Arsitektur Narasi Suara (TTS) & Caching
+
+### Model & Konfigurasi Server
+- Environment variables:
+  - `GEMINI_API_KEY`: Kunci API Google AI Studio (server-only).
+  - `GEMINI_TUTOR_MODEL`: Model penalaran teks (default: `gemini-2.5-flash`).
+  - `GEMINI_TTS_MODEL`: Model sintesis audio (default: `gemini-2.5-flash`).
+  - `GEMINI_TTS_VOICE`: Suara prebuilt (default: `Puck`).
+  - `TUTOR_ENABLED`: Feature flag global.
+- Endpoint:
+  - `POST /api/tutor/explain`: Menghasilkan analisis terstruktur + naskah lisan (`spokenText`).
+  - `POST /api/tutor/speech`: Mengonversi teks menjadi data biner audio (`audio/wav`) langsung dari model Gemini TTS.
+
+### Caching Lokal & Fallback
+- **IndexedDB Audio Cache (`chess_archive_audio_db`):** Menyimpan Blob audio berdasarkan hash kunci `text + voice`. Mengurangi panggilan API berulang hingga 0 untuk materi atau naskah yang sama.
+- **Web Speech API Fallback:** Jika kuota Gemini habis, API key kosong, atau koneksi terputus, sistem secara otomatis beralih ke `window.speechSynthesis` dengan suara bahasa Indonesia (`id-ID`) berlabel *"Suara Perangkat"*.
+- **Kontrol Pemutaran Lengkap:** Dengarkan, Jeda, Lanjutkan, Ulangi, Hentikan, dan pengatur kecepatan (`0.85x`, `1.0x`, `1.25x`) via `HTMLAudioElement.playbackRate` tanpa mengunduh ulang audio.
+- **Autoplay Terkontrol:** Preferensi putar otomatis disimpan di `localStorage` dan hanya aktif jika pengguna menyetujuinya, dengan penanganan aman terhadap pemblokiran autoplay oleh peramban.
+

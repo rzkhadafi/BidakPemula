@@ -9,10 +9,13 @@ import {
   BookOpen,
   Trophy,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { AcademyLesson } from "./types";
 import { InteractiveLessonBoard } from "./InteractiveLessonBoard";
 import { markLessonCompleted } from "./academy-progress";
+import { TutorPanel } from "@/features/tutor/components/TutorPanel";
+import { tutorSpeech } from "@/features/tutor/speech-controller";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -31,6 +34,14 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
 }) => {
   const router = useRouter();
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"tutor" | "guide">("tutor");
+
+  // Cleanup speech when navigating away
+  React.useEffect(() => {
+    return () => {
+      tutorSpeech.stop();
+    };
+  }, []);
 
   const handleLessonComplete = () => {
     markLessonCompleted(lesson.id);
@@ -74,36 +85,79 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
           />
         </div>
 
-        {/* Right Column: Concept Explanation & Takeaways */}
+        {/* Right Column: AI Tutor & Concept Guide */}
         <div className="lg:col-span-5 space-y-4 w-full">
-          {/* Concept Guide Card */}
-          <Card variant="surface" className="space-y-3">
-            <div className="flex items-center gap-2 text-xs text-[#C7A66A] font-semibold uppercase tracking-wider pb-2 border-b border-[#353B42]">
-              <BookOpen className="w-4 h-4" />
-              <span>{lesson.conceptHeading}</span>
-            </div>
+          {/* Tab Selection */}
+          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[#1C2024] border border-[#353B42]">
+            <button
+              type="button"
+              onClick={() => setActiveTab("tutor")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+                activeTab === "tutor"
+                  ? "bg-[#C7A66A] text-[#141619] font-semibold"
+                  : "text-[#8A9299] hover:text-[#F2F0E8]"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Guru Catur (Suara)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("guide")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+                activeTab === "guide"
+                  ? "bg-[#24292E] text-[#F2F0E8] font-semibold border border-[#353B42]"
+                  : "text-[#8A9299] hover:text-[#F2F0E8]"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Panduan Materi</span>
+            </button>
+          </div>
 
-            <div className="space-y-2.5 text-xs text-[#B0B5B9] leading-relaxed">
-              {lesson.conceptBody.map((paragraph, idx) => (
-                <p key={idx}>{paragraph}</p>
-              ))}
-            </div>
-          </Card>
+          {activeTab === "tutor" ? (
+            <TutorPanel
+              requestContext={{
+                fen: lesson.steps[0].fen,
+                sideToMove: "w",
+                learnerLevel: "pemula",
+                mode: "lesson",
+                lessonTitle: lesson.title,
+                lessonStepInstruction: lesson.steps[0].instruction,
+              }}
+            />
+          ) : (
+            <>
+              {/* Concept Guide Card */}
+              <Card variant="surface" className="space-y-3">
+                <div className="flex items-center gap-2 text-xs text-[#C7A66A] font-semibold uppercase tracking-wider pb-2 border-b border-[#353B42]">
+                  <BookOpen className="w-4 h-4" />
+                  <span>{lesson.conceptHeading}</span>
+                </div>
 
-          {/* Key Takeaways Card */}
-          <Card variant="surface" className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#F2F0E8] pb-1 border-b border-[#353B42]">
-              Poin Penting untuk Diingat:
-            </h3>
-            <ul className="space-y-2 text-xs text-[#B0B5B9]">
-              {lesson.takeaways.map((point, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C7A66A] mt-1.5 shrink-0" />
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+                <div className="space-y-2.5 text-xs text-[#B0B5B9] leading-relaxed">
+                  {lesson.conceptBody.map((paragraph, idx) => (
+                    <p key={idx}>{paragraph}</p>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Key Takeaways Card */}
+              <Card variant="surface" className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#F2F0E8] pb-1 border-b border-[#353B42]">
+                  Poin Penting untuk Diingat:
+                </h3>
+                <ul className="space-y-2 text-xs text-[#B0B5B9]">
+                  {lesson.takeaways.map((point, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C7A66A] mt-1.5 shrink-0" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </>
+          )}
 
           {/* Navigation Controls */}
           <div className="flex items-center justify-between pt-2">

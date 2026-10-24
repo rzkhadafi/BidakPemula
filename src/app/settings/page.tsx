@@ -18,21 +18,38 @@ import { Modal } from "@/components/ui/Modal";
 import { clearArchivedGames } from "@/lib/storage/game-archive";
 import { clearAcademyProgress } from "@/features/academy/academy-progress";
 import { clearPuzzleProgress } from "@/features/puzzles/puzzle-progress";
+import { clearAudioCache } from "@/features/tutor/audio-cache";
+import {
+  getTutorPreferences,
+  saveTutorPreferences,
+} from "@/features/tutor/tutor-preferences";
 import { chessAudio } from "@/lib/audio/chess-audio";
 
 export default function SettingsPage() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">("white");
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(() => chessAudio.isEnabled());
+  const [tutorAutoplay, setTutorAutoplay] = useState(() => getTutorPreferences().autoplay);
+  const [tutorSpeed, setTutorSpeed] = useState(() => getTutorPreferences().speed);
 
   const handleSoundToggle = (enabled: boolean) => {
     setSoundEnabled(enabled);
     chessAudio.setEnabled(enabled);
   };
 
+  const handleAutoplayToggle = (checked: boolean) => {
+    setTutorAutoplay(checked);
+    saveTutorPreferences({ autoplay: checked });
+  };
+
+  const handleSpeedChange = (speed: 0.85 | 1.0 | 1.25) => {
+    setTutorSpeed(speed);
+    saveTutorPreferences({ speed });
+  };
+
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    type: "history" | "progress" | null;
+    type: "history" | "progress" | "audioCache" | null;
     title: string;
     description: string;
   }>({
@@ -179,24 +196,69 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {/* Status Tutor AI */}
-        <Card variant="surface" className="space-y-3">
+        {/* Status & Preferensi Guru AI */}
+        <Card variant="surface" className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-[#353B42]">
             <Sparkles className="w-4 h-4 text-[#C7A66A]" />
             <h2 className="text-sm font-semibold text-[#F2F0E8]">
-              Status Guru AI (Gemini)
+              Guru Catur AI & Penjelasan Suara
             </h2>
           </div>
+
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
-                Status Layanan Tutor
+                Status Layanan Guru AI
               </span>
               <span className="text-xs text-[#8A9299]">
-                Kunci API disimpan aman di server; tidak diekspos ke peramban
+                Didukung model Gemini & sintesis suara bahasa Indonesia di sisi server
               </span>
             </div>
-            <Badge variant="muted">Nonaktif (Menunggu Fase 3)</Badge>
+            <Badge variant="accent">Aktif (Server-Side)</Badge>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-[#353B42]">
+            <div>
+              <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
+                Putar Suara Otomatis
+              </span>
+              <span className="text-xs text-[#8A9299]">
+                Membacakan narasi secara otomatis saat materi atau penjelasan dibuka
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              checked={tutorAutoplay}
+              onChange={(e) => handleAutoplayToggle(e.target.checked)}
+              className="accent-[#C7A66A] w-4 h-4 cursor-pointer"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-[#353B42]">
+            <div>
+              <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
+                Kecepatan Narasi Suara
+              </span>
+              <span className="text-xs text-[#8A9299]">
+                Kecepatan pemutaran audio penjelasan
+              </span>
+            </div>
+            <div className="inline-flex rounded-lg border border-[#353B42] p-0.5 bg-[#141619]">
+              {([0.85, 1.0, 1.25] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleSpeedChange(s)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    tutorSpeed === s
+                      ? "bg-[#C7A66A] text-[#141619] font-semibold"
+                      : "text-[#8A9299] hover:text-[#F2F0E8]"
+                  }`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
           </div>
         </Card>
 
@@ -262,6 +324,33 @@ export default function SettingsPage() {
               Reset Progres
             </Button>
           </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#353B42]">
+            <div>
+              <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
+                Kosongkan Cache Audio Suara
+              </span>
+              <span className="text-xs text-[#8A9299]">
+                Menghapus berkas suara yang tersimpan di IndexedDB peramban lokal.
+              </span>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                setConfirmModal({
+                  isOpen: true,
+                  type: "audioCache",
+                  title: "Kosongkan Cache Audio Guru Catur?",
+                  description:
+                    "Berkas audio yang tersimpan di memori peramban akan dihapus. Suara baru akan diunduh kembali saat Anda mendengarkan materi.",
+                })
+              }
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+              Kosongkan Cache
+            </Button>
+          </div>
         </Card>
       </div>
 
@@ -294,6 +383,10 @@ export default function SettingsPage() {
                 if (confirmModal.type === "history") {
                   clearArchivedGames();
                   showToast("Riwayat pertandingan telah dikosongkan.");
+                } else if (confirmModal.type === "audioCache") {
+                  clearAudioCache().then(() => {
+                    showToast("Cache audio Guru Catur berhasil dikosongkan.");
+                  });
                 } else {
                   clearAcademyProgress();
                   clearPuzzleProgress();

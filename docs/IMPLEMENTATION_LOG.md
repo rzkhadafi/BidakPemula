@@ -225,3 +225,56 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Next.js Turbopack production build selesai tanpa kendala; 39 rute statis & partial prerendering berhasil di-generate).
 
 - **Gate:** **PASS** (Seluruh spesifikasi perombakan UX pemula, permainan catur interaktif, modul belajar pemula, latihan taktik, dan audio lokal telah terpenuhi secara lengkap).
+
+---
+
+### 2026-10-24 — Fase 3: Guru Catur AI Indonesia dengan Penjelasan Suara
+
+- **Tujuan:**
+  Membangun Guru Catur AI berbahasa Indonesia yang mampu menjelaskan posisi, langkah, dan konsep catur dengan bahasa yang ramah pemula mutlak, serta membacakan penjelasannya menggunakan narasi audio alami (TTS). Menjaga keamanan API key di sisi server Next.js, memvalidasi legalitas langkah catur dengan `chess.js`, menyediakan caching audio berbasis IndexedDB, fallback suara peramban (Web Speech API), serta fallback penjelasan kurasi offline ketika kunci API atau kuota tidak tersedia.
+
+- **Perubahan utama:**
+  1. **Konfigurasi Lingkungan & Keamanan (`.env.example`):**
+     - Mendefinisikan variabel server: `GEMINI_API_KEY`, `GEMINI_TUTOR_MODEL` (default: `gemini-2.5-flash`), `GEMINI_TTS_MODEL` (default: `gemini-2.5-flash`), `GEMINI_TTS_VOICE` (default: `Puck`), dan `TUTOR_ENABLED`.
+     - Kunci API tidak pernah diekspos ke kode peramban (`NEXT_PUBLIC_*`), bundle JavaScript, log, atau respons API.
+  2. **Model Data Guru Catur (`src/features/tutor/types.ts`):**
+     - Mendefinisikan antarmuka TypeScript ketat: `TutorExplainRequest`, `TutorExplainResponse`, `SuggestedMove`, `TutorAnalysisContext`, `TutorSpeechRequest`, `TutorApiError`, dan `TutorPreferences`.
+  3. **Layanan Server Gemini & Fallback Kurasi (`src/features/tutor/server/`):**
+     - `gemini-service.ts`: Memvalidasi FEN dan panjang input secara ketat. Mengirimkan prompt pedagogis Indonesia, memvalidasi seluruh langkah yang disarankan (`suggestedMoves`) menggunakan `chess.js` pada FEN terkait (menghapus/mengabaikan langkah ilegal), serta menangani sintesis audio biner WAV.
+     - `curated-tutor-fallbacks.ts`: Menyediakan penjelasan catur lokal berkualitas tinggi untuk posisi pembukaan, ancaman skak, materi kurikulum akademi, dan tinjauan langkah terakhir saat sistem offline atau kuota habis.
+  4. **Endpoint API Server:**
+     - `POST /api/tutor/explain`: Menerima konteks FEN, giliran, tingkat pemula, dan riwayat langkah; mengembalikan penjelasan terstruktur beserta naskah lisan (`spokenText`).
+     - `POST /api/tutor/speech`: Menerima naskah teks; mengembalikan data biner audio (`audio/wav`) langsung dari model TTS, atau respons 503 fallback jika kuota/kunci tidak tersedia.
+  5. **Pengontrol Suara & Caching Audio Klien (`src/features/tutor/`):**
+     - `audio-cache.ts`: Cache lokal berbasis IndexedDB (`chess_archive_audio_db`) dengan kunci hash deterministik (`text + voice`). Memungkinkan pemutaran instan tanpa request API berulang.
+     - `speech-controller.ts`: Pengontrol pemutaran audio dengan state management (`idle`, `loading`, `playing`, `paused`, `error`), kontrol Play, Pause, Resume, Replay, Stop, serta pengatur kecepatan (`0.85x`, `1.0x`, `1.25x`) secara real-time via `playbackRate`. Otomatis beralih ke `window.speechSynthesis` (bahasa Indonesia) bila Gemini TTS tidak aktif.
+     - `tutor-preferences.ts`: Mengelola preferensi putar otomatis (autoplay), kecepatan suara, dan pilihan model/suara di `localStorage` secara SSR-safe.
+  6. **Integrasi Antarmuka Pengguna (`src/features/tutor/components/`):**
+     - `TutorAudioPlayer.tsx`: Bilah kendali suara taktil Dark Graphite dengan visual gelombang suara, kontrol pemutar, opsi kecepatan instan, dan toggle autoplay.
+     - `TutorPanel.tsx`: Panel pendamping guru catur dengan judul, rangkuman, naskah lisan, pemutar audio terintegrasi, accordion petunjuk bertahap (*hint*), sorotan langkah kandidat, chip pertanyaan reflektif, serta input pertanyaan lanjutan.
+     - `PlayTutorModal.tsx`: Dialog modal bimbingan di halaman `/play` yang dipicu tombol *"Jelaskan Langkah Terakhir (Suara)"* tanpa mengganggu posisi papan, giliran, maupun jam catur yang sedang berjalan.
+     - Halaman `/academy/[lessonId]`: Menghadirkan tab terpadu antara *Guru Catur (Suara)* dan *Panduan Materi*.
+     - Halaman `/settings`: Menampilkan status Guru AI aktif di server, kontrol kecepatan suara, preferensi autoplay, dan tombol pengosongan cache audio IndexedDB.
+
+- **File penting yang dibuat/dimodifikasi:**
+  - `.env.example`
+  - `src/features/tutor/types.ts`, `index.ts`
+  - `src/features/tutor/server/gemini-service.ts`, `curated-tutor-fallbacks.ts`
+  - `src/features/tutor/audio-cache.ts`, `speech-controller.ts`, `tutor-preferences.ts`, `tutor-client.ts`
+  - `src/features/tutor/components/TutorAudioPlayer.tsx`, `TutorPanel.tsx`, `PlayTutorModal.tsx`
+  - `src/app/api/tutor/explain/route.ts`, `src/app/api/tutor/speech/route.ts`
+  - `src/app/academy/[lessonId]/page.tsx`, `src/features/academy/LessonViewClient.tsx`
+  - `src/app/play/page.tsx`, `src/app/settings/page.tsx`
+  - `tests/unit/tutor-service.test.ts`, `tests/unit/speech-controller.test.ts`, `tests/integration/tutor-api.test.ts`, `tests/unit/tutor-ui.test.tsx`
+  - `docs/AI_TUTOR_SPEC.md`, `docs/IMPLEMENTATION_LOG.md`
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run test` -> **PASS** (16 test suites, **95 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Next.js Turbopack build sukses, 41 rute berhasil di-compile termasuk 2 rute API server dinamis).
+  - Verifikasi Server HTTP (Next.js production runtime):
+    - `POST /api/tutor/explain` -> Status 200 OK (mengembalikan analisis terstruktur, naskah lisan, dan langkah legal tervalidasi).
+    - `POST /api/tutor/speech` -> Status 503 fallback terkelola aman saat tanpa kunci API (`fallbackToWebSpeech: true`).
+
+- **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 3 terpenuhi secara penuh).
