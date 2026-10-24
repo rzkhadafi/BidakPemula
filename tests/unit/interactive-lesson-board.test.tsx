@@ -103,4 +103,22 @@ describe("InteractiveLessonBoard - Pop-up Step Completion Modal", () => {
     fireEvent.click(completeBtn);
     expect(handleLessonComplete).toHaveBeenCalledTimes(1);
   });
+
+  it("notifies onStepChange when advancing steps so side panels sync in real time", () => {
+    const handleStepChange = vi.fn();
+    render(
+      <InteractiveLessonBoard
+        lesson={mockLesson}
+        currentStepIndex={0}
+        onStepChange={handleStepChange}
+        onLessonComplete={vi.fn()}
+      />
+    );
+
+    // Complete step 1
+    fireEvent.click(screen.getByLabelText("Petak e4"));
+    fireEvent.click(screen.getByRole("button", { name: /Lanjut ke Tantangan Berikutnya/i }));
+
+    expect(handleStepChange).toHaveBeenCalledWith(1);
+  });
 });

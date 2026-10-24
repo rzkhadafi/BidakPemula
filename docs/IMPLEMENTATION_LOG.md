@@ -671,4 +671,38 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
 
 - **Gate:** **PASS** (Alur belajar kini zero-scroll dan otomatis memandu pemula lewat pop-up yang jelas).
 
+---
+
+### 2026-10-24 — Sinkronisasi 100% Real-Time Tantangan Papan & Panel Guru Catur (Academy Step Sync)
+
+- **Tujuan Permintaan Pengguna:**
+  Saat pemain berada di Tantangan 3 dari 3 (*"Tunjukkan Sudut Kanan Bawah Putih (h1)"*), panel samping Guru Catur AI sebelumnya masih tertahan di instruksi langkah pertama (*"Tunjukkan Petak Pusat e4"*). Pengguna menuntut **100% sinkronisasi real-time di seluruh bagian website**: apa pun yang aktif di papan catur harus langsung tercermin secara instan di panel panduan, teks ringkasan, maupun pemutar suara tanpa keterlambatan atau data basi.
+
+- **Penyebab:**
+  Komponen `LessonViewClient.tsx` sebelumnya meng-hardcode indeks langkah pertama (`lesson.steps[0]`) saat mengoper data `requestContext` ke `TutorPanel`. Komponen papan `InteractiveLessonBoard` juga sebelumnya mengelola indeks langkahnya secara internal tanpa mengirimkan pembaruan langkah kembali ke parent. Akibatnya, saat papan berpindah ke tantangan nomor 2 dan 3, panel samping tetap terkunci di langkah nomor 1.
+
+- **Perubahan yang Diterapkan:**
+  1. **Two-Way Real-Time State Binding (`src/features/academy/InteractiveLessonBoard.tsx`):**
+     - Menambahkan prop `currentStepIndex?: number` dan `onStepChange?: (stepIndex: number) => void`.
+     - Saat pemain mengonfirmasi kelanjutan langkah (`handleNextStep`), fungsi `setCurrentStepIdx` langsung memberitahukan `onStepChange(nextIdx)` ke parent.
+  2. **Sinkronisasi Total Panel Samping (`src/features/academy/LessonViewClient.tsx`):**
+     - State `currentStepIdx` dikelola di level parent dan diturunkan ke `InteractiveLessonBoard`.
+     - Panel samping `TutorPanel` kini dipasang dengan kunci unik reaktif `key={`${lesson.id}-${currentStep.id}`}` dan `requestContext` yang sepenuhnya dinamis:
+       - FEN papan aktif: `currentStep.fen`
+       - Instruksi materi aktif: `currentStep.instruction` (misal: *"Tunjukkan Sudut Kanan Bawah Putih (h1)"*)
+     - Setiap kali tantangan berpindah, audio suara lama dihentikan seketika (`tutorSpeech.stop()`) dan penjelasan baru langsung siap diputar untuk langkah yang sedang aktif.
+     - Penyelarasan siklus hidup: `<LessonViewClient key={lesson.id} ... />` di `src/app/academy/[lessonId]/page.tsx` memastikan perpindahan antar pelajaran mereset tantangan ke nomor 1 secara konsisten tanpa efek samping *cascading render*.
+  3. **Pengujian Integrasi Komprehensif (`tests/unit/academy-view-client.test.tsx`):**
+     - Memverifikasi bahwa ketika tantangan di papan bergerak dari langkah 1 (e4) ke langkah 2 (d5) lalu ke langkah 3 (h1), judul dan ringkasan `TutorPanel` di panel samping langsung berganti secara real-time menjadi *"Tunjukkan Sudut Kanan Bawah Putih (h1)"*.
+     - Memverifikasi teks lama e4 tidak lagi muncul di panel saat langkah 3 aktif.
+     - Total pengujian lulus: **142 tests (24 test suites)**.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (24 test suites, **142 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (Papan catur dan seluruh panel pendamping kini 100% tersinkronisasi secara real-time).
+
 - **Langkah berikutnya:** Tahap 3: Evaluasi & Perbaikan Diri (*Storytelling Game Review & Play from Turning Point*).

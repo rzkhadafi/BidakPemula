@@ -35,6 +35,19 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
   const router = useRouter();
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"tutor" | "guide">("tutor");
+  const [currentStepIdx, setCurrentStepIdx] = useState<number>(0);
+  const [prevLessonId, setPrevLessonId] = useState<string>(lesson.id);
+
+  // Sync step index during render when lesson changes (official React pattern)
+  if (prevLessonId !== lesson.id) {
+    setPrevLessonId(lesson.id);
+    setCurrentStepIdx(0);
+  }
+
+  // Stop previous speech immediately when step or lesson changes
+  React.useEffect(() => {
+    tutorSpeech.stop();
+  }, [currentStepIdx, lesson.id]);
 
   // Cleanup speech when navigating away
   React.useEffect(() => {
@@ -47,6 +60,8 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
     markLessonCompleted(lesson.id);
     setCompletionModalOpen(true);
   };
+
+  const currentStep = lesson.steps[currentStepIdx] || lesson.steps[0];
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -81,6 +96,8 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
         <div className="lg:col-span-7 flex flex-col items-center w-full">
           <InteractiveLessonBoard
             lesson={lesson}
+            currentStepIndex={currentStepIdx}
+            onStepChange={setCurrentStepIdx}
             onLessonComplete={handleLessonComplete}
           />
         </div>
@@ -117,13 +134,14 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
 
           {activeTab === "tutor" ? (
             <TutorPanel
+              key={`${lesson.id}-${currentStep.id}`}
               requestContext={{
-                fen: lesson.steps[0].fen,
+                fen: currentStep.fen,
                 sideToMove: "w",
                 learnerLevel: "pemula",
                 mode: "lesson",
                 lessonTitle: lesson.title,
-                lessonStepInstruction: lesson.steps[0].instruction,
+                lessonStepInstruction: currentStep.instruction,
               }}
             />
           ) : (

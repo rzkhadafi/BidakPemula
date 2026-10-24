@@ -24,6 +24,7 @@ async function LessonDetailContent({
 
   return (
     <LessonViewClient
+      key={lesson.id}
       lesson={lesson}
       prevLesson={prevLesson}
       nextLesson={nextLesson}

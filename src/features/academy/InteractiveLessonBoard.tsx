@@ -16,6 +16,8 @@ import { getSkillByLessonId, recordActivityEvidence } from "@/features/learning"
 interface InteractiveLessonBoardProps {
   lesson: AcademyLesson;
   initialStepIndex?: number;
+  currentStepIndex?: number;
+  onStepChange?: (stepIndex: number) => void;
   onLessonComplete: () => void;
 }
 
@@ -36,9 +38,22 @@ function initChessWithFen(fen: string): Chess {
 export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   lesson,
   initialStepIndex = 0,
+  currentStepIndex,
+  onStepChange,
   onLessonComplete,
 }) => {
-  const [currentStepIdx, setCurrentStepIdx] = useState<number>(initialStepIndex);
+  const [internalStepIdx, setInternalStepIdx] = useState<number>(initialStepIndex);
+  const currentStepIdx = currentStepIndex !== undefined ? currentStepIndex : internalStepIdx;
+
+  const setCurrentStepIdx = useCallback(
+    (action: number | ((prev: number) => number)) => {
+      const nextIdx = typeof action === "function" ? action(currentStepIdx) : action;
+      setInternalStepIdx(nextIdx);
+      onStepChange?.(nextIdx);
+    },
+    [currentStepIdx, onStepChange]
+  );
+
   const step: LessonStep = lesson.steps[currentStepIdx] || lesson.steps[0];
 
   const [chess, setChess] = useState<Chess>(() => initChessWithFen(step.fen));
