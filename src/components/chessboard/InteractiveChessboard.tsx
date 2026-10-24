@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useSyncExternalStore } from "react";
 import { Chess, Square } from "chess.js";
-import { Glasses, AlertTriangle, Shield, Target } from "lucide-react";
+import { Glasses, AlertTriangle, Shield, Target, HelpCircle } from "lucide-react";
 import { PlayerColor } from "@/types/chess";
 import { Modal } from "@/components/ui/Modal";
 import { ChessPiece } from "./ChessPieces";
@@ -142,59 +142,125 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
-      {/* Utility Bar: Kacamata Catur Toggle & Status Mini */}
+      {/* Utility Bar: Kacamata Catur Toggle & Live Radar Ticker (Zero Page Scroll) */}
       {showVisionToggle && (
-        <div className="flex items-center justify-between gap-2 mb-2 px-1">
-          <button
-            type="button"
-            onClick={handleToggleVision}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-              visionEnabled
-                ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
-                : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
-            }`}
-            title="Nyalakan/matikan Kacamata Catur (melihat bidak terancam & peluang secara visual)"
-            aria-label={`Kacamata Catur ${visionEnabled ? "Aktif" : "Nonaktif"}`}
-            aria-pressed={visionEnabled}
-          >
-            <Glasses className={`w-3.5 h-3.5 ${visionEnabled ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
-            <span>Kacamata Catur</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                visionEnabled ? "bg-[#C7A66A] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2 px-0.5 min-h-[34px]">
+          {/* Left: Button Kacamata Catur & Mobile Guide Toggle */}
+          <div className="flex items-center justify-between sm:justify-start gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleToggleVision}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                visionEnabled
+                  ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
+                  : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
               }`}
+              title="Nyalakan/matikan Kacamata Catur (melihat bidak terancam & peluang secara visual)"
+              aria-label={`Kacamata Catur ${visionEnabled ? "Aktif" : "Nonaktif"}`}
+              aria-pressed={visionEnabled}
             >
-              {visionEnabled ? "ON" : "OFF"}
-            </span>
-          </button>
+              <Glasses className={`w-3.5 h-3.5 ${visionEnabled ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
+              <span className="font-semibold">Kacamata Catur</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                  visionEnabled ? "bg-[#C7A66A] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
+                }`}
+              >
+                {visionEnabled ? "ON" : "OFF"}
+              </span>
+            </button>
 
+            {visionEnabled && (
+              <button
+                type="button"
+                onClick={() => setShowLegend((prev) => !prev)}
+                className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-md bg-[#1C2024] border border-[#353B42] text-[#8A9299] text-[11px] cursor-pointer"
+                title="Panduan simbol visual"
+              >
+                <HelpCircle className="w-3 h-3" />
+                <span>Panduan</span>
+              </button>
+            )}
+          </div>
+
+          {/* Right: Live Radar Alert/Summary (Zero Page Scroll, tepat di atas papan) */}
           {visionEnabled && (
-            <div className="flex items-center gap-2 text-xs">
-              {urgentHangingCount > 0 ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E17C78]/15 border border-[#E17C78]/40 text-[#E17C78] text-[11px] font-medium animate-pulse">
-                  <AlertTriangle className="w-3 h-3" />
-                  {urgentHangingCount} Terancam
+            <div className="flex items-center gap-1.5 flex-1 sm:justify-end min-w-0">
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border truncate max-w-full transition-all ${
+                  inspectedReport?.status === "hanging_friendly" || (!inspectedReport && urgentHangingCount > 0)
+                    ? "bg-[#E17C78]/15 border-[#E17C78]/40 text-[#E17C78]"
+                    : inspectedReport?.status === "overpowered_friendly"
+                    ? "bg-[#E3B66F]/15 border-[#E3B66F]/40 text-[#E3B66F]"
+                    : inspectedReport?.status === "hanging_opponent" || (!inspectedReport && opponentOpportunityCount > 0)
+                    ? "bg-[#73B894]/15 border-[#73B894]/40 text-[#73B894]"
+                    : "bg-[#1C2024] border-[#353B42] text-[#B0B5B9]"
+                }`}
+                title={inspectedReport?.summary}
+              >
+                {inspectedReport?.status === "hanging_friendly" || (!inspectedReport && urgentHangingCount > 0) ? (
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 animate-pulse text-[#E17C78]" />
+                ) : inspectedReport?.status === "overpowered_friendly" ? (
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-[#E3B66F]" />
+                ) : inspectedReport?.status === "hanging_opponent" || (!inspectedReport && opponentOpportunityCount > 0) ? (
+                  <Target className="w-3.5 h-3.5 shrink-0 text-[#73B894]" />
+                ) : (
+                  <Shield className="w-3.5 h-3.5 shrink-0 text-[#73B894]" />
+                )}
+
+                <span className="truncate text-[11px] font-medium">
+                  {inspectedReport
+                    ? `${inspectedReport.square.toUpperCase()}: ${inspectedReport.summary}`
+                    : urgentHangingCount > 0
+                    ? `Waspada: ${urgentHangingCount} bidak terancam tanpa penjaga (merah)!`
+                    : opponentOpportunityCount > 0
+                    ? `Peluang: ${opponentOpportunityCount} bidak lawan bisa dimakan gratis (hijau)!`
+                    : "Posisi aman. Arahkan mouse ke petak mana pun untuk melihat penjaganya."}
                 </span>
-              ) : opponentOpportunityCount > 0 ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#73B894]/15 border border-[#73B894]/40 text-[#73B894] text-[11px] font-medium">
-                  <Target className="w-3 h-3" />
-                  {opponentOpportunityCount} Peluang Bebas
-                </span>
-              ) : (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#24292E] border border-[#353B42] text-[#8A9299] text-[11px]">
-                  <Shield className="w-3 h-3 text-[#73B894]" />
-                  Posisi Terjaga
-                </span>
-              )}
+              </div>
 
               <button
                 type="button"
                 onClick={() => setShowLegend((prev) => !prev)}
-                className="text-[11px] text-[#8A9299] hover:text-[#F2F0E8] underline decoration-dotted cursor-pointer"
-                title="Tampilkan keterangan simbol visual"
+                className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#1C2024] border border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] text-[11px] shrink-0 cursor-pointer"
+                title="Panduan simbol visual Kacamata Catur"
               >
-                {showLegend ? "Tutup" : "Panduan"}
+                <span>{showLegend ? "Tutup" : "Panduan"}</span>
               </button>
+            </div>
+          )}
+
+          {/* Floating Popover Legend (Zero layout shift, absolute overlay di atas papan) */}
+          {visionEnabled && showLegend && (
+            <div className="absolute right-0 top-full mt-1.5 w-72 p-3 rounded-xl bg-[#1C2024] border border-[#353B42] shadow-2xl z-40 text-xs space-y-2 animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center justify-between pb-1.5 border-b border-[#353B42]">
+                <span className="font-semibold text-[#F2F0E8] text-xs">Panduan Simbol Kacamata</span>
+                <button
+                  type="button"
+                  onClick={() => setShowLegend(false)}
+                  className="text-[11px] text-[#8A9299] hover:text-[#F2F0E8] cursor-pointer"
+                >
+                  ✕ Tutup
+                </button>
+              </div>
+              <div className="space-y-1.5 text-[11px] text-[#B0B5B9]">
+                <div className="flex items-start gap-2">
+                  <span className="w-3.5 h-3.5 rounded-full bg-[#E17C78] text-white flex items-center justify-center text-[9px] font-black shrink-0 mt-0.5">!</span>
+                  <span><strong className="text-[#E17C78]">Merah (!)</strong>: Bidakmu diserang dan tidak ada yang menjaga (bahaya).</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-3 h-3 rounded-full bg-[#E3B66F] shrink-0 mt-0.5" />
+                  <span><strong className="text-[#E3B66F]">Oranye</strong>: Bidakmu kalah jumlah pengawal atau diserang bidak lebih murah.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-3.5 h-3.5 rounded-full bg-[#73B894] text-[#141619] flex items-center justify-center text-[8px] font-black shrink-0 mt-0.5">★</span>
+                  <span><strong className="text-[#73B894]">Hijau (★)</strong>: Bidak lawan tidak dijaga, bisa kamu tangkap gratis!</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[11px] shrink-0">🛡️ / 🎯</span>
+                  <span><strong>Perisai/Sasaran</strong>: Garis jangkauan bidak yang sedang kamu klik.</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -242,6 +308,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   onMouseLeave={() => setHoveredSquare(null)}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, squareCoord)}
+                  title={visionEnabled && squareThreat ? squareThreat.summary : undefined}
                   className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 ${
                     isLight ? "board-square-light" : "board-square-dark"
                   } ${
@@ -382,69 +449,6 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
           )}
         </div>
       </div>
-
-      {/* Info Card Radar Taktis Pemula (Ketika Kacamata Catur Aktif) */}
-      {visionEnabled && (
-        <div className="mt-2.5 p-3 rounded-xl bg-[#1C2024] border border-[#353B42] text-xs transition-all shadow-xs">
-          <div className="flex items-start gap-2.5">
-            {inspectedReport?.status === "hanging_friendly" ? (
-              <AlertTriangle className="w-4 h-4 text-[#E17C78] shrink-0 mt-0.5 animate-pulse" />
-            ) : inspectedReport?.status === "overpowered_friendly" ? (
-              <AlertTriangle className="w-4 h-4 text-[#E3B66F] shrink-0 mt-0.5" />
-            ) : inspectedReport?.status === "hanging_opponent" ||
-              inspectedReport?.status === "vulnerable_opponent" ? (
-              <Target className="w-4 h-4 text-[#73B894] shrink-0 mt-0.5" />
-            ) : (
-              <Shield className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
-            )}
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#F2F0E8]">
-                  {inspectedReport
-                    ? `Petak ${inspectedReport.square.toUpperCase()}`
-                    : "Radar Kacamata Catur"}
-                </span>
-                {inspectedReport && (
-                  <span className="text-[10px] text-[#8A9299]">
-                    ({inspectedReport.friendlyDefenders.length} pengawal kawan vs{" "}
-                    {inspectedReport.opponentAttackers.length} penyerang lawan)
-                  </span>
-                )}
-              </div>
-              <p className="text-[#B0B5B9] mt-0.5 leading-relaxed text-xs">
-                {inspectedReport?.summary ||
-                  (urgentHangingCount > 0
-                    ? `⚠️ Waspada: Ada ${urgentHangingCount} bidakmu yang terancam tanpa penjaga. Periksa petak berbingkai merah sebelum melangkah!`
-                    : opponentOpportunityCount > 0
-                    ? `🎯 Peluang Emas: Ada ${opponentOpportunityCount} bidak lawan yang rentan atau tidak dijaga (petak hijau). Manfaatkan kesempatan ini!`
-                    : `🛡️ Posisi seimbang & terjaga. Arahkan mouse atau sentuh petak mana pun untuk memeriksa penjaga dan garis pandang perwira.`)}
-              </p>
-            </div>
-          </div>
-
-          {/* Panduan Ringkas Simbol Kacamata */}
-          {showLegend && (
-            <div className="mt-3 pt-2.5 border-t border-[#353B42] grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#B0B5B9]">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#E17C78] animate-pulse shrink-0" />
-                <span>Bidakmu Terancam</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#E3B66F] shrink-0" />
-                <span>Kalah Pengawal/Nilai</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#73B894] animate-pulse shrink-0" />
-                <span>Peluang Tangkap Gratis</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] shrink-0">🛡️/🎯</span>
-                <span>Penjaga / Sasaran</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Pawn Promotion Modal */}
       <Modal
