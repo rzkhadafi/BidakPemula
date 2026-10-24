@@ -1,10 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo, useCallback, useSyncExternalStore } from "react";
 import { Chess, Square } from "chess.js";
+import { Glasses, AlertTriangle, Shield, Target } from "lucide-react";
 import { PlayerColor } from "@/types/chess";
 import { Modal } from "@/components/ui/Modal";
 import { ChessPiece } from "./ChessPieces";
+import {
+  computeBoardThreats,
+  computePieceScope,
+  SquareThreatReport,
+  getVisionGlassesSetting,
+  setVisionGlassesSetting,
+  subscribeVisionGlasses,
+} from "@/features/chessboard/square-threats";
 
 interface InteractiveChessboardProps {
   chess: Chess;
@@ -18,6 +27,10 @@ interface InteractiveChessboardProps {
   onSquareClick: (square: string) => void;
   onConfirmPromotion: (piece: "q" | "r" | "b" | "n") => void;
   onCancelPromotion: () => void;
+  /** Tampilkan tombol toggle Kacamata Catur di atas papan (default true) */
+  showVisionToggle?: boolean;
+  /** Pengaturan awal Kacamata Catur aktif/tidak jika belum ada di localStorage */
+  defaultVisionEnabled?: boolean;
 }
 
 export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
@@ -32,7 +45,61 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   onSquareClick,
   onConfirmPromotion,
   onCancelPromotion,
+  showVisionToggle = true,
+  defaultVisionEnabled = false,
 }) => {
+  // State Kacamata Catur (Vision Glasses) tersinkronisasi aman SSR & multi-komponen
+  const storedVision = useSyncExternalStore(
+    subscribeVisionGlasses,
+    getVisionGlassesSetting,
+    () => defaultVisionEnabled
+  );
+  const [visionOverride, setVisionOverride] = useState<boolean | null>(null);
+  const visionEnabled = visionOverride !== null ? visionOverride : storedVision;
+
+  const [showLegend, setShowLegend] = useState<boolean>(false);
+  const [hoveredSquare, setHoveredSquare] = useState<Square | null>(null);
+
+  const handleToggleVision = useCallback(() => {
+    const next = !visionEnabled;
+    setVisionGlassesSetting(next);
+    setVisionOverride(next);
+  }, [visionEnabled]);
+
+  const playerColorCode = orientation === "white" ? "w" : "b";
+
+  // Hitung peta ancaman & peluang jika Kacamata Catur aktif
+  const threats = useMemo(() => {
+    if (!visionEnabled) return null;
+    return computeBoardThreats(chess, playerColorCode);
+  }, [chess, playerColorCode, visionEnabled]);
+
+  // Hitung garis pandang (scope) bidak yang sedang dipilih
+  const pieceScope = useMemo(() => {
+    if (!visionEnabled || !selectedSquare) return null;
+    return computePieceScope(chess, selectedSquare as Square);
+  }, [chess, selectedSquare, visionEnabled]);
+
+  // Ringkasan bahaya & peluang papan untuk indikator status
+  const { urgentHangingCount, opponentOpportunityCount } = useMemo(() => {
+    if (!threats) return { urgentHangingCount: 0, opponentOpportunityCount: 0 };
+    let hanging = 0;
+    let opportunity = 0;
+    for (const [, report] of threats) {
+      if (report.status === "hanging_friendly" || report.status === "overpowered_friendly") {
+        hanging++;
+      } else if (report.status === "hanging_opponent" || report.status === "vulnerable_opponent") {
+        opportunity++;
+      }
+    }
+    return { urgentHangingCount: hanging, opponentOpportunityCount: opportunity };
+  }, [threats]);
+
+  // Petak yang sedang diinspeksi (hover diutamakan, atau petak yang dipilih)
+  const inspectedSquare = hoveredSquare || (selectedSquare as Square | null);
+  const inspectedReport: SquareThreatReport | undefined =
+    threats && inspectedSquare ? threats.get(inspectedSquare) : undefined;
+
   const files =
     orientation === "white"
       ? ["a", "b", "c", "d", "e", "f", "g", "h"]
@@ -75,6 +142,65 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div className="w-full max-w-[640px] lg:max-w-[660px] mx-auto select-none">
+      {/* Utility Bar: Kacamata Catur Toggle & Status Mini */}
+      {showVisionToggle && (
+        <div className="flex items-center justify-between gap-2 mb-2 px-1">
+          <button
+            type="button"
+            onClick={handleToggleVision}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+              visionEnabled
+                ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
+                : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
+            }`}
+            title="Nyalakan/matikan Kacamata Catur (melihat bidak terancam & peluang secara visual)"
+            aria-label={`Kacamata Catur ${visionEnabled ? "Aktif" : "Nonaktif"}`}
+            aria-pressed={visionEnabled}
+          >
+            <Glasses className={`w-3.5 h-3.5 ${visionEnabled ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
+            <span>Kacamata Catur</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                visionEnabled ? "bg-[#C7A66A] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
+              }`}
+            >
+              {visionEnabled ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {visionEnabled && (
+            <div className="flex items-center gap-2 text-xs">
+              {urgentHangingCount > 0 ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E17C78]/15 border border-[#E17C78]/40 text-[#E17C78] text-[11px] font-medium animate-pulse">
+                  <AlertTriangle className="w-3 h-3" />
+                  {urgentHangingCount} Terancam
+                </span>
+              ) : opponentOpportunityCount > 0 ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#73B894]/15 border border-[#73B894]/40 text-[#73B894] text-[11px] font-medium">
+                  <Target className="w-3 h-3" />
+                  {opponentOpportunityCount} Peluang Bebas
+                </span>
+              ) : (
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#24292E] border border-[#353B42] text-[#8A9299] text-[11px]">
+                  <Shield className="w-3 h-3 text-[#73B894]" />
+                  Posisi Terjaga
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowLegend((prev) => !prev)}
+                className="text-[11px] text-[#8A9299] hover:text-[#F2F0E8] underline decoration-dotted cursor-pointer"
+                title="Tampilkan keterangan simbol visual"
+              >
+                {showLegend ? "Tutup" : "Panduan"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Chessboard Viewport */}
       <div
         className="relative aspect-square w-full rounded-2xl overflow-hidden border-[5px] sm:border-[7px] border-[#382414] shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[#24170D] ring-1 ring-white/10"
         role="region"
@@ -102,11 +228,18 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
               const isWhitePiece = piece?.color === "w";
 
+              // Kacamata Catur threat report for this square
+              const squareThreat = threats?.get(squareCoord);
+              const isDefendedInScope = pieceScope?.defendedPieces.includes(squareCoord);
+              const isTargetedInScope = pieceScope?.targetedEnemyPieces.includes(squareCoord);
+
               return (
                 <div
                   key={squareCoord}
                   data-square={squareCoord}
                   onClick={() => !disabled && onSquareClick(squareCoord)}
+                  onMouseEnter={() => setHoveredSquare(squareCoord)}
+                  onMouseLeave={() => setHoveredSquare(null)}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, squareCoord)}
                   className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 ${
@@ -179,12 +312,139 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   {isLegal && piece && (
                     <div className="absolute inset-1 border-[3px] sm:border-4 border-[#E2B13C]/80 rounded-full pointer-events-none z-20 animate-pulse" />
                   )}
+
+                  {/* Overlays Kacamata Catur (Pointer-events-none agar tidak mengganggu klik/drag) */}
+                  {visionEnabled && squareThreat && (
+                    <>
+                      {/* 1. Bidak Sendiri Gantung (Hanging Friendly): Bahaya Fatal! */}
+                      {squareThreat.status === "hanging_friendly" && (
+                        <div className="absolute inset-0 ring-[3px] ring-inset ring-[#E17C78] bg-[#E17C78]/25 pointer-events-none z-15 animate-pulse rounded-xs">
+                          <span
+                            className="absolute top-0.5 right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-[#E17C78] text-white flex items-center justify-center text-[9px] font-black shadow-md"
+                            title="Bidak terancam tanpa penjaga!"
+                          >
+                            !
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 2. Bidak Sendiri Kalah Pengawal / Diserang Bidak Lebih Murah */}
+                      {squareThreat.status === "overpowered_friendly" && (
+                        <div className="absolute inset-0 ring-2 ring-inset ring-[#E3B66F]/80 bg-[#E3B66F]/15 pointer-events-none z-15 rounded-xs">
+                          <span
+                            className="absolute top-0.5 right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#E3B66F] shadow-xs"
+                            title="Waspada: Kalah nilai / jumlah pengawal"
+                          />
+                        </div>
+                      )}
+
+                      {/* 3. Bidak Lawan Gantung (Hanging Opponent): Peluang Emas! */}
+                      {squareThreat.status === "hanging_opponent" && (
+                        <div className="absolute inset-0 ring-[3px] ring-inset ring-[#73B894] bg-[#73B894]/25 pointer-events-none z-15 animate-pulse rounded-xs">
+                          <span
+                            className="absolute top-0.5 right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-[#73B894] text-[#141619] flex items-center justify-center text-[8px] font-black shadow-md"
+                            title="Bidak lawan bebas ditangkap gratis!"
+                          >
+                            ★
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 4. Bidak Lawan Rentan (Vulnerable Opponent) */}
+                      {squareThreat.status === "vulnerable_opponent" && (
+                        <div className="absolute inset-0 ring-2 ring-inset ring-[#73B894]/60 bg-[#73B894]/10 pointer-events-none z-15 rounded-xs" />
+                      )}
+
+                      {/* 5. Bidak Kawan yang Dilindungi oleh Bidak Terpilih (Piece Scope) */}
+                      {isDefendedInScope && (
+                        <div
+                          className="absolute bottom-0.5 left-0.5 px-1 py-0.2 rounded bg-[#73B894]/90 text-[#141619] text-[8px] sm:text-[9px] font-bold pointer-events-none z-25 shadow-xs flex items-center gap-0.5"
+                          title="Perwira kawan ini dilindungi oleh bidak yang Anda pilih"
+                        >
+                          <Shield className="w-2.5 h-2.5" />
+                        </div>
+                      )}
+
+                      {/* 6. Bidak Lawan yang Diincar oleh Bidak Terpilih (Target In Scope) */}
+                      {isTargetedInScope && (
+                        <div
+                          className="absolute bottom-0.5 left-0.5 px-1 py-0.2 rounded bg-[#E17C78]/90 text-white text-[8px] sm:text-[9px] font-bold pointer-events-none z-25 shadow-xs flex items-center gap-0.5"
+                          title="Bidak lawan ini berada dalam jangkauan serangan bidak Anda"
+                        >
+                          <Target className="w-2.5 h-2.5" />
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               );
             })
           )}
         </div>
       </div>
+
+      {/* Info Card Radar Taktis Pemula (Ketika Kacamata Catur Aktif) */}
+      {visionEnabled && (
+        <div className="mt-2.5 p-3 rounded-xl bg-[#1C2024] border border-[#353B42] text-xs transition-all shadow-xs">
+          <div className="flex items-start gap-2.5">
+            {inspectedReport?.status === "hanging_friendly" ? (
+              <AlertTriangle className="w-4 h-4 text-[#E17C78] shrink-0 mt-0.5 animate-pulse" />
+            ) : inspectedReport?.status === "overpowered_friendly" ? (
+              <AlertTriangle className="w-4 h-4 text-[#E3B66F] shrink-0 mt-0.5" />
+            ) : inspectedReport?.status === "hanging_opponent" ||
+              inspectedReport?.status === "vulnerable_opponent" ? (
+              <Target className="w-4 h-4 text-[#73B894] shrink-0 mt-0.5" />
+            ) : (
+              <Shield className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#F2F0E8]">
+                  {inspectedReport
+                    ? `Petak ${inspectedReport.square.toUpperCase()}`
+                    : "Radar Kacamata Catur"}
+                </span>
+                {inspectedReport && (
+                  <span className="text-[10px] text-[#8A9299]">
+                    ({inspectedReport.friendlyDefenders.length} pengawal kawan vs{" "}
+                    {inspectedReport.opponentAttackers.length} penyerang lawan)
+                  </span>
+                )}
+              </div>
+              <p className="text-[#B0B5B9] mt-0.5 leading-relaxed text-xs">
+                {inspectedReport?.summary ||
+                  (urgentHangingCount > 0
+                    ? `⚠️ Waspada: Ada ${urgentHangingCount} bidakmu yang terancam tanpa penjaga. Periksa petak berbingkai merah sebelum melangkah!`
+                    : opponentOpportunityCount > 0
+                    ? `🎯 Peluang Emas: Ada ${opponentOpportunityCount} bidak lawan yang rentan atau tidak dijaga (petak hijau). Manfaatkan kesempatan ini!`
+                    : `🛡️ Posisi seimbang & terjaga. Arahkan mouse atau sentuh petak mana pun untuk memeriksa penjaga dan garis pandang perwira.`)}
+              </p>
+            </div>
+          </div>
+
+          {/* Panduan Ringkas Simbol Kacamata */}
+          {showLegend && (
+            <div className="mt-3 pt-2.5 border-t border-[#353B42] grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#B0B5B9]">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#E17C78] animate-pulse shrink-0" />
+                <span>Bidakmu Terancam</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#E3B66F] shrink-0" />
+                <span>Kalah Pengawal/Nilai</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#73B894] animate-pulse shrink-0" />
+                <span>Peluang Tangkap Gratis</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] shrink-0">🛡️/🎯</span>
+                <span>Penjaga / Sasaran</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Pawn Promotion Modal */}
       <Modal
@@ -205,7 +465,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 key={p.id}
                 type="button"
                 onClick={() => onConfirmPromotion(p.id as "q" | "r" | "b" | "n")}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-[#1C2024] border border-[#382414] hover:border-[#D4A017] hover:bg-[#2A1F16] transition-all group focus-visible:outline-2 focus-visible:outline-[#D4A017]"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-[#1C2024] border border-[#382414] hover:border-[#D4A017] hover:bg-[#2A1F16] transition-all group focus-visible:outline-2 focus-visible:outline-[#D4A017] cursor-pointer"
               >
                 <div className="w-12 h-12 mb-1 group-hover:scale-105 transition-transform">
                   <ChessPiece
@@ -224,7 +484,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
             <button
               type="button"
               onClick={onCancelPromotion}
-              className="text-xs text-[#8A9299] hover:text-[#F2F0E8] underline"
+              className="text-xs text-[#8A9299] hover:text-[#F2F0E8] underline cursor-pointer"
             >
               Batalkan
             </button>

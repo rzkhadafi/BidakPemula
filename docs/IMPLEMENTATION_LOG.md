@@ -396,3 +396,44 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 42 rute statis & server berhasil dibuat).
 
 - **Gate:** **PASS** (Seluruh kriteria penerimaan Fase 5 terpenuhi secara lengkap).
+
+---
+
+### 2026-10-24 — Fitur Pedagogi Lanjutan: Tahap 1 — "Kacamata Catur" (Vision & Threat Heatmap)
+
+- **Tujuan:**
+  Membangun fitur "Kacamata Catur" (Vision & Threat Heatmap) sebagai Tahap 1 dari peta jalan pedagogi pemula. Fitur ini dirancang khusus untuk mengatasi kebutaan taktis pemula (*chess blindness*), seperti meninggalkan bidak tanpa perlindungan (*hanging pieces*), melewatkan peluang menangkap perwira lawan secara gratis, dan ketidaktahuan atas koordinasi perlindungan antar-perwira.
+
+- **Perubahan utama:**
+  1. **Mesin Kalkulasi Ancaman & Perlindungan Petak (`src/features/chessboard/square-threats.ts`):**
+     - Memanfaatkan metode native berkecepatan tinggi `chess.attackers(sq, color)` dari `chess.js` untuk memetakan seluruh 64 petak papan catur dalam waktu < 0.5 ms tanpa memblokir rendering UI.
+     - Menilai status taktis per petak:
+       - `hanging_friendly`: Bidak kawan diserang lawan dan sama sekali tidak dijaga pengawal (peringatan bahaya fatal).
+       - `overpowered_friendly`: Bidak kawan kalah jumlah pengawal atau diserang oleh bidak lawan yang nilainya lebih murah (misal Menteri diserang Pion/Kuda).
+       - `hanging_opponent`: Bidak lawan tidak dijaga dan bisa ditangkap gratis (peluang emas).
+       - `vulnerable_opponent`: Bidak lawan rentan karena diincar oleh perwira kita yang lebih murah atau kalah jumlah pengawal.
+       - `defended_friendly`: Bidak kawan terlindungi aman oleh perwira kawan.
+     - Memperhitungkan matriks nilai bidak standar (`P=1, N=3, B=3, R=5, Q=9, K=1000`) untuk mendeteksi ancaman pertukaran yang merugikan pemula.
+     - Mengimplementasikan `computePieceScope()`: mendeteksi perwira kawan yang dilindungi oleh bidak yang dipilih (`defendedPieces`), bidak lawan yang diincar (`targetedEnemyPieces`), dan petak kosong yang dikontrol (`controlledEmptySquares`).
+     - Menyediakan penyimpanan preferensi `localStorage` (`chess_archive_vision_glasses_v1`) yang tersinkronisasi aman melalui pola React 19 `useSyncExternalStore`.
+  2. **Integrasi Visual pada Papan Catur (`src/components/chessboard/InteractiveChessboard.tsx`):**
+     - **Tombol Toggle & Status Bar:** Menghadirkan tombol `Kacamata Catur` dengan ikon `Glasses` dan status `ON / OFF` di atas papan, lengkap dengan indikator mini jumlah bahaya (`! Terancam`) dan peluang (`★ Peluang Bebas`).
+     - **Overlay Petak Non-Intrusif:** Seluruh indikator visual menggunakan `pointer-events-none` agar tidak mengganggu klik, drag-and-drop, dan eksekusi langkah catur:
+       - Cincin merah berdenyut dan lencana `!` untuk bidak sendiri yang gantung tanpa pengawal.
+       - Cincin oranye/kuning untuk bidak kawan yang kalah nilai pertukaran atau kalah jumlah pengawal.
+       - Cincin hijau zamrud berdenyut dan lencana `★` untuk peluang menangkap bidak lawan yang gratis.
+       - Lencana perisai hijau `🛡️` pada perwira kawan yang dijaga oleh bidak yang sedang diklik.
+       - Lencana sasaran `🎯` pada bidak lawan yang diincar oleh bidak yang sedang diklik.
+     - **Radar Taktis Pemula & Panduan Simbol:** Kartu informasi interaktif di bawah papan yang menampilkan kalimat penjelasan bahasa Indonesia yang ramah saat kursor diarahkan ke petak (*hover*) atau saat petak diklik/disentuh, serta tombol panduan legenda simbol visual.
+  3. **Pengujian Unit & Komprehensif (`tests/unit/square-threats.test.ts`):**
+     - Memvalidasi cakupan 64 petak, pendeteksian posisi awal, akurasi deteksi bidak gantung kawan, peluang tangkap bebas lawan, perbandingan nilai materi bidak penyerang, dan garis pandang perwira (scope).
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings pada seluruh file TypeScript & React).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm test` -> **PASS** (18 test suites, **115 tests lulus 100%**).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 sukses, seluruh 42 rute statis & server berhasil dibuat).
+
+- **Gate:** **PASS** (Tahap 1: "Kacamata Catur" telah selesai diimplementasikan, teruji bebas error, dan siap digunakan).
+
+- **Langkah berikutnya:** Tahap 2: Pendampingan Aktif (*In-Game AI Co-Pilot: Guided Undo & Socratic Hints*).
