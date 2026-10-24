@@ -12,24 +12,36 @@ export const DEFAULT_COPILOT_PREFERENCES: CoPilotPreferences = {
 type CoPilotListener = (prefs: CoPilotPreferences) => void;
 const listeners = new Set<CoPilotListener>();
 
+// In-memory cache to guarantee reference stability for useSyncExternalStore
+let memoryCache: CoPilotPreferences | null = null;
+
 export function getCoPilotPreferences(): CoPilotPreferences {
   if (typeof window === "undefined") {
     return DEFAULT_COPILOT_PREFERENCES;
   }
 
+  if (memoryCache !== null) {
+    return memoryCache;
+  }
+
   try {
     const raw = localStorage.getItem(COPILOT_STORAGE_KEY);
-    if (!raw) return DEFAULT_COPILOT_PREFERENCES;
+    if (!raw) {
+      memoryCache = DEFAULT_COPILOT_PREFERENCES;
+      return memoryCache;
+    }
     const parsed = JSON.parse(raw);
-    return {
+    memoryCache = {
       enabled: typeof parsed.enabled === "boolean" ? parsed.enabled : DEFAULT_COPILOT_PREFERENCES.enabled,
       blunderSafetyNet: typeof parsed.blunderSafetyNet === "boolean" ? parsed.blunderSafetyNet : DEFAULT_COPILOT_PREFERENCES.blunderSafetyNet,
       socraticHintsEnabled: typeof parsed.socraticHintsEnabled === "boolean" ? parsed.socraticHintsEnabled : DEFAULT_COPILOT_PREFERENCES.socraticHintsEnabled,
       autoAudioHint: typeof parsed.autoAudioHint === "boolean" ? parsed.autoAudioHint : DEFAULT_COPILOT_PREFERENCES.autoAudioHint,
     };
   } catch {
-    return DEFAULT_COPILOT_PREFERENCES;
+    memoryCache = DEFAULT_COPILOT_PREFERENCES;
   }
+
+  return memoryCache;
 }
 
 export function setCoPilotPreferences(prefs: Partial<CoPilotPreferences>): void {
@@ -38,6 +50,7 @@ export function setCoPilotPreferences(prefs: Partial<CoPilotPreferences>): void 
   try {
     const current = getCoPilotPreferences();
     const updated: CoPilotPreferences = { ...current, ...prefs };
+    memoryCache = updated;
     localStorage.setItem(COPILOT_STORAGE_KEY, JSON.stringify(updated));
     listeners.forEach((l) => l(updated));
   } catch {

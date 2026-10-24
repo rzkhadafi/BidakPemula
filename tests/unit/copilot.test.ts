@@ -115,6 +115,12 @@ describe("In-Game AI Co-Pilot: Blunder Detector & Socratic Hints", () => {
   });
 
   describe("Co-Pilot Storage Preferences", () => {
+    it("returns a stable cached reference on consecutive calls for useSyncExternalStore", () => {
+      const snap1 = getCoPilotPreferences();
+      const snap2 = getCoPilotPreferences();
+      expect(snap1).toBe(snap2); // Strict identity equality
+    });
+
     it("reads default preferences and allows updates", () => {
       const prefs = getCoPilotPreferences();
       expect(prefs.enabled).toBe(true);
