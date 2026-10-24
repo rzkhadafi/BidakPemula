@@ -47,13 +47,19 @@ const DEFAULT_CONFIG: ChessGameConfig = {
   isPracticeMode: true,
 };
 
-// Natural human-like minimum thinking delay (in ms)
-const BOT_MIN_THINKING_DELAYS: Record<BotDifficultyLevel, number> = {
-  beginner: 650,     // Santai
-  casual: 850,       // Pemula
-  intermediate: 1100, // Berkembang
-  advanced: 1300,    // Menantang
-  master: 1500,      // Kuat
+interface ThinkingDelayRange {
+  min: number;
+  max: number;
+}
+
+// Natural human-like thinking delay ranges (in ms) mimicking chess.com bots
+// chess.com bots take a realistic pause so moves don't feel instantaneous or robotic
+const BOT_MIN_THINKING_DELAYS: Record<BotDifficultyLevel, ThinkingDelayRange> = {
+  beginner: { min: 1400, max: 2400 },     // Santai (~1.9 detik)
+  casual: { min: 1600, max: 2800 },       // Pemula (~2.2 detik)
+  intermediate: { min: 1900, max: 3200 }, // Berkembang (~2.5 detik)
+  advanced: { min: 2200, max: 3800 },     // Menantang (~3.0 detik)
+  master: { min: 2600, max: 4500 },       // Kuat (~3.5 detik)
 };
 
 function getInitialTimeMs(timeControl: TimeControlId): number {
@@ -378,7 +384,10 @@ export function useChessGame(
       setBotThinking(true);
       const searchId = ++currentSearchIdRef.current;
       const diffConfig = getDifficultyConfig(config.botDifficulty);
-      const minDelay = customEngine ? 0 : (BOT_MIN_THINKING_DELAYS[config.botDifficulty] || 800);
+      const delayRange = BOT_MIN_THINKING_DELAYS[config.botDifficulty] || { min: 1600, max: 2600 };
+      const minDelay = customEngine
+        ? 0
+        : Math.floor(Math.random() * (delayRange.max - delayRange.min + 1)) + delayRange.min;
       const searchStartTime = Date.now();
 
       try {
@@ -459,13 +468,16 @@ export function useChessGame(
         setLastMove({ from: moveRes.from, to: moveRes.to });
         setBotThinking(false);
 
-        // Sound effect
+        // Sound effect: castle, capture, check, or opponent move
+        const isCastle = moveRes.san.startsWith("O-O");
         if (checkState) {
           chessAudio.playCheck();
+        } else if (isCastle) {
+          chessAudio.playCastle();
         } else if (moveRes.captured) {
           chessAudio.playCapture();
         } else {
-          chessAudio.playMove();
+          chessAudio.playOpponentMove();
         }
 
         // Check termination after bot move
@@ -514,12 +526,15 @@ export function useChessGame(
             setIsCheck(checkState);
             setLastMove({ from: moveRes.from, to: moveRes.to });
 
+            const isCastle = moveRes.san.startsWith("O-O");
             if (checkState) {
               chessAudio.playCheck();
+            } else if (isCastle) {
+              chessAudio.playCastle();
             } else if (moveRes.captured) {
               chessAudio.playCapture();
             } else {
-              chessAudio.playMove();
+              chessAudio.playOpponentMove();
             }
 
             const term = evaluateGameTermination();
@@ -589,9 +604,12 @@ export function useChessGame(
         setCurrentHint(null);
       }
 
-      // Sound effect
+      // Sound effect: castle, capture, check, or player move
+      const isCastle = moveRes.san.startsWith("O-O");
       if (checkState) {
         chessAudio.playCheck();
+      } else if (isCastle) {
+        chessAudio.playCastle();
       } else if (moveRes.captured) {
         chessAudio.playCapture();
       } else {

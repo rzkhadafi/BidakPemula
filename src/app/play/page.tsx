@@ -113,6 +113,11 @@ export default function PlayPage() {
     isPracticeMode: isPracticeMode,
   });
 
+  // Preload authentic chess audio for zero-latency playback
+  useEffect(() => {
+    chessAudio.preloadSounds();
+  }, []);
+
   // Consume any pending replay from turning point (e.g. redirected from archive)
   useEffect(() => {
     const pending = getPendingTurningPointReplay();

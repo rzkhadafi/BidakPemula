@@ -161,8 +161,11 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
       setPendingPromotion(null);
 
       // Sound
+      const isCastle = moveRes.san.startsWith("O-O");
       if (newChess.inCheck()) {
         chessAudio.playCheck();
+      } else if (isCastle) {
+        chessAudio.playCastle();
       } else if (moveRes.captured) {
         chessAudio.playCapture();
       } else {
@@ -201,12 +204,15 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
                 setChess(afterOppChess);
                 setLastMove({ from: oppFrom, to: oppTo });
 
+                const isOppCastle = oppRes.san.startsWith("O-O");
                 if (afterOppChess.inCheck()) {
                   chessAudio.playCheck();
+                } else if (isOppCastle) {
+                  chessAudio.playCastle();
                 } else if (oppRes.captured) {
                   chessAudio.playCapture();
                 } else {
-                  chessAudio.playMove();
+                  chessAudio.playOpponentMove();
                 }
 
                 const plyAfterOpp = nextPly + 1;

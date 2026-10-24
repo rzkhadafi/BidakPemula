@@ -828,3 +828,50 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk 42 rute).
 
 - **Gate:** **PASS** (Fitur Putar Ulang dari Titik Balik Kesalahan telah terintegrasi sempurna di `/play` dan `/archive/[gameId]`, tanpa merusak klik papan catur, kacamata catur, radar panah, atau narasi suara).
+
+---
+
+### Implementasi Peningkatan Audio & Pacing Bot: Suara Hentak Catur Chess.com & Jeda Berpikir Alami
+
+- **Latar Belakang & Kebutuhan Pengguna:**
+  1. Pengguna menginginkan suara langkah yang realistis persis seperti suara hentak papan kayu di chess.com (bukan suara synthesizer sintetis/beep sederhana).
+  2. Suara khusus rokade (*castling*) seperti di chess.com (dua ketukan hentakan kayu berurutan yang khas).
+  3. Menambahkan jeda waktu berpikir bot agar tidak instan (robotik), melainkan memiliki jeda berpikir manusiawi yang natural layaknya bermain melawan bot di chess.com.
+
+- **Perubahan yang Diterapkan:**
+  1. **Aset Audio Otentik Chess.com (`public/sounds/`):**
+     - Mengunduh dan membundel berkas audio MP3 resmi default chess.com secara offline-first ke dalam direktori `public/sounds/`:
+       - `move.mp3`: Suara hentakan kayu langkah sendiri (*move-self*).
+       - `move-opponent.mp3`: Suara hentakan kayu langkah lawan.
+       - `capture.mp3`: Suara gertakan benturan saat memakan bidak.
+       - `castle.mp3`: Suara rokade khas dua hentakan kayu cepat (*castling*).
+       - `check.mp3`: Suara peringatan skak.
+       - `promote.mp3`: Suara promosi bidak.
+       - `game-end.mp3`: Suara akhir pertandingan.
+       - `game-start.mp3`: Suara awal permainan.
+  2. **Mesin Audio Berkinerja Tinggi & Fallback Akustik (`src/lib/audio/chess-audio.ts`):**
+     - Mendukung pra-muat (*preload*) dan penguraian instan (`decodeAudioData`) ke dalam Web Audio API `AudioBuffer` untuk pemutaran tanpa latensi (*zero-latency playback*).
+     - Menambahkan fungsi `playCastle()`, `playOpponentMove()`, `playPromotion()`, `playGameStart()`, dan `preloadSounds()`.
+     - Menyediakan fallback HTMLAudioElement dan sintesis fisik papan kayu beresonansi (frekuensi 160Hz -> 55Hz + klik kontak 1400Hz) jika lingkungan tidak mendukung pemutaran berkas.
+  3. **Jeda Waktu Berpikir Alami Bot Mirip Chess.com (`src/features/game/use-chess-game.ts`):**
+     - Mengubah jeda berpikir minimum yang sebelumnya instan (650ms - 850ms) menjadi rentang alami dengan variasi acak organik (*natural human-like thinking delay*):
+       - `beginner`: 1400ms – 2400ms (~1.9 detik)
+       - `casual`: 1600ms – 2800ms (~2.2 detik)
+       - `intermediate`: 1900ms – 3200ms (~2.5 detik)
+       - `advanced`: 2200ms – 3800ms (~3.0 detik)
+       - `master`: 2600ms – 4500ms (~3.5 detik)
+     - Pemain mendapatkan waktu bernapas (*breathing room*) untuk mengamati langkahnya dan melihat status "Bot sedang berpikir..." sebelum bot melangkah.
+     - Jeda otomatis di-bypass (0ms) saat pengujian unit menggunakan `customEngine` agar pengujian tetap berjalan instan.
+  4. **Integrasi Suara Rokade & Langkah Lawan:**
+     - `use-chess-game.ts`: Deteksi `isCastle` (`moveRes.san.startsWith("O-O")`) memicu `chessAudio.playCastle()`, langkah bot memicu `chessAudio.playOpponentMove()`.
+     - `use-puzzle-game.ts`: Deteksi rokade dan suara balasan lawan yang otentik.
+     - `InteractiveLessonBoard.tsx`: Pemicuan suara rokade pada materi modul rokade.
+     - `tests/setup.ts`: Mocking `HTMLMediaElement` prototype (`play`, `pause`, `load`) untuk lingkungan pengujian Vitest jsdom yang bersih dari warning.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm test` -> **PASS** (27 test suites, **161 tests lulus 100%**).
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (Suara catur otentik chess.com dan jeda berpikir natural bot telah aktif sepenuhnya).

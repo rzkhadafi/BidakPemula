@@ -33,10 +33,15 @@ describe("Chess Audio Engine (Web Audio API Synthesizer)", () => {
   });
 
   it("gracefully executes sound trigger methods without throwing errors when audio context is unavailable", () => {
+    expect(() => chessAudio.preloadSounds()).not.toThrow();
     expect(() => chessAudio.playMove()).not.toThrow();
+    expect(() => chessAudio.playOpponentMove()).not.toThrow();
+    expect(() => chessAudio.playCastle()).not.toThrow();
     expect(() => chessAudio.playCapture()).not.toThrow();
     expect(() => chessAudio.playCheck()).not.toThrow();
+    expect(() => chessAudio.playPromotion()).not.toThrow();
     expect(() => chessAudio.playGameOver(true)).not.toThrow();
     expect(() => chessAudio.playGameOver(false)).not.toThrow();
+    expect(() => chessAudio.playGameStart()).not.toThrow();
   });
 });

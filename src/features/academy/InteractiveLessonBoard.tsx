@@ -110,7 +110,13 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
           setShowSuccessModal(true);
-          chessAudio.playMove();
+          if (res.san.startsWith("O-O")) {
+            chessAudio.playCastle();
+          } else if (res.captured) {
+            chessAudio.playCapture();
+          } else {
+            chessAudio.playMove();
+          }
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
 
           const skillDef = getSkillByLessonId(lesson.id);
