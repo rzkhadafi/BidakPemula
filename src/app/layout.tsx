@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bidak Pemula — Belajar Catur Mudah",
+  title: "Bidak Pemula - Belajar Catur Mudah",
   description:
     "Platform belajar, bermain catur melawan bot komputer, dan mengasah taktik catur dengan analisis terstruktur dalam Bahasa Indonesia.",
   icons: {
