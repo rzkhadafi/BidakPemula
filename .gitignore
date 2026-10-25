@@ -30,3 +30,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# internal specs & ai documents (local only, do not push to github)
+AGENTS.md
+ANTIGRAVITY_START_HERE.md
+PRD.md
+/docs/
+
