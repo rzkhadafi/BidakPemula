@@ -1,7 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useSyncExternalStore } from "react";
-import { Chess, Square } from "chess.js";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useSyncExternalStore,
+  useEffect,
+  useRef,
+} from "react";
+import { Chess, Square, PieceSymbol, Color } from "chess.js";
 import { Glasses, AlertTriangle, Shield, Target, HelpCircle, Navigation } from "lucide-react";
 import { PlayerColor } from "@/types/chess";
 import { Modal } from "@/components/ui/Modal";
@@ -158,6 +165,116 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     orientation === "white"
       ? [8, 7, 6, 5, 4, 3, 2, 1]
       : [1, 2, 3, 4, 5, 6, 7, 8];
+
+  // Smooth piece glide animation state (chess.com style)
+  const [animatingMove, setAnimatingMove] = useState<{
+    from: string;
+    to: string;
+    castlingRook?: { from: string; to: string };
+    capturedPiece?: { type: PieceSymbol; color: Color };
+    key: string;
+  } | null>(null);
+
+  const prevLastMoveRef = useRef<{ from: string; to: string } | null>(null);
+  const prevBoardMapRef = useRef<Map<Square, { type: PieceSymbol; color: Color }>>(new Map());
+  const isInitialMountRef = useRef(true);
+
+  // Monitor move changes to trigger smooth chess.com-style piece glide animation
+  useEffect(() => {
+    const currentBoardMap = new Map<Square, { type: PieceSymbol; color: Color }>();
+    const boardMatrix = chess.board();
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = boardMatrix[r][c];
+        if (p) {
+          const sq = `${String.fromCharCode(97 + c)}${8 - r}` as Square;
+          currentBoardMap.set(sq, { type: p.type, color: p.color });
+        }
+      }
+    }
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      prevLastMoveRef.current = lastMove;
+      prevBoardMapRef.current = currentBoardMap;
+      return;
+    }
+
+    const isNewMove =
+      lastMove &&
+      (!prevLastMoveRef.current ||
+        prevLastMoveRef.current.from !== lastMove.from ||
+        prevLastMoveRef.current.to !== lastMove.to);
+
+    if (isNewMove) {
+      const movedPiece = currentBoardMap.get(lastMove.to as Square);
+
+      // Detect castling rook move if King moved 2 squares
+      let castlingRook: { from: string; to: string } | undefined;
+      if (movedPiece && movedPiece.type === "k") {
+        if (lastMove.from === "e1" && lastMove.to === "g1") {
+          castlingRook = { from: "h1", to: "f1" };
+        } else if (lastMove.from === "e1" && lastMove.to === "c1") {
+          castlingRook = { from: "a1", to: "d1" };
+        } else if (lastMove.from === "e8" && lastMove.to === "g8") {
+          castlingRook = { from: "h8", to: "f8" };
+        } else if (lastMove.from === "e8" && lastMove.to === "c8") {
+          castlingRook = { from: "a8", to: "d8" };
+        }
+      }
+
+      // Detect if an opponent piece was captured on lastMove.to
+      const prevPieceOnTarget = prevBoardMapRef.current.get(lastMove.to as Square);
+      const capturedPiece =
+        prevPieceOnTarget && movedPiece && prevPieceOnTarget.color !== movedPiece.color
+          ? prevPieceOnTarget
+          : undefined;
+
+      setAnimatingMove({
+        from: lastMove.from,
+        to: lastMove.to,
+        castlingRook,
+        capturedPiece,
+        key: `${lastMove.from}-${lastMove.to}-${Date.now()}`,
+      });
+
+      const timer = setTimeout(() => {
+        setAnimatingMove(null);
+      }, 220);
+
+      prevLastMoveRef.current = lastMove;
+      prevBoardMapRef.current = currentBoardMap;
+
+      return () => clearTimeout(timer);
+    } else {
+      prevLastMoveRef.current = lastMove;
+      prevBoardMapRef.current = currentBoardMap;
+    }
+  }, [chess, lastMove]);
+
+  const getSquareOffset = useCallback(
+    (fromSquare: string, toSquare: string) => {
+      const fromFile = fromSquare[0];
+      const fromRank = parseInt(fromSquare[1], 10);
+      const toFile = toSquare[0];
+      const toRank = parseInt(toSquare[1], 10);
+
+      const fromFileIdx = files.indexOf(fromFile);
+      const fromRankIdx = ranks.indexOf(fromRank);
+      const toFileIdx = files.indexOf(toFile);
+      const toRankIdx = ranks.indexOf(toRank);
+
+      if (fromFileIdx === -1 || fromRankIdx === -1 || toFileIdx === -1 || toRankIdx === -1) {
+        return { deltaX: 0, deltaY: 0 };
+      }
+
+      const deltaX = (fromFileIdx - toFileIdx) * 100;
+      const deltaY = (fromRankIdx - toRankIdx) * 100;
+
+      return { deltaX, deltaY };
+    },
+    [files, ranks]
+  );
 
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, square: string) => {
@@ -347,7 +464,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
       {/* Main Chessboard Viewport */}
       <div
-        className="relative aspect-square w-full rounded-2xl overflow-hidden border-[5px] sm:border-[7px] border-[#382414] shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[#24170D] ring-1 ring-white/10"
+        className="relative aspect-square w-full rounded-2xl overflow-hidden border-[5px] sm:border-[7px] border-[#382414] shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[#24170D] ring-1 ring-white/10 touch-manipulation select-none"
         role="region"
         aria-label="Papan catur interaktif"
       >
@@ -390,7 +507,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, squareCoord)}
                   title={visionEnabled && squareThreat ? squareThreat.summary : undefined}
-                  className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 ${
+                  className={`relative flex items-center justify-center cursor-pointer touch-manipulation select-none transition-colors duration-150 ${
                     isLight ? "board-square-light" : "board-square-dark"
                   } ${
                     isSelected ? "!bg-[rgba(235,195,60,0.65)] ring-2 ring-inset ring-[#F5C342]" : ""
@@ -443,16 +560,57 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                     </span>
                   )}
 
-                  {/* Piece */}
-                  {piece && (
+                  {/* Ghost of captured piece dissolving behind the arriving piece */}
+                  {animatingMove && animatingMove.to === squareCoord && animatingMove.capturedPiece && (
                     <div
-                      draggable={!disabled && piece.color === chess.turn()}
-                      onDragStart={(e) => handleDragStart(e, squareCoord)}
-                      className="w-[88%] h-[88%] flex items-center justify-center select-none z-10 drop-shadow-md transition-transform duration-150 active:scale-95"
+                      className="absolute inset-0 w-[88%] h-[88%] m-auto flex items-center justify-center animate-piece-captured z-15 select-none pointer-events-none"
+                      aria-hidden="true"
                     >
-                      <ChessPiece type={piece.type} color={piece.color} />
+                      <ChessPiece
+                        type={animatingMove.capturedPiece.type}
+                        color={animatingMove.capturedPiece.color}
+                      />
                     </div>
                   )}
+
+                  {/* Piece */}
+                  {piece && (() => {
+                    const isMovingPiece = animatingMove && animatingMove.to === squareCoord;
+                    const isCastlingRook = animatingMove?.castlingRook && animatingMove.castlingRook.to === squareCoord;
+                    const isAnimating = Boolean(isMovingPiece || isCastlingRook);
+
+                    let glideStyle: React.CSSProperties = {};
+                    if (isMovingPiece) {
+                      const { deltaX, deltaY } = getSquareOffset(animatingMove.from, animatingMove.to);
+                      glideStyle = {
+                        "--glide-from-x": `${deltaX}%`,
+                        "--glide-from-y": `${deltaY}%`,
+                      } as React.CSSProperties;
+                    } else if (isCastlingRook && animatingMove?.castlingRook) {
+                      const { deltaX, deltaY } = getSquareOffset(
+                        animatingMove.castlingRook.from,
+                        animatingMove.castlingRook.to
+                      );
+                      glideStyle = {
+                        "--glide-from-x": `${deltaX}%`,
+                        "--glide-from-y": `${deltaY}%`,
+                      } as React.CSSProperties;
+                    }
+
+                    return (
+                      <div
+                        key={isAnimating ? animatingMove?.key : squareCoord}
+                        draggable={!disabled && piece.color === chess.turn()}
+                        onDragStart={(e) => handleDragStart(e, squareCoord)}
+                        style={glideStyle}
+                        className={`w-[88%] h-[88%] flex items-center justify-center select-none drop-shadow-md transition-transform duration-150 active:scale-95 ${
+                          isAnimating ? "animate-piece-glide z-35" : "z-10"
+                        }`}
+                      >
+                        <ChessPiece type={piece.type} color={piece.color} />
+                      </div>
+                    );
+                  })()}
 
                   {/* Legal move indicator (Empty square = Central Dot, Capture = Refined Ring) */}
                   {isLegal && !piece && (

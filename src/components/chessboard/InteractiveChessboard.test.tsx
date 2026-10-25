@@ -164,4 +164,81 @@ describe("InteractiveChessboard lastMove clickability and captures", () => {
     const markerSafe = container.querySelector("#radar-arrow-safe");
     expect(markerSafe).not.toBeNull();
   });
+
+  it("applies animate-piece-glide with correct offset when a piece moves", () => {
+    const chess = new Chess();
+    const onSquareClick = vi.fn();
+
+    const { rerender } = render(
+      <InteractiveChessboard
+        {...defaultProps}
+        chess={chess}
+        selectedSquare={null}
+        legalDestinations={[]}
+        lastMove={null}
+        onSquareClick={onSquareClick}
+      />
+    );
+
+    // Initial mount should NOT have animation
+    const initialE4Square = screen.getByRole("button", { name: /Petak e4/i });
+    expect(initialE4Square.querySelector(".animate-piece-glide")).toBeNull();
+
+    // Now White plays e2 -> e4
+    chess.move({ from: "e2", to: "e4" });
+    rerender(
+      <InteractiveChessboard
+        {...defaultProps}
+        chess={chess}
+        selectedSquare={null}
+        legalDestinations={[]}
+        lastMove={{ from: "e2", to: "e4" }}
+        onSquareClick={onSquareClick}
+      />
+    );
+
+    // Target square e4 should now contain the gliding piece
+    const updatedE4Square = screen.getByRole("button", { name: /Petak e4/i });
+    const glidingPiece = updatedE4Square.querySelector(".animate-piece-glide") as HTMLElement;
+    expect(glidingPiece).not.toBeNull();
+    expect(glidingPiece.style.getPropertyValue("--glide-from-x")).toBe("0%");
+    expect(glidingPiece.style.getPropertyValue("--glide-from-y")).toBe("200%");
+  });
+
+  it("renders dissolving captured piece when a piece captures an opponent piece", () => {
+    const fen = "rnbqkbnr/pppp1ppp/8/4p3/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2";
+    const chess = new Chess(fen);
+    const onSquareClick = vi.fn();
+
+    const { rerender } = render(
+      <InteractiveChessboard
+        {...defaultProps}
+        chess={chess}
+        selectedSquare={null}
+        legalDestinations={[]}
+        lastMove={null}
+        onSquareClick={onSquareClick}
+      />
+    );
+
+    // White captures on e5: d4xe5
+    chess.move({ from: "d4", to: "e5" });
+    rerender(
+      <InteractiveChessboard
+        {...defaultProps}
+        chess={chess}
+        selectedSquare={null}
+        legalDestinations={[]}
+        lastMove={{ from: "d4", to: "e5" }}
+        onSquareClick={onSquareClick}
+      />
+    );
+
+    const squareE5 = screen.getByRole("button", { name: /Petak e5/i });
+    const capturedGhost = squareE5.querySelector(".animate-piece-captured");
+    expect(capturedGhost).not.toBeNull();
+
+    const glidingPiece = squareE5.querySelector(".animate-piece-glide") as HTMLElement;
+    expect(glidingPiece).not.toBeNull();
+  });
 });

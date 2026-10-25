@@ -153,3 +153,41 @@ button,
       #7d4d24 100%
     );
 }
+
+/* =========================================================================
+   Chess Piece Movement & Capture Animations (chess.com style)
+   Buttery smooth GPU-accelerated piece glide with cubic-bezier easing
+   ========================================================================= */
+
+@keyframes chessPieceGlide {
+  0% {
+    transform: translate3d(var(--glide-from-x), var(--glide-from-y), 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes chessPieceCaptured {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+.animate-piece-glide {
+  animation: chessPieceGlide 200ms cubic-bezier(0.2, 0, 0.2, 1) both;
+  will-change: transform;
+  z-index: 35 !important;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.animate-piece-captured {
+  animation: chessPieceCaptured 180ms ease-out both;
+  pointer-events: none;
+}
