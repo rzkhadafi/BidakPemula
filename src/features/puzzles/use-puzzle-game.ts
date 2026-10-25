@@ -228,6 +228,7 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
                   setStatus("completed");
                   setFeedback("Luar biasa! Puzzle berhasil dipecahkan.");
                   chessAudio.playGameOver(true);
+                  chessAudio.playSuccess();
                   recordPuzzleSolved(puzzle.id, solutionRevealed);
                   unlockBadge("puzzle_solver");
 
@@ -252,6 +253,7 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
           setStatus("completed");
           setFeedback("Luar biasa! Puzzle berhasil dipecahkan.");
           chessAudio.playGameOver(true);
+          chessAudio.playSuccess();
           recordPuzzleSolved(puzzle.id, solutionRevealed);
           unlockBadge("puzzle_solver");
 
@@ -272,6 +274,7 @@ export function usePuzzleGame(puzzle: ChessPuzzle) {
         // Legal move, but not the puzzle tactical solution
         setStatus("wrong_step");
         setFeedback("Langkah sah, namun bukan solusi taktis terbaik. Coba cari alternatif lain!");
+        chessAudio.playError();
         recordPuzzleAttempt(puzzle.id, true);
 
         const skillDef = getSkillByPuzzleId(puzzle.id);

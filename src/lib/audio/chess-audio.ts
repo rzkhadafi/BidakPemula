@@ -221,6 +221,72 @@ class ChessAudioEngine {
   }
 
   /**
+   * Joyful, bright major arpeggio chime for correct moves and solved challenges
+   */
+  public playSuccess(): void {
+    if (!this.isEnabled()) return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      // High-vibrancy C-major arpeggio: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        const start = now + idx * 0.07;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.2, start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.38);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + 0.4);
+      });
+    } catch {}
+  }
+
+  /**
+   * Warm, gentle error reminder for incorrect moves or failed attempts
+   */
+  public playError(): void {
+    if (!this.isEnabled()) return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      // Soft descending reminder tones: 310Hz -> 220Hz
+      const tones = [310, 220];
+      tones.forEach((freq, idx) => {
+        const start = now + idx * 0.1;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.22, start + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.16);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + 0.18);
+      });
+    } catch {}
+  }
+
+  /**
    * High-fidelity physical wooden board thud synthesis fallback
    */
   private playSyntheticMove(): void {

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Chess, Square } from "chess.js";
-import { CheckCircle2, HelpCircle, RotateCcw, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, HelpCircle, RotateCcw, ArrowRight, Sparkles, AlertCircle } from "lucide-react";
 import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessboard";
 import { AcademyLesson, LessonStep } from "./types";
 import { markLessonStepCompleted } from "./academy-progress";
@@ -68,6 +68,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
 
   // Sync state during render when step changes (official React pattern)
   const [prevStepId, setPrevStepId] = useState<string>(step.id);
@@ -82,6 +83,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
     setFeedback(null);
     setShowHint(false);
     setShowSuccessModal(false);
+    setShowErrorModal(false);
   }
 
   const executeMove = useCallback(
@@ -111,6 +113,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
           setShowSuccessModal(true);
+          setShowErrorModal(false);
           if (res.san.startsWith("O-O")) {
             chessAudio.playCastle();
           } else if (res.captured) {
@@ -118,6 +121,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           } else {
             chessAudio.playMove();
           }
+          chessAudio.playSuccess();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
           unlockBadge("curious_student");
 
@@ -134,8 +138,12 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
             });
           }
         } else {
+          tutorSpeech.stop();
           setStatus("incorrect");
-          setFeedback("Langkah tersebut legal, tetapi belum sesuai dengan sasaran latihan. Klik 'Ulangi' untuk mencoba kembali.");
+          setFeedback("Langkah tersebut legal, tetapi belum sesuai dengan sasaran latihan. Klik 'Coba Lagi' untuk mencoba kembali.");
+          setShowErrorModal(true);
+          setShowSuccessModal(false);
+          chessAudio.playError();
 
           const skillDef = getSkillByLessonId(lesson.id);
           if (skillDef) {
@@ -151,8 +159,12 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           }
         }
       } catch {
+        tutorSpeech.stop();
         setStatus("incorrect");
-        setFeedback("Gerakan tidak diperbolehkan menurut aturan catur.");
+        setFeedback("Gerakan tidak diperbolehkan menurut aturan catur. Pastikan langkah sesuai jalur pergerakan bidak.");
+        setShowErrorModal(true);
+        setShowSuccessModal(false);
+        chessAudio.playError();
       }
     },
     [chess, currentStepIdx, lesson.id, lesson.steps.length, showHint, step.allowedMovesUci, step.expectedMoveUci, step.explanationOnSuccess]
@@ -169,7 +181,9 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
           setShowSuccessModal(true);
+          setShowErrorModal(false);
           chessAudio.playMove();
+          chessAudio.playSuccess();
           markLessonStepCompleted(lesson.id, currentStepIdx, lesson.steps.length);
           unlockBadge("curious_student");
 
@@ -186,8 +200,12 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
             });
           }
         } else {
+          tutorSpeech.stop();
           setStatus("incorrect");
           setFeedback(`Petak yang Anda klik adalah ${squareCoord.toUpperCase()}. Coba cari petak ${step.targetSquare.toUpperCase()}.`);
+          setShowErrorModal(true);
+          setShowSuccessModal(false);
+          chessAudio.playError();
 
           const skillDef = getSkillByLessonId(lesson.id);
           if (skillDef) {
@@ -266,7 +284,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
 
   const handleResetStep = () => {
     tutorSpeech.stop();
-    const fresh = new Chess(step.fen);
+    const fresh = initChessWithFen(step.fen);
     setChess(fresh);
     setSelectedSquare(null);
     setLegalDestinations([]);
@@ -276,6 +294,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
     setFeedback(null);
     setShowHint(false);
     setShowSuccessModal(false);
+    setShowErrorModal(false);
   };
 
   return (
@@ -311,7 +330,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         legalDestinations={legalDestinations}
         lastMove={lastMove}
         isCheck={chess.inCheck()}
-        disabled={status === "correct"}
+        disabled={status === "correct" || showErrorModal}
         pendingPromotion={pendingPromotion}
         onSquareClick={handleSquareClick}
         onConfirmPromotion={(p) => {
@@ -370,30 +389,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           </div>
         )}
 
-        {status === "incorrect" && (
-          <div className="p-3 rounded-lg bg-[#E3B66F]/10 border border-[#E3B66F]/30 text-xs text-[#E3B66F] space-y-2 animate-in fade-in duration-200">
-            <p className="leading-relaxed">{feedback}</p>
-            <div className="flex items-center gap-2 pt-1">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleResetStep}
-                className="text-xs"
-              >
-                Coba Lagi
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowHint(true)}
-                className="text-xs text-[#E3B66F] hover:text-[#F2F0E8]"
-              >
-                <HelpCircle className="w-3.5 h-3.5 mr-1" />
-                Lihat Petunjuk
-              </Button>
-            </div>
-          </div>
-        )}
+
 
         {/* Hint Section */}
         {showHint && status !== "correct" && (
@@ -474,6 +470,67 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
                   : "Selesaikan Pelajaran Ini"}
               </span>
               <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Pop-up Modal Evaluasi Langkah Belum Tepat */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+          handleResetStep();
+        }}
+        title="Langkah Belum Tepat"
+        description={`Tantangan ${currentStepIdx + 1} dari ${lesson.steps.length}`}
+      >
+        <div className="space-y-4 pt-1">
+          {/* Error Banner with Explanation */}
+          <div className="p-4 rounded-xl bg-[#E17C78]/15 border border-[#E17C78]/40 flex items-start gap-3.5 text-[#F2F0E8] animate-in fade-in">
+            <div className="w-9 h-9 rounded-full bg-[#E17C78]/25 border border-[#E17C78]/60 flex items-center justify-center shrink-0 mt-0.5">
+              <AlertCircle className="w-5 h-5 text-[#E17C78]" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#E17C78] block">
+                Evaluasi Langkah:
+              </span>
+              <p className="text-xs sm:text-sm text-[#F2F0E8] leading-relaxed">
+                {feedback || "Langkah tersebut belum sesuai dengan sasaran latihan."}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setShowErrorModal(false);
+                handleResetStep();
+                setShowHint(true);
+              }}
+              className="w-full sm:w-auto text-xs"
+              title="Lihat petunjuk langkah ini"
+            >
+              <HelpCircle className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
+              <span>Lihat Petunjuk</span>
+            </Button>
+
+            <Button
+              variant="primary"
+              size="sm"
+              autoFocus
+              onClick={() => {
+                setShowErrorModal(false);
+                handleResetStep();
+              }}
+              className="w-full sm:w-auto py-2.5 px-4 font-bold text-xs bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 shadow-md cursor-pointer"
+              title="Coba ulangi tantangan ini"
+            >
+              <RotateCcw className="w-4 h-4 mr-1.5" />
+              <span>Coba Lagi</span>
             </Button>
           </div>
         </div>

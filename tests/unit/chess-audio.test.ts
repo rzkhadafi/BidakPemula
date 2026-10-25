@@ -43,5 +43,7 @@ describe("Chess Audio Engine (Web Audio API Synthesizer)", () => {
     expect(() => chessAudio.playGameOver(true)).not.toThrow();
     expect(() => chessAudio.playGameOver(false)).not.toThrow();
     expect(() => chessAudio.playGameStart()).not.toThrow();
+    expect(() => chessAudio.playSuccess()).not.toThrow();
+    expect(() => chessAudio.playError()).not.toThrow();
   });
 });

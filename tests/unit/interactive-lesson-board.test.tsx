@@ -121,4 +121,28 @@ describe("InteractiveLessonBoard - Pop-up Step Completion Modal", () => {
 
     expect(handleStepChange).toHaveBeenCalledWith(1);
   });
+
+  it("opens pop-up modal when clicking wrong target square and resets step on 'Coba Lagi'", () => {
+    render(<InteractiveLessonBoard lesson={mockLesson} onLessonComplete={vi.fn()} />);
+
+    // Click on wrong square e5 instead of e4
+    fireEvent.click(screen.getByLabelText("Petak e5"));
+
+    // Error modal MUST appear
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText("Langkah Belum Tepat")).toBeInTheDocument();
+    expect(
+      screen.getByText("Petak yang Anda klik adalah E5. Coba cari petak E4.")
+    ).toBeInTheDocument();
+
+    // Verify "Coba Lagi" button is present and functional
+    const retryBtn = screen.getByRole("button", { name: /Coba Lagi/i });
+    expect(retryBtn).toBeInTheDocument();
+
+    fireEvent.click(retryBtn);
+
+    // Modal closes and board is ready to retry
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });
