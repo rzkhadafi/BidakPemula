@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { Sparkles, X } from "lucide-react";
 import { TutorPanel } from "./TutorPanel";
 import { TutorExplainRequest } from "../types";
+import { getCuratedTutorExplanation } from "../server/curated-tutor-fallbacks";
 import { tutorSpeech } from "../speech-controller";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -74,7 +75,9 @@ export const PlayTutorModal: React.FC<PlayTutorModalProps> = ({
       {/* Body: Konten Interaktif TutorPanel */}
       <div className="pt-1">
         <TutorPanel
+          key={requestContext.fen}
           requestContext={requestContext}
+          initialExplanation={getCuratedTutorExplanation(requestContext)}
           onHighlightMove={onHighlightMove}
           className="border-0 shadow-none p-0 bg-transparent"
         />

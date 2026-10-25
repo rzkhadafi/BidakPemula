@@ -200,6 +200,12 @@ export class SpeechController {
     }
 
     // 2. Fetch from server Gemini TTS API with abort signal
+    let isTimedOut = false;
+    const fetchTimeout = setTimeout(() => {
+      isTimedOut = true;
+      abortController.abort();
+    }, 4500);
+
     try {
       const res = await fetch("/api/tutor/speech", {
         method: "POST",
@@ -211,6 +217,7 @@ export class SpeechController {
           speed: this.state.speed,
         }),
       });
+      clearTimeout(fetchTimeout);
 
       if (requestId !== this.currentRequestId) {
         return; // Superseded during fetch
@@ -234,12 +241,19 @@ export class SpeechController {
       console.warn("Gemini TTS unavailable, falling back to Web Speech API.");
       this.fallbackToWebSpeech(trimmed, requestId);
     } catch (err: unknown) {
-      // If deliberately aborted (e.g. step changed or user stopped), DO NOT trigger Web Speech fallback!
-      if (err instanceof Error && err.name === "AbortError") {
+      clearTimeout(fetchTimeout);
+      if (requestId !== this.currentRequestId) {
         return;
       }
 
-      if (requestId !== this.currentRequestId) {
+      if (isTimedOut) {
+        console.warn("Gemini TTS took >4.5s, switching to fast Web Speech fallback.");
+        this.fallbackToWebSpeech(trimmed, requestId);
+        return;
+      }
+
+      // If deliberately aborted (e.g. step changed or user stopped), DO NOT trigger Web Speech fallback!
+      if (err instanceof Error && err.name === "AbortError") {
         return;
       }
 

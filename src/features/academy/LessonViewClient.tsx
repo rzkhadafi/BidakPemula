@@ -15,6 +15,7 @@ import { AcademyLesson } from "./types";
 import { InteractiveLessonBoard } from "./InteractiveLessonBoard";
 import { markLessonCompleted } from "./academy-progress";
 import { TutorPanel } from "@/features/tutor/components/TutorPanel";
+import { getCuratedTutorExplanation } from "@/features/tutor/server/curated-tutor-fallbacks";
 import { tutorSpeech } from "@/features/tutor/speech-controller";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -159,6 +160,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
               <TutorPanel
                 key={`${lesson.id}-${currentStep.id}`}
                 requestContext={tutorRequestContext}
+                initialExplanation={getCuratedTutorExplanation(tutorRequestContext)}
               />
             ) : (
               <>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { TutorExplainRequest, TutorExplainResponse, SuggestedMove } from "../types";
 import { requestTutorExplanation } from "../tutor-client";
+import { getCuratedTutorExplanation } from "../server/curated-tutor-fallbacks";
 import { tutorSpeech } from "../speech-controller";
 import { TutorAudioPlayer } from "./TutorAudioPlayer";
 import { Card } from "@/components/ui/Card";
@@ -33,46 +34,53 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
   onHighlightMove,
   className = "",
 }) => {
-  const [explanation, setExplanation] = useState<TutorExplainResponse | null>(
-    initialExplanation
+  const instantFallback = React.useMemo(
+    () => initialExplanation || getCuratedTutorExplanation(requestContext),
+    [initialExplanation, requestContext]
   );
+
+  const [explanation, setExplanation] = useState<TutorExplainResponse>(instantFallback);
   const [prevInitial, setPrevInitial] = useState<TutorExplainResponse | null>(initialExplanation);
-  const [loading, setLoading] = useState<boolean>(!initialExplanation);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isAiConnecting, setIsAiConnecting] = useState<boolean>(false);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [customQuestion, setCustomQuestion] = useState<string>("");
   const [activeHighlightedMove, setActiveHighlightedMove] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
-  const [originalExplanation, setOriginalExplanation] = useState<TutorExplainResponse | null>(initialExplanation);
+  const [originalExplanation, setOriginalExplanation] = useState<TutorExplainResponse>(instantFallback);
 
-  if (prevInitial !== initialExplanation) {
+  if (prevInitial !== initialExplanation && initialExplanation) {
     setPrevInitial(initialExplanation);
     setExplanation(initialExplanation);
     setOriginalExplanation(initialExplanation);
     setActiveQuestion(null);
   }
 
-  // Fetch initial explanation if not provided
+  // Non-blocking background sync with live Gemini if available
   useEffect(() => {
     let cancelled = false;
-    if (!initialExplanation) {
+
+    // Only attempt to upgrade via Gemini if current explanation is not already Gemini-backed
+    if (explanation.source !== "gemini") {
+      setIsAiConnecting(true);
       requestTutorExplanation(requestContext)
         .then((data) => {
-          if (!cancelled) {
+          if (!cancelled && data.source === "gemini") {
             setExplanation(data);
             setOriginalExplanation(data);
-            setLoading(false);
           }
         })
-        .catch(() => {
+        .finally(() => {
           if (!cancelled) {
-            setLoading(false);
+            setIsAiConnecting(false);
           }
         });
     }
+
     return () => {
       cancelled = true;
     };
-  }, [initialExplanation, requestContext]);
+  }, [requestContext]);
 
   const handleAskQuestion = async (q: string) => {
     const trimmed = q.trim();
@@ -143,7 +151,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
             </Badge>
           ) : (
             <Badge variant="muted" size="sm" className="text-[10px]">
-              Panduan Mandiri
+              {isAiConnecting ? "Menghubungkan AI..." : "Panduan Mandiri"}
             </Badge>
           )}
         </div>
