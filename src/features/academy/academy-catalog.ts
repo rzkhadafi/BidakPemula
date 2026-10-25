@@ -139,7 +139,7 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
         stepNumber: 2,
         instruction: "Tangkap Kuda Lawan di g8",
         subText: "Lanjutkan gerakan miring gajah untuk menangkap kuda hitam di g8.",
-        fen: "8/5B2/8/8/8/8/8/4K1nk w - - 0 1",
+        fen: "6n1/5B2/8/8/8/8/8/4K2k w - - 0 1",
         expectedMoveUci: "f7g8",
         hint: "Klik gajah di f7, lalu klik kuda hitam di g8.",
         explanationOnSuccess: "Bagus! Anda berhasil memanfaatkan garis diagonal gajah untuk menumbangkan perwira lawan.",

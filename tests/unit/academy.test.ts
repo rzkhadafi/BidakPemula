@@ -49,8 +49,26 @@ describe("Academy Curriculum & Catalog Verification", () => {
           const from = step.expectedMoveUci.slice(0, 2);
           const to = step.expectedMoveUci.slice(2, 4);
           const promotion = (step.expectedMoveUci[4] as "q" | "r" | "b" | "n") || undefined;
+          const targetPieceBeforeMove = c.get(to);
+
           const res = c.move({ from, to, promotion });
           expect(res).not.toBeNull();
+
+          // Strict validation: if instruction says "Tangkap" or "Pukul", target piece must exist and match!
+          if (step.instruction.startsWith("Tangkap") || step.instruction.startsWith("Pukul")) {
+            expect(res?.captured).toBeTruthy();
+            expect(targetPieceBeforeMove).not.toBeNull();
+
+            if (step.instruction.includes("Kuda")) {
+              expect(targetPieceBeforeMove?.type).toBe("n");
+            }
+            if (step.instruction.includes("Pion")) {
+              expect(targetPieceBeforeMove?.type).toBe("p");
+            }
+            if (step.instruction.includes("Benteng")) {
+              expect(targetPieceBeforeMove?.type).toBe("r");
+            }
+          }
         }
       }
     }
