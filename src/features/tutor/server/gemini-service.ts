@@ -58,7 +58,7 @@ export class GeminiTutorService {
   }
 
   private static getTutorModel(): string {
-    return process.env.GEMINI_TUTOR_MODEL?.trim() || "gemini-3.8-flash";
+    return process.env.GEMINI_TUTOR_MODEL?.trim() || "gemini-3.5-flash";
   }
 
   private static getTtsModel(): string {
@@ -80,16 +80,27 @@ export class GeminiTutorService {
    * Generates structured explanation from Gemini, with validation & fallback.
    */
   public static async explain(request: TutorExplainRequest): Promise<TutorExplainResponse> {
-    // 1. Strict Validation
+    // 1. Validation & Board Initialization
     let chess: Chess;
+    const isCustomOrLessonBoard =
+      request.fen.startsWith("8/8/8/8/8/8/8/8") ||
+      request.mode === "lesson";
+
     try {
       chess = new Chess(request.fen);
     } catch {
-      throw {
-        code: "INVALID_REQUEST",
-        message: "Format FEN papan catur tidak valid.",
-        retryable: false,
-      } as TutorApiError;
+      if (isCustomOrLessonBoard) {
+        chess = new Chess();
+        try {
+          chess.clear();
+        } catch {}
+      } else {
+        throw {
+          code: "INVALID_REQUEST",
+          message: "Format FEN papan catur tidak valid.",
+          retryable: false,
+        } as TutorApiError;
+      }
     }
 
     if (request.question && request.question.length > 500) {
@@ -154,97 +165,101 @@ PEDOMAN PENTING:
   "followUpQuestion": "Pertanyaan reflektif untuk mengajak pemain berpikir"
 }`;
 
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const candidateModels = Array.from(
+      new Set([modelName, "gemini-3.5-flash", "gemini-3.8-flash", "gemini-3-flash-preview"])
+    );
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.6,
-            maxOutputTokens: 1000,
-            responseMimeType: "application/json",
-          },
-        }),
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.warn("Gemini quota reached (429), switching to curated offline tutor.");
-          return getCuratedTutorExplanation(request);
-        }
-        console.warn(`Gemini API returned status ${response.status}, switching to curated offline tutor.`);
-        return getCuratedTutorExplanation(request);
-      }
-
-      const json = await response.json();
-      const rawText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!rawText) {
-        return getCuratedTutorExplanation(request);
-      }
-
-      let parsed: Partial<TutorExplainResponse>;
+    for (const currentModel of candidateModels) {
       try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        return getCuratedTutorExplanation(request);
-      }
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // 3. Legal Move Verification via chess.js on suggestedMoves
-      const verifiedMoves: SuggestedMove[] = [];
-      const legalMoves = chess.moves({ verbose: true });
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.6,
+              maxOutputTokens: 1000,
+              responseMimeType: "application/json",
+            },
+          }),
+        });
 
-      if (Array.isArray(parsed.suggestedMoves)) {
-        for (const item of parsed.suggestedMoves) {
-          if (item && typeof item.uci === "string" && item.uci.length >= 4) {
-            const from = item.uci.slice(0, 2) as Square;
-            const to = item.uci.slice(2, 4) as Square;
-            const matched = legalMoves.find((m) => m.from === from && m.to === to);
-            if (matched) {
-              verifiedMoves.push({
-                uci: `${matched.from}${matched.to}${matched.promotion || ""}`,
-                san: matched.san,
-                description: item.description || `Langkah legal ke ${matched.to}`,
-              });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          console.warn(`Gemini API (${currentModel}) returned status ${response.status}`);
+          continue;
+        }
+
+        const json = await response.json();
+        const rawText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawText) {
+          continue;
+        }
+
+        let parsed: Partial<TutorExplainResponse>;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          continue;
+        }
+
+        // 3. Legal Move Verification via chess.js on suggestedMoves
+        const verifiedMoves: SuggestedMove[] = [];
+        const legalMoves = chess.moves({ verbose: true });
+
+        if (Array.isArray(parsed.suggestedMoves)) {
+          for (const item of parsed.suggestedMoves) {
+            if (item && typeof item.uci === "string" && item.uci.length >= 4) {
+              const from = item.uci.slice(0, 2) as Square;
+              const to = item.uci.slice(2, 4) as Square;
+              const matched = legalMoves.find((m) => m.from === from && m.to === to);
+              if (matched) {
+                verifiedMoves.push({
+                  uci: `${matched.from}${matched.to}${matched.promotion || ""}`,
+                  san: matched.san,
+                  description: item.description || `Langkah legal ke ${matched.to}`,
+                });
+              }
             }
           }
         }
-      }
 
-      // If Gemini didn't supply valid legal moves, inject from legalMoves
-      if (verifiedMoves.length === 0 && legalMoves.length > 0) {
-        const top = legalMoves[0];
-        verifiedMoves.push({
-          uci: `${top.from}${top.to}${top.promotion || ""}`,
-          san: top.san,
-          description: "Langkah legal terdekat yang dapat dipertimbangkan.",
-        });
-      }
+        // If Gemini didn't supply valid legal moves, inject from legalMoves
+        if (verifiedMoves.length === 0 && legalMoves.length > 0) {
+          const top = legalMoves[0];
+          verifiedMoves.push({
+            uci: `${top.from}${top.to}${top.promotion || ""}`,
+            san: top.san,
+            description: "Langkah legal terdekat yang dapat dipertimbangkan.",
+          });
+        }
 
-      return {
-        title: parsed.title || "Penjelasan Posisi Catur",
-        summary: parsed.summary || "Analisis posisi catur Anda saat ini.",
-        explanation: parsed.explanation || "Perhatikan perwira dan koordinasi petak di atas papan.",
-        spokenText: parsed.spokenText || parsed.summary || "Mari amati posisi bidak pada papan bersama-sama.",
-        concept: parsed.concept || "Strategi Dasar Catur",
-        suggestedMoves: verifiedMoves.slice(0, 3),
-        hint: parsed.hint || undefined,
-        followUpQuestion: parsed.followUpQuestion || undefined,
-        analysisStatus: request.analysis?.bestMoveSan ? "available" : "unavailable",
-        source: "gemini",
-      };
-    } catch (err) {
-      console.warn("Gemini call failed or timed out, returning curated tutor:", err);
-      return getCuratedTutorExplanation(request);
+        return {
+          title: parsed.title || "Penjelasan Posisi Catur",
+          summary: parsed.summary || "Analisis posisi catur Anda saat ini.",
+          explanation: parsed.explanation || "Perhatikan perwira dan koordinasi petak di atas papan.",
+          spokenText: parsed.spokenText || parsed.summary || "Mari amati posisi bidak pada papan bersama-sama.",
+          concept: parsed.concept || "Strategi Dasar Catur",
+          suggestedMoves: verifiedMoves.slice(0, 3),
+          hint: parsed.hint || undefined,
+          followUpQuestion: parsed.followUpQuestion || undefined,
+          analysisStatus: request.analysis?.bestMoveSan ? "available" : "unavailable",
+          source: "gemini",
+        };
+      } catch (err) {
+        console.warn(`Gemini explain attempt on model ${currentModel} failed:`, err);
+        continue;
+      }
     }
+
+    return getCuratedTutorExplanation(request);
   }
 
   /**
