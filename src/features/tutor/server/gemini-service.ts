@@ -58,11 +58,11 @@ export class GeminiTutorService {
   }
 
   private static getTutorModel(): string {
-    return process.env.GEMINI_TUTOR_MODEL?.trim() || "gemini-2.0-flash";
+    return process.env.GEMINI_TUTOR_MODEL?.trim() || "gemini-3.8-flash";
   }
 
   private static getTtsModel(): string {
-    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-2.0-flash";
+    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-3.8-flash";
   }
 
   private static getDefaultVoice(): string {
@@ -166,14 +166,14 @@ PEDOMAN PENTING:
 }`;
 
     const candidateModels = Array.from(
-      new Set([modelName, "gemini-2.0-flash", "gemini-1.5-flash"])
+      new Set([modelName, "gemini-3.8-flash"])
     );
 
     for (const currentModel of candidateModels) {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(endpoint, {
           method: "POST",
@@ -295,7 +295,7 @@ PEDOMAN PENTING:
     const candidateModels = Array.from(
       new Set([
         primaryModel,
-        "gemini-2.0-flash",
+        "gemini-3.8-flash",
       ])
     );
 
@@ -303,7 +303,7 @@ PEDOMAN PENTING:
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4500);
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
         const response = await fetch(endpoint, {
           method: "POST",

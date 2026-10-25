@@ -204,7 +204,7 @@ export class SpeechController {
     const fetchTimeout = setTimeout(() => {
       isTimedOut = true;
       abortController.abort();
-    }, 4500);
+    }, 12000);
 
     try {
       const res = await fetch("/api/tutor/speech", {
@@ -247,7 +247,7 @@ export class SpeechController {
       }
 
       if (isTimedOut) {
-        console.warn("Gemini TTS took >4.5s, switching to fast Web Speech fallback.");
+        console.warn("Gemini TTS took >12s, switching to fast Web Speech fallback.");
         this.fallbackToWebSpeech(trimmed, requestId);
         return;
       }
