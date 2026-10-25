@@ -13,11 +13,11 @@ import {
 } from "@/features/academy/academy-progress";
 
 describe("Academy Curriculum & Catalog Verification", () => {
-  it("contains exactly 9 structured lessons for absolute beginners", () => {
-    expect(ACADEMY_LESSONS.length).toBe(9);
+  it("contains exactly 10 structured lessons for absolute beginners", () => {
+    expect(ACADEMY_LESSONS.length).toBe(10);
   });
 
-  it("has valid sequence order from 1 to 9", () => {
+  it("has valid sequence order from 1 to 10", () => {
     ACADEMY_LESSONS.forEach((lesson, idx) => {
       expect(lesson.order).toBe(idx + 1);
       expect(lesson.id).toBeTruthy();
@@ -80,7 +80,10 @@ describe("Academy Curriculum & Catalog Verification", () => {
     expect(firstLesson?.order).toBe(1);
 
     const nextId = getNextLessonId("mengenal-papan");
-    expect(nextId).toBe("gerak-benteng");
+    expect(nextId).toBe("kenalan-pasukan");
+
+    const thirdId = getNextLessonId("kenalan-pasukan");
+    expect(thirdId).toBe("gerak-benteng");
 
     const nonExistent = getLessonById("unknown-lesson");
     expect(nonExistent).toBeUndefined();

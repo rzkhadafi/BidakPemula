@@ -5,6 +5,7 @@ export interface LessonStep {
   subText: string;
   fen: string;
   targetSquare?: string; // If the challenge is to click a square
+  allowedTargetSquares?: string[]; // Multiple acceptable target squares to click
   expectedMoveUci?: string; // e.g. "d4d7" or "e1g1"
   allowedMovesUci?: string[]; // Multiple acceptable solutions
   hint: string;

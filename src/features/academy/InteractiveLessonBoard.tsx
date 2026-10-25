@@ -173,9 +173,14 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
     (squareCoord: string) => {
       if (status === "correct") return;
 
-      // Mode A: Click target square directly (e.g. learning board coordinates)
-      if (step.targetSquare) {
-        if (squareCoord.toLowerCase() === step.targetSquare.toLowerCase()) {
+      // Mode A: Click target square directly (e.g. learning board coordinates or identifying pieces)
+      if (step.targetSquare || (step.allowedTargetSquares && step.allowedTargetSquares.length > 0)) {
+        const isMatched =
+          (step.targetSquare && squareCoord.toLowerCase() === step.targetSquare.toLowerCase()) ||
+          (step.allowedTargetSquares &&
+            step.allowedTargetSquares.map((s) => s.toLowerCase()).includes(squareCoord.toLowerCase()));
+
+        if (isMatched) {
           tutorSpeech.stop();
           setStatus("correct");
           setFeedback(step.explanationOnSuccess);
@@ -201,7 +206,10 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         } else {
           tutorSpeech.stop();
           setStatus("incorrect");
-          setFeedback(`Petak yang Anda klik adalah ${squareCoord.toUpperCase()}. Coba cari petak ${step.targetSquare.toUpperCase()}.`);
+          const targetHintText = step.targetSquare
+            ? `Coba cari petak ${step.targetSquare.toUpperCase()}.`
+            : "Coba perhatikan petak atau bidak yang diminta pada instruksi di atas.";
+          setFeedback(`Petak yang Anda klik adalah ${squareCoord.toUpperCase()}. ${targetHintText}`);
           setShowErrorModal(true);
           setShowSuccessModal(false);
           chessAudio.playError();

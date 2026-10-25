@@ -58,11 +58,90 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 2: GERAKAN BENTENG
+  // PELAJARAN 2: KENALAN SAMA PASUKAN CATUR
+  // ==========================================
+  {
+    id: "kenalan-pasukan",
+    order: 2,
+    title: "Kenalan Sama Pasukan Catur",
+    subtitle: "Nama, bentuk, poin kesaktian, dan posisi awal 6 bidak",
+    summary: "Sebelum mulai adu taktik, yuk kenalan dulu sama 6 pasukan tempur di atas papan catur. Dari prajurit pion garis depan sampai menteri yang paling sakti!",
+    duration: "4 menit",
+    conceptHeading: "Siapa Aja Pasukan di Atas Papan?",
+    conceptBody: [
+      "Di catur, kamu adalah panglima yang mimpin 16 pasukan tempur. Lawanmu juga punya 16 pasukan yang sama persis.",
+      "Ada 6 jenis bidak dengan kekuatan dan poin berbeda: Pion (1 poin), Kuda (3 poin), Gajah (3 poin), Benteng (5 poin), Menteri (9 poin), dan Raja (tak ternilai / nyawa permainanmu).",
+      "Formasi awalnya selalu rapi: baris ke-2 diisi 8 prajurit Pion sebagai tameng, baris pertama diisi para perwira andalan.",
+      "Rumus legendaris pemula: Menteri selalu nyocokin warna bajunya! Menteri Putih duduk di petak putih (d1), Menteri Hitam di petak hitam (d8). Di sebelahnya berdiri Sang Raja bertanda mahkota plus/salib.",
+    ],
+    takeaways: [
+      "Total pasukanmu ada 16 bidak: 8 prajurit pion di depan, 8 perwira hebat di belakang.",
+      "Menteri adalah bidak paling sakti (9 poin), jangan sampai kamu buang atau obral gratis ya!",
+      "Raja itu bos utama. Kalau dia terkepung tanpa jalan keluar (skakmat), permainan langsung tamat.",
+    ],
+    steps: [
+      {
+        id: "pasukan-step-1",
+        stepNumber: 1,
+        instruction: "Sentuh Salah Satu Pion Putih (Prajurit Tameng)",
+        subText: "Pion itu prajurit tameng yang berjejer rapi di baris kedua (a2 sampai h2). Coba klik salah satunya!",
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        targetSquare: "e2",
+        allowedTargetSquares: ["a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2"],
+        hint: "Klik bidak kecil mana pun yang ada di baris ke-2.",
+        explanationOnSuccess: "Mantap! Ini namanya Pion. Jumlahnya ada 8 biji dan bernilai 1 poin. Tugasnya jadi tameng garis depan dan mengawal wilayah tengah papan.",
+      },
+      {
+        id: "pasukan-step-2",
+        stepNumber: 2,
+        instruction: "Klik Kuda atau Benteng Putih di Sayap Luar",
+        subText: "Benteng nongkrong di pojokan (a1 & h1), sedangkan Kuda berkepala gagah berdiri di sebelahnya (b1 & g1). Klik salah satu!",
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        targetSquare: "b1",
+        allowedTargetSquares: ["a1", "b1", "g1", "h1"],
+        hint: "Sentuh menara benteng di sudut papan (a1/h1) atau kepala kuda di b1/g1.",
+        explanationOnSuccess: "Keren! Benteng nilainya 5 poin, jalannya lurus lempeng. Kalau Kuda nilainya 3 poin, dia petarung lincah yang sakti karena bisa ngelompatin bidak lain pake gaya huruf L!",
+      },
+      {
+        id: "pasukan-step-3",
+        stepNumber: 3,
+        instruction: "Sentuh Gajah Putih di Petak c1 atau f1",
+        subText: "Gajah punya helm runcing berbelah, nongkrong di samping kuda. Coba sentuh salah satu gajahmu!",
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        targetSquare: "c1",
+        allowedTargetSquares: ["c1", "f1"],
+        hint: "Gajah berdiri persis di sebelah kuda dan raja/menteri (petak c1 atau f1).",
+        explanationOnSuccess: "Top! Gajah (Bishop) nilainya 3 poin. Jalannya miring serong (diagonal) sesuai warna petaknya. Dia kayak sniper penembak jitu jarak jauh!",
+      },
+      {
+        id: "pasukan-step-4",
+        stepNumber: 4,
+        instruction: "Sentuh Sang Menteri di Petak d1",
+        subText: "Menteri selalu nyocokin warna bajunya: Menteri Putih duduk di petak putih (d1). Coba klik petak d1!",
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        targetSquare: "d1",
+        hint: "Cari menteri bermahkota anggun di petak d1 (persis di sebelah raja).",
+        explanationOnSuccess: "Asik! Ini dia Menteri (Ratu), bidak paling OP di papan catur dengan nilai 9 poin! Dia bisa meluncur lurus kayak benteng sekaligus miring kayak gajah. Jaga dia baik-baik, jangan sampai blunder dimakan gratis ya!",
+      },
+      {
+        id: "pasukan-step-5",
+        stepNumber: 5,
+        instruction: "Sentuh Sang Raja di Petak e1",
+        subText: "Raja itu pemimpin tertinggi bertanda mahkota plus/salib di petak e1. Klik rajanya!",
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        targetSquare: "e1",
+        hint: "Raja putih berdiri gagah di petak gelap e1 tepat di samping menterinya.",
+        explanationOnSuccess: "Sempurna! Ini dia Sang Raja. Nilainya tak terhingga karena dia adalah nyawa permainanmu. Kalau raja kena kepung tanpa jalan keluar (skakmat), game berakhir. Lindungi rajamu sampai titik darah penghabisan!",
+      },
+    ],
+  },
+
+  // ==========================================
+  // PELAJARAN 3: GERAKAN BENTENG
   // ==========================================
   {
     id: "gerak-benteng",
-    order: 2,
+    order: 3,
     title: "Gerakan Bidak: Benteng",
     subtitle: "Meluncur lurus vertikal dan horizontal",
     summary: "Benteng adalah perwira berat yang memiliki daya jelajah lurus tanpa batas sejauh jalurnya tidak terhalang bidak lain.",
@@ -103,11 +182,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 3: GERAKAN GAJAH
+  // PELAJARAN 4: GERAKAN GAJAH
   // ==========================================
   {
     id: "gerak-gajah",
-    order: 3,
+    order: 4,
     title: "Gerakan Bidak: Gajah",
     subtitle: "Meluncur miring diagonal sesuai warna petak",
     summary: "Gajah bergerak diagonal tanpa batas jarak, namun terikat selamanya pada satu warna petak tempat ia memulai permainan.",
@@ -148,11 +227,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 4: GERAKAN MENTERI
+  // PELAJARAN 5: GERAKAN MENTERI
   // ==========================================
   {
     id: "gerak-menteri",
-    order: 4,
+    order: 5,
     title: "Gerakan Bidak: Menteri (Ratu)",
     subtitle: "Perpaduan kekuatan benteng dan gajah",
     summary: "Menteri adalah perwira paling fleksibel dan mematikan di atas papan karena dapat meluncur lurus maupun miring ke segala arah.",
@@ -193,11 +272,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 5: GERAKAN KUDA
+  // PELAJARAN 6: GERAKAN KUDA
   // ==========================================
   {
     id: "gerak-kuda",
-    order: 5,
+    order: 6,
     title: "Gerakan Bidak: Kuda",
     subtitle: "Lompatan unik berbentuk huruf 'L'",
     summary: "Kuda adalah satu-satunya bidak yang dapat melompati bidak lain dengan pola langkah 2 petak lurus dan 1 petak belok.",
@@ -238,11 +317,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 6: GERAKAN PION
+  // PELAJARAN 7: GERAKAN PION
   // ==========================================
   {
     id: "gerak-pion",
-    order: 6,
+    order: 7,
     title: "Gerakan Bidak: Pion",
     subtitle: "Maju pantang mundur, memukul secara miring",
     summary: "Pion adalah prajurit garis depan. Pion melangkah maju lurus satu petak, namun memukul bidak lawan secara diagonal.",
@@ -283,11 +362,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 7: RAJA & SKAK
+  // PELAJARAN 8: RAJA & SKAK
   // ==========================================
   {
     id: "gerak-raja-dan-skak",
-    order: 7,
+    order: 8,
     title: "Raja, Skak, dan Skakmat",
     subtitle: "Melindungi pemimpin dan menuntaskan kemenangan",
     summary: "Raja adalah bidak terpenting. Jika raja diserang, Anda berada dalam kondisi skak dan wajib menyelamatkannya seketika.",
@@ -319,11 +398,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 8: GERAKAN KHUSUS
+  // PELAJARAN 9: GERAKAN KHUSUS
   // ==========================================
   {
     id: "gerakan-khusus",
-    order: 8,
+    order: 9,
     title: "Gerakan Khusus: Rokade & Promosi",
     subtitle: "Manuver gabungan dan kebangkitan menteri",
     summary: "Dua aturan istimewa yang mengubah dinamika permainan: rokade untuk mengamankan raja dan promosi pion menjadi perwira tertinggi.",
@@ -363,11 +442,11 @@ export const ACADEMY_LESSONS: AcademyLesson[] = [
   },
 
   // ==========================================
-  // PELAJARAN 9: STRATEGI DASAR PEMULA
+  // PELAJARAN 10: STRATEGI DASAR PEMULA
   // ==========================================
   {
     id: "strategi-dasar",
-    order: 9,
+    order: 10,
     title: "Prinsip Strategi untuk Pemula",
     subtitle: "Empat pilar utama di langkah-langkah awal",
     summary: "Pelajari cara memulai pertandingan seperti pemain terampil: kuasai pusat, aktifkan perwira, amankan raja, dan jangan beri bidak gratis.",

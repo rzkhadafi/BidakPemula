@@ -11,7 +11,7 @@ export const SKILL_DEFINITIONS: Record<SkillId, SkillDefinition> = {
     categoryLabel: "Dasar Permainan",
     description: "Memahami 64 petak, membaca lajur a–h dan baris 1–8, serta orientasi papan yang benar.",
     prerequisiteIds: [],
-    relatedLessonIds: ["mengenal-papan"],
+    relatedLessonIds: ["mengenal-papan", "kenalan-pasukan"],
     relatedPuzzleIds: [],
   },
   "piece-rook": {
