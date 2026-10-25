@@ -277,9 +277,9 @@ export default function PlayPage() {
   );
 
   return (
-    <div className="flex flex-col w-full -my-2 sm:-my-4">
+    <div className="flex flex-col w-full min-h-0">
       {/* Header: Ramping & Hemat Ruang Vertikal */}
-      <div className="flex items-center justify-between gap-3 pb-2 mb-2 sm:mb-2.5 border-b border-[#353B42] shrink-0">
+      <div className="flex items-center justify-between gap-3 pb-1.5 mb-2 border-b border-[#353B42] shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <h1 className="text-base sm:text-lg font-semibold text-[#F2F0E8] truncate">
             Main Catur vs Bot
@@ -346,7 +346,7 @@ export default function PlayPage() {
         </div>
 
         {/* Side Panel: Controls & Move History (Independently scrollable, papan catur tetap diam) */}
-        <div className="lg:col-span-5 xl:col-span-4 w-full flex flex-col lg:max-h-[calc(100dvh-125px)] lg:overflow-y-auto pr-1 space-y-3.5 pt-0">
+        <div className="lg:col-span-5 xl:col-span-4 w-full flex flex-col lg:max-h-[calc(100dvh-115px)] lg:overflow-y-auto pr-1 space-y-3 pt-0">
           {/* Game Over Banner */}
           {gameStatus !== "ongoing" && gameStatus !== "not_started" && (
             <Card

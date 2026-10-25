@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { BadgeToastNotification } from "@/features/badges";
 
 const geistSans = Geist({
@@ -41,12 +40,11 @@ export default function RootLayout({
         >
           <Navbar />
         </Suspense>
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col min-h-0">
           <Suspense fallback={<div className="p-8 text-center text-[#8A9299]">Memuat tampilan...</div>}>
             {children}
           </Suspense>
         </main>
-        <Footer />
       </body>
     </html>
   );

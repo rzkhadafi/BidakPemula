@@ -58,7 +58,7 @@ export const PuzzleViewClient: React.FC<PuzzleViewClientProps> = ({
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Navigation Breadcrumb */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#353B42]">
+      <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#353B42] shrink-0">
         <Link
           href="/puzzles"
           className="inline-flex items-center gap-1.5 text-xs text-[#B0B5B9] hover:text-[#F2F0E8] transition-colors"
@@ -77,11 +77,11 @@ export const PuzzleViewClient: React.FC<PuzzleViewClientProps> = ({
       </div>
 
       {/* Main Grid: Board & Side Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start flex-1 min-h-0">
         {/* Left Column: Interactive Chessboard */}
-        <div className="lg:col-span-8 flex flex-col items-center w-full">
+        <div className="lg:col-span-8 flex flex-col items-center w-full shrink-0">
           {/* Turn Banner */}
-          <div className="w-full max-w-[640px] lg:max-w-[660px] flex items-center justify-between py-2 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
+          <div className="w-full max-w-[min(540px,calc(100dvh-200px))] flex items-center justify-between py-1.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
             <div className="flex items-center gap-2">
               <span
                 className={`w-3 h-3 rounded-full border ${
@@ -117,7 +117,7 @@ export const PuzzleViewClient: React.FC<PuzzleViewClientProps> = ({
         </div>
 
         {/* Right Column: Mission Objective, Hints, and Feedback */}
-        <div className="lg:col-span-4 space-y-4 w-full">
+        <div className="lg:col-span-4 space-y-3.5 w-full lg:max-h-[calc(100dvh-115px)] lg:overflow-y-auto pr-1">
           {/* Objective Card */}
           <Card variant="surface" className="space-y-2.5">
             <div className="flex items-center justify-between pb-1 border-b border-[#353B42]">

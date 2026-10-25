@@ -83,9 +83,9 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
   );
 
   return (
-    <div className="w-full max-w-7xl mx-auto flex flex-col space-y-3">
+    <div className="w-full max-w-7xl mx-auto flex flex-col space-y-2 min-h-0">
       {/* Sleek Compact Header Bar */}
-      <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-[#353B42] text-xs">
+      <div className="flex items-center justify-between gap-3 pb-1.5 border-b border-[#353B42] text-xs shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <Link
             href="/academy"
@@ -110,10 +110,10 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
       </div>
 
       {/* Main Split-Screen: Interactive Board (Left, Stationary) & AI Tutor / Guide (Right, Scrollable) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start flex-1 min-h-0">
         {/* Left Column: Interactive Practice Board (STATIONARY / NO SCROLL) */}
-        <div className="lg:col-span-7 flex flex-col items-center w-full">
-          <div className="w-full max-w-[530px]">
+        <div className="lg:col-span-7 flex flex-col items-center w-full shrink-0">
+          <div className="w-full max-w-[min(510px,calc(100dvh-175px))]">
             <InteractiveLessonBoard
               lesson={lesson}
               currentStepIndex={currentStepIdx}
@@ -124,7 +124,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
         </div>
 
         {/* Right Column: AI Tutor & Concept Guide (SCROLLABLE CONTAINER) */}
-        <div className="lg:col-span-5 w-full flex flex-col lg:max-h-[calc(100vh-130px)] lg:sticky lg:top-3">
+        <div className="lg:col-span-5 w-full flex flex-col lg:max-h-[calc(100dvh-115px)] lg:sticky lg:top-1">
           {/* Tab Selection */}
           <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[#1C2024] border border-[#353B42] shrink-0 mb-2.5">
             <button
