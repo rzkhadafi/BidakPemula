@@ -99,4 +99,77 @@ describe("Tutor UI Components", () => {
 
     expect(screen.queryByText("Bimbingan Guru Catur AI")).not.toBeInTheDocument();
   });
+
+  it("submits question when clicking 'Kenapa langkah ini penting?' chip and shows Q&A banner", async () => {
+    const questionResponse: TutorExplainResponse = {
+      title: "Penjelasan Guru: Mengapa Langkah Ini Penting",
+      summary: "Langkah e4 mengendalikan petak pusat.",
+      explanation: "Langkah ini penting karena membuka jalan bagi menteri dan gajah.",
+      spokenText: "Pertanyaan bagus! Langkah ini penting untuk menguasai pusat.",
+      concept: "Penguasaan Pusat Papan",
+      suggestedMoves: [],
+      analysisStatus: "available",
+      source: "local-curated",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => questionResponse,
+    } as Response);
+
+    render(
+      <TutorPanel
+        requestContext={mockRequest}
+        initialExplanation={mockExplanation}
+      />
+    );
+
+    const chip = screen.getByRole("button", { name: /Kenapa langkah ini penting\?/i });
+    expect(chip).toBeInTheDocument();
+    fireEvent.click(chip);
+
+    expect(await screen.findByText(/Pertanyaan Anda:/i)).toBeInTheDocument();
+    expect(await screen.findByText("Penjelasan Guru: Mengapa Langkah Ini Penting")).toBeInTheDocument();
+  });
+
+  it("submits custom question from input field and allows returning to overview", async () => {
+    const customResponse: TutorExplainResponse = {
+      title: "Jawaban Guru: Peran Kuda",
+      summary: "Kuda melompat dengan pola L.",
+      explanation: "Kuda melompat dan kuat di tengah.",
+      spokenText: "Kuda sangat aktif jika ditempatkan di tengah.",
+      concept: "Kuda",
+      suggestedMoves: [],
+      analysisStatus: "available",
+      source: "local-curated",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => customResponse,
+    } as Response);
+
+    render(
+      <TutorPanel
+        requestContext={mockRequest}
+        initialExplanation={mockExplanation}
+      />
+    );
+
+    const input = screen.getByPlaceholderText(/Ajukan pertanyaan seputar posisi ini/i);
+    fireEvent.change(input, { target: { value: "Bagaimana cara kerja kuda?" } });
+
+    const sendButton = screen.getByRole("button", { name: /Kirim pertanyaan/i });
+    fireEvent.click(sendButton);
+
+    expect(await screen.findByText(/Bagaimana cara kerja kuda\?/i)).toBeInTheDocument();
+    expect(await screen.findByText("Jawaban Guru: Peran Kuda")).toBeInTheDocument();
+
+    // Reset button to initial overview
+    const resetButton = screen.getByRole("button", { name: /Tinjauan Awal/i });
+    expect(resetButton).toBeInTheDocument();
+    fireEvent.click(resetButton);
+
+    expect(screen.getByText("Analisis Pembukaan: 1. e4")).toBeInTheDocument();
+  });
 });

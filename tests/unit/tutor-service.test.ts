@@ -149,4 +149,73 @@ describe("Gemini Tutor Service & Curated Fallbacks", () => {
     expect(wav.subarray(36, 40).toString()).toBe("data");
     expect(wav.readUInt32LE(40)).toBe(480);
   });
+
+  describe("Tutor Question Answering (Quick Chips & Custom Input)", () => {
+    it("answers 'Kenapa langkah ini penting?' with contextual reasons", () => {
+      const req: TutorExplainRequest = {
+        fen: startFen,
+        sideToMove: "w",
+        learnerLevel: "pemula",
+        mode: "lesson",
+        lessonTitle: "Mengenal Papan Catur",
+        lessonStepInstruction: "Tunjukkan Petak Pusat e4",
+        question: "Kenapa langkah ini penting?",
+      };
+
+      const res = getCuratedTutorExplanation(req);
+      expect(res.title).toContain("Mengapa Langkah Ini Penting");
+      expect(res.explanation).toContain("Jalur Terbuka");
+      expect(res.spokenText).toContain("Pertanyaan bagus");
+      expect(res.concept).toContain("Penempatan Petak Kunci");
+    });
+
+    it("answers 'Apa ancaman utama lawan?' by analyzing opposing threats", () => {
+      // Opponent black rook on e8 attacks e4
+      const threatFen = "4r2k/8/8/8/4P3/8/8/4K3 w - - 0 1";
+      const req: TutorExplainRequest = {
+        fen: threatFen,
+        sideToMove: "w",
+        learnerLevel: "pemula",
+        mode: "play",
+        question: "Apa ancaman utama lawan?",
+      };
+
+      const res = getCuratedTutorExplanation(req);
+      expect(res.title).toContain("Membaca Ancaman Lawan");
+      expect(res.explanation).toContain("Lawan memiliki perwira");
+      expect(res.spokenText).toBeTruthy();
+      expect(res.concept).toContain("Profilaksis");
+    });
+
+    it("answers 'Bisa jelaskan lebih sederhana?' with 3 golden rules", () => {
+      const req: TutorExplainRequest = {
+        fen: startFen,
+        sideToMove: "w",
+        learnerLevel: "pemula",
+        mode: "play",
+        question: "Bisa jelaskan lebih sederhana?",
+      };
+
+      const res = getCuratedTutorExplanation(req);
+      expect(res.title).toContain("Ringkas & Sederhana");
+      expect(res.explanation).toContain("3 aturan emas");
+      expect(res.spokenText).toContain("sederhana");
+      expect(res.concept).toContain("3 Aturan Emas Catur Pemula");
+    });
+
+    it("answers custom question about a specific piece like Kuda", () => {
+      const req: TutorExplainRequest = {
+        fen: startFen,
+        sideToMove: "w",
+        learnerLevel: "pemula",
+        mode: "play",
+        question: "Bagaimana cara terbaik menggerakkan kuda?",
+      };
+
+      const res = getCuratedTutorExplanation(req);
+      expect(res.title).toContain("Kuda");
+      expect(res.explanation).toContain("huruf L");
+      expect(res.concept).toContain("Kuda");
+    });
+  });
 });

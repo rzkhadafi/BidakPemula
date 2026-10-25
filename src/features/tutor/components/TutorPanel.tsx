@@ -9,6 +9,8 @@ import {
   ChevronUp,
   Lightbulb,
   Compass,
+  MessageSquare,
+  RotateCcw,
 } from "lucide-react";
 import { TutorExplainRequest, TutorExplainResponse, SuggestedMove } from "../types";
 import { requestTutorExplanation } from "../tutor-client";
@@ -35,15 +37,19 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
     initialExplanation
   );
   const [prevInitial, setPrevInitial] = useState<TutorExplainResponse | null>(initialExplanation);
-  if (prevInitial !== initialExplanation) {
-    setPrevInitial(initialExplanation);
-    setExplanation(initialExplanation);
-  }
-
   const [loading, setLoading] = useState<boolean>(!initialExplanation);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [customQuestion, setCustomQuestion] = useState<string>("");
   const [activeHighlightedMove, setActiveHighlightedMove] = useState<string | null>(null);
+  const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
+  const [originalExplanation, setOriginalExplanation] = useState<TutorExplainResponse | null>(initialExplanation);
+
+  if (prevInitial !== initialExplanation) {
+    setPrevInitial(initialExplanation);
+    setExplanation(initialExplanation);
+    setOriginalExplanation(initialExplanation);
+    setActiveQuestion(null);
+  }
 
   // Fetch initial explanation if not provided
   useEffect(() => {
@@ -53,6 +59,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
         .then((data) => {
           if (!cancelled) {
             setExplanation(data);
+            setOriginalExplanation(data);
             setLoading(false);
           }
         })
@@ -71,7 +78,12 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
     const trimmed = q.trim();
     if (!trimmed || loading) return;
 
+    if (!originalExplanation && explanation) {
+      setOriginalExplanation(explanation);
+    }
+
     tutorSpeech.stop();
+    setActiveQuestion(trimmed);
     setLoading(true);
     setCustomQuestion("");
     try {
@@ -86,6 +98,14 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
       // Error handled by tutor-client fallback
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetToOverview = () => {
+    if (originalExplanation) {
+      tutorSpeech.stop();
+      setActiveQuestion(null);
+      setExplanation(originalExplanation);
     }
   };
 
@@ -129,7 +149,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
         </div>
       </div>
 
-      {loading ? (
+      {loading && !explanation ? (
         <div className="py-8 flex flex-col items-center justify-center text-center space-y-2">
           <Loader2 className="w-6 h-6 animate-spin text-[#C7A66A]" />
           <p className="text-xs text-[#B0B5B9]">
@@ -138,6 +158,42 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
         </div>
       ) : explanation ? (
         <div className="space-y-4">
+          {/* Active Question Banner */}
+          {activeQuestion && (
+            <div className="flex items-start justify-between gap-2 p-2.5 rounded-lg bg-[#C7A66A]/10 border border-[#C7A66A]/40 text-xs animate-in fade-in">
+              <div className="flex items-start gap-2 min-w-0">
+                <MessageSquare className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C7A66A] block">
+                    Pertanyaan Anda:
+                  </span>
+                  <p className="font-medium text-[#F2F0E8] text-xs mt-0.5">
+                    &ldquo;{activeQuestion}&rdquo;
+                  </p>
+                </div>
+              </div>
+              {originalExplanation && (
+                <button
+                  type="button"
+                  onClick={handleResetToOverview}
+                  className="inline-flex items-center gap-1 text-[11px] text-[#8A9299] hover:text-[#C7A66A] underline shrink-0 cursor-pointer pt-0.5 transition-colors"
+                  title="Kembali ke penjelasan materi umum"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Tinjauan Awal</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Loading indicator while formulating answer */}
+          {loading && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#24292E] border border-[#C7A66A]/50 text-xs text-[#C7A66A] animate-pulse">
+              <Loader2 className="w-4 h-4 animate-spin text-[#C7A66A] shrink-0" />
+              <span className="font-medium">Guru Catur sedang menyusun jawaban terbaik untuk Anda...</span>
+            </div>
+          )}
+
           {/* Title & Core Summary */}
           <div className="space-y-1">
             <h4 className="text-sm font-semibold text-[#F2F0E8]">
@@ -158,7 +214,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
           <div className="p-3 rounded-lg bg-[#141619] border border-[#353B42]/70 text-xs text-[#B0B5B9] leading-relaxed space-y-2">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#C7A66A] uppercase tracking-wider">
               <Compass className="w-3.5 h-3.5" />
-              <span>Konsep: {explanation.concept}</span>
+              <span>{activeQuestion ? "Jawaban Guru Catur" : `Konsep: ${explanation.concept}`}</span>
             </div>
             <p className="whitespace-pre-line">{explanation.explanation}</p>
           </div>
@@ -251,7 +307,11 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
                   type="button"
                   onClick={() => handleAskQuestion(chip)}
                   disabled={loading}
-                  className="px-2 py-1 rounded-md text-[11px] bg-[#141619] border border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#C7A66A] transition-colors"
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors cursor-pointer ${
+                    activeQuestion === chip
+                      ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] font-semibold shadow-xs"
+                      : "bg-[#141619] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#C7A66A]"
+                  } disabled:opacity-50`}
                 >
                   {chip}
                 </button>

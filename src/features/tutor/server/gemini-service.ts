@@ -125,7 +125,11 @@ ${request.lastMoveSan ? `Langkah Terakhir: ${request.lastMoveSan}` : ""}
 ${request.recentMovesSan && request.recentMovesSan.length > 0 ? `Riwayat Langkah Terbaru: ${request.recentMovesSan.join(" ")}` : ""}
 ${request.lessonTitle ? `Judul Materi Belajar: ${request.lessonTitle}` : ""}
 ${request.lessonStepInstruction ? `Instruksi Langkah: ${request.lessonStepInstruction}` : ""}
-${request.question ? `Pertanyaan Pemain: "${request.question}"` : ""}
+${
+  request.question
+    ? `\nPERMINTAAN KHUSUS DARI PEMAIN: Pemain menanyakan: "${request.question}". Fokuskan seluruh respon Anda (title, summary, explanation, spokenText) untuk MENJAWAB PERTANYAAN INI secara langsung, bersahabat, mendidik, dan tuntas sesuai situasi papan saat ini.`
+    : ""
+}
 ${
   request.analysis?.bestMoveSan
     ? `Analisis Engine: Langkah Terbaik = ${request.analysis.bestMoveSan}, Evaluasi (cp) = ${request.analysis.evaluationCp ?? 0}, Kedalaman = ${request.analysis.depth ?? 0}`
