@@ -52,7 +52,7 @@ export const Navbar: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <span className="font-semibold tracking-wider text-sm sm:text-base uppercase text-[#F2F0E8]">
-                CHESS ARCHIVE
+                BIDAK PEMULA
               </span>
               <span className="text-[10px] text-[#8A9299] tracking-normal -mt-0.5 hidden sm:block">
                 Belajar & Bermain Catur

@@ -32,7 +32,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Selalu waspadai petak c2 atau c7 ketika raja lawan belum melakukan rokade.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Langkah legal terverifikasi dan menghasilkan keunggulan mutlak.",
     },
@@ -63,7 +63,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Pengorbanan defleksi sering kali menjadi kunci membuka pola garpu yang mematikan.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Taktik memenangkan benteng bersih dengan kombinasi langkah teratur.",
     },
@@ -94,7 +94,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Perwira yang tidak terkawal (undefended pieces) adalah magnet utama bagi taktik garpu.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan kualitas benteng bersih.",
     },
@@ -133,7 +133,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Perwira yang terikat pada raja tidak memiliki kebebasan bergerak (pinned piece loses mobility).",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Menghasilkan kemenangan menteri mutlak.",
     },
@@ -164,7 +164,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Prinsip emas ikatan: selalu tambahkan tekanan pada perwira yang sedang terikat.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Menghasilkan kemenangan gajah bersih.",
     },
@@ -195,7 +195,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Kuasai lajur terbuka dengan menempatkan benteng berhadapan dengan perwira lawan.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Dominasi posisi dan kemenangan taktis.",
     },
@@ -233,7 +233,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Serangan tusuk adalah kebalikan dari pin: sasaran bernilai lebih tinggi berada di depan.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan benteng penuh dalam ending murni.",
     },
@@ -267,7 +267,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Gajah di diagonal panjang memiliki daya jangkau mematikan untuk taktik tusukan.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan benteng bersih di a8.",
     },
@@ -299,7 +299,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Jangan pernah membiarkan raja dan perwira berat berada pada garis yang sama tanpa penjagaan.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Menang mutlak dengan menangkap benteng h2.",
     },
@@ -334,7 +334,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Ketika langkah pembuka menghasilkan skak (discovered check), lawan tidak memiliki tempo untuk membalas ancaman kedua.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Menghasilkan keuntungan menteri bersih (+9).",
     },
@@ -365,7 +365,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Singkirkan perwira penghalang dengan langkah agresif untuk melancarkan serangan terbuka.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan satu perwira minor bersih.",
     },
@@ -398,7 +398,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Skak terbuka memaksa lawan bereaksi pada raja, mengabaikan perwira berharga lainnya yang sedang diserang.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan menteri bersih dengan skak terbuka taktis.",
     },
@@ -435,7 +435,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Ancaman skakmat adalah alat penyingkir penjaga paling kuat dalam catur.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan kuda hitam di e4.",
     },
@@ -466,7 +466,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Jika perwira lawan hanya memiliki satu pengawal, periksa kemungkinan menukarnya.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Mendominasi penguasaan pusat.",
     },
@@ -496,7 +496,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Defleksi sederhana di satu sektor sering kali meruntuhkan pertahanan di sektor lainnya.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Memenangkan pion a2 dan keunggulan endgame mutlak.",
     },
@@ -530,7 +530,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Selalu waspadai kelemahan baris belakang ketika tidak ada 'lubang udara' (luft) untuk raja.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Skakmat paksa dalam 2 langkah.",
     },
@@ -560,7 +560,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Kombinasi kuda dan benteng di sudut papan adalah salah satu pola mat tertua dan paling mematikan.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Skakmat 1 langkah klasik.",
     },
@@ -590,7 +590,7 @@ export const PUZZLE_CATALOG: ChessPuzzle[] = [
       takeaway: "Jangan ragu mengorbankan perwira tertinggi jika langkah tersebut berujung pada skakmat pasti.",
     },
     metadata: {
-      source: "Arsip Taktik Chess Archive",
+      source: "Koleksi Taktik Bidak Pemula",
       verified: true,
       verdictNote: "Pengorbanan menteri paksa menuju skakmat.",
     },

@@ -7,10 +7,10 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-[#F2F0E8] tracking-wider uppercase text-xs">
-            Chess Archive
+            Bidak Pemula
           </span>
           <span>•</span>
-          <span>Ruang Belajar & Arsip Strategi Mandiri</span>
+          <span>Ruang Belajar & Bermain Catur Ramah Pemula</span>
         </div>
         <div className="flex items-center gap-4 text-xs">
           <span>Penyimpanan lokal di peramban</span>

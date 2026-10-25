@@ -19,7 +19,7 @@ describe("Smoke Tests: Core Pages and Navigation", () => {
 
   it("renders Navbar with brand and main links", () => {
     render(<Navbar />);
-    expect(screen.getByText("CHESS ARCHIVE")).toBeInTheDocument();
+    expect(screen.getByText("BIDAK PEMULA")).toBeInTheDocument();
     expect(screen.getByText("Belajar")).toBeInTheDocument();
     expect(screen.getByText("Main Catur")).toBeInTheDocument();
     expect(screen.getByText("Latihan")).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe("Smoke Tests: Core Pages and Navigation", () => {
   it("renders Footer with copyright and local privacy notice", () => {
     render(<Footer />);
     expect(
-      screen.getByText(/Ruang Belajar & Arsip Strategi Mandiri/i)
+      screen.getByText(/Ruang Belajar & Bermain Catur Ramah Pemula/i)
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Penyimpanan lokal di peramban/i)

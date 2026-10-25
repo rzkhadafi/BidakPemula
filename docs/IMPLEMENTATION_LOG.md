@@ -985,3 +985,34 @@ File ini dikelola oleh Antigravity selama pengembangan. Semua catatan hasil tes 
   - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
 
 - **Gate:** **PASS** (Jam pemain kini selalu tampil jelas tepat di bawah papan catur bersama jam bot di atasnya tanpa terpotong).
+
+---
+
+### Rebranding Identitas Produk: Chess Archive -> Bidak Pemula
+
+- **Latar Belakang & Permintaan Pengguna:**
+  Pengguna meminta untuk mengubah total nama website dan seluruh judul dari *"Chess Archive"* menjadi *"Bidak Pemula"*, menyelaraskan identitas resmi website dengan repositori GitHub dan visi platform belajar catur ramah pemula.
+
+- **Perubahan yang Diterapkan:**
+  1. **Metadata & Judul Dokumen (`src/app/layout.tsx`):**
+     - Mengubah judul dokumen global: `title: "Bidak Pemula — Belajar & Bermain Catur Ramah Pemula"`.
+     - Mengubah meta description agar menonjolkan platform belajar, bermain melawan bot komputer, dan melatih taktik catur ramah pemula.
+  2. **Identitas Navigasi Header (`src/components/layout/Navbar.tsx`):**
+     - Mengubah logo teks merek di pojok kiri atas menjadi `BIDAK PEMULA`.
+     - Subtitle: `Belajar & Bermain Catur`.
+  3. **Identitas Footer (`src/components/layout/Footer.tsx`):**
+     - Mengubah teks hak cipta/merek menjadi `Bidak Pemula • Ruang Belajar & Bermain Catur Ramah Pemula`.
+  4. **Katalog Taktik Puzzle (`src/features/puzzles/puzzle-catalog.ts`):**
+     - Mengubah seluruh 18 sumber metadata puzzle dari *"Arsip Taktik Chess Archive"* menjadi *"Koleksi Taktik Bidak Pemula"*.
+  5. **Konfigurasi Proyek (`package.json`):**
+     - Mengubah nama paket aplikasi menjadi `"name": "bidak-pemula"`.
+  6. **Pembaruan Tes Otomatis (`tests/unit/smoke.test.tsx`):**
+     - Memperbarui ekspektasi verifikasi Navbar dan Footer untuk mencocokkan `BIDAK PEMULA`.
+
+- **Hasil Pemeriksaan Teknis:**
+  - `npm test` -> **PASS** (29 test suites, **171 tests lulus 100%**).
+  - `npm run lint` -> **PASS** (0 errors, 0 warnings).
+  - `npm run typecheck` -> **PASS** (`tsc --noEmit` 0 errors).
+  - `npm run build` -> **PASS** (Kompilasi Next.js 16 Turbopack sukses untuk seluruh 42 rute).
+
+- **Gate:** **PASS** (Nama merek dan seluruh judul telah resmi berganti menjadi Bidak Pemula).

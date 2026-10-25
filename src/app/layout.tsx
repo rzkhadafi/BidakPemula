@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chess Archive — Ruang Arsip Strategi Catur",
+  title: "Bidak Pemula — Belajar & Bermain Catur Ramah Pemula",
   description:
-    "Platform belajar, bermain catur melawan bot komputer, dan mengarsipkan pertandingan dengan analisis terstruktur dalam Bahasa Indonesia.",
+    "Platform belajar, bermain catur melawan bot komputer, dan mengasah taktik catur dengan analisis terstruktur dalam Bahasa Indonesia.",
 };
 
 export default function RootLayout({
