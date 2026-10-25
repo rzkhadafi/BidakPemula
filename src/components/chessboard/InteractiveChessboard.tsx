@@ -166,45 +166,59 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       ? [8, 7, 6, 5, 4, 3, 2, 1]
       : [1, 2, 3, 4, 5, 6, 7, 8];
 
-  // Smooth piece glide animation state (chess.com style)
-  const [animatingMove, setAnimatingMove] = useState<{
-    from: string;
-    to: string;
-    castlingRook?: { from: string; to: string };
-    capturedPiece?: { type: PieceSymbol; color: Color };
-    key: string;
-  } | null>(null);
+  // Track previous move and active glide animation state synchronously during render (eliminates mobile boomerang flash)
+  const [moveAnimState, setMoveAnimState] = useState<{
+    lastMove: { from: string; to: string } | null;
+    animatingMove: {
+      from: string;
+      to: string;
+      castlingRook?: { from: string; to: string };
+      capturedPiece?: { type: PieceSymbol; color: Color };
+      key: string;
+    } | null;
+  }>(() => ({
+    lastMove: lastMove,
+    animatingMove: null,
+  }));
 
-  const prevLastMoveRef = useRef<{ from: string; to: string } | null>(null);
   const prevBoardMapRef = useRef<Map<Square, { type: PieceSymbol; color: Color }>>(new Map());
-  const isInitialMountRef = useRef(true);
 
-  // Monitor move changes to trigger smooth chess.com-style piece glide animation
-  useEffect(() => {
-    const currentBoardMap = new Map<Square, { type: PieceSymbol; color: Color }>();
+  // Snapshot current board mapping (tracks chess.fen() so in-place mutations recompute reliably)
+  const currentBoardMap = useMemo(() => {
+    const map = new Map<Square, { type: PieceSymbol; color: Color }>();
     const boardMatrix = chess.board();
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const p = boardMatrix[r][c];
         if (p) {
           const sq = `${String.fromCharCode(97 + c)}${8 - r}` as Square;
-          currentBoardMap.set(sq, { type: p.type, color: p.color });
+          map.set(sq, { type: p.type, color: p.color });
         }
       }
     }
+    return map;
+  }, [chess, chess.fen()]);
 
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      prevLastMoveRef.current = lastMove;
-      prevBoardMapRef.current = currentBoardMap;
-      return;
-    }
+  // Ensure prevBoardMapRef is populated on initial render
+  if (prevBoardMapRef.current.size === 0) {
+    prevBoardMapRef.current = currentBoardMap;
+  }
 
+  // Synchronously calculate animation DURING RENDER before browser paints to prevent boomerang/flicker
+  if (lastMove !== moveAnimState.lastMove) {
     const isNewMove =
-      lastMove &&
-      (!prevLastMoveRef.current ||
-        prevLastMoveRef.current.from !== lastMove.from ||
-        prevLastMoveRef.current.to !== lastMove.to);
+      lastMove !== null &&
+      (moveAnimState.lastMove === null ||
+        lastMove.from !== moveAnimState.lastMove.from ||
+        lastMove.to !== moveAnimState.lastMove.to);
+
+    let nextAnim: {
+      from: string;
+      to: string;
+      castlingRook?: { from: string; to: string };
+      capturedPiece?: { type: PieceSymbol; color: Color };
+      key: string;
+    } | null = null;
 
     if (isNewMove) {
       const movedPiece = currentBoardMap.get(lastMove.to as Square);
@@ -223,34 +237,44 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
         }
       }
 
-      // Detect if an opponent piece was captured on lastMove.to
+      // Detect if an opponent piece was captured on lastMove.to in the previous position
       const prevPieceOnTarget = prevBoardMapRef.current.get(lastMove.to as Square);
       const capturedPiece =
         prevPieceOnTarget && movedPiece && prevPieceOnTarget.color !== movedPiece.color
           ? prevPieceOnTarget
           : undefined;
 
-      setAnimatingMove({
+      nextAnim = {
         from: lastMove.from,
         to: lastMove.to,
         castlingRook,
         capturedPiece,
         key: `${lastMove.from}-${lastMove.to}-${Date.now()}`,
-      });
-
-      const timer = setTimeout(() => {
-        setAnimatingMove(null);
-      }, 220);
-
-      prevLastMoveRef.current = lastMove;
-      prevBoardMapRef.current = currentBoardMap;
-
-      return () => clearTimeout(timer);
-    } else {
-      prevLastMoveRef.current = lastMove;
-      prevBoardMapRef.current = currentBoardMap;
+      };
     }
-  }, [chess, lastMove]);
+
+    setMoveAnimState({
+      lastMove,
+      animatingMove: nextAnim,
+    });
+  }
+
+  const animatingMove = moveAnimState.animatingMove;
+
+  // Clear animation after 220ms and keep prevBoardMapRef updated for the next move
+  useEffect(() => {
+    prevBoardMapRef.current = currentBoardMap;
+
+    if (!moveAnimState.animatingMove) return;
+
+    const timer = setTimeout(() => {
+      setMoveAnimState((prev) =>
+        prev.animatingMove ? { ...prev, animatingMove: null } : prev
+      );
+    }, 220);
+
+    return () => clearTimeout(timer);
+  }, [moveAnimState.animatingMove, currentBoardMap]);
 
   const getSquareOffset = useCallback(
     (fromSquare: string, toSquare: string) => {
@@ -603,8 +627,10 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                         draggable={!disabled && piece.color === chess.turn()}
                         onDragStart={(e) => handleDragStart(e, squareCoord)}
                         style={glideStyle}
-                        className={`w-[88%] h-[88%] flex items-center justify-center select-none drop-shadow-md transition-transform duration-150 active:scale-95 ${
-                          isAnimating ? "animate-piece-glide z-35" : "z-10"
+                        className={`w-[88%] h-[88%] flex items-center justify-center select-none drop-shadow-md ${
+                          isAnimating
+                            ? "animate-piece-glide z-35 pointer-events-none"
+                            : "z-10 transition-transform duration-150 active:scale-95"
                         }`}
                       >
                         <ChessPiece type={piece.type} color={piece.color} />
