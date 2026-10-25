@@ -284,9 +284,6 @@ export default function PlayPage() {
           <h1 className="text-base sm:text-lg font-semibold text-[#F2F0E8] truncate">
             Main Catur vs Bot
           </h1>
-          <Badge variant="accent" size="sm" className="hidden sm:inline-flex">
-            Stockfish 19
-          </Badge>
           <span className="text-xs text-[#8A9299] hidden md:inline truncate">
             • Latihan mandiri lokal
           </span>
@@ -475,7 +472,7 @@ export default function PlayPage() {
                   </div>
                   <div>
                     <h2 className="text-xs font-bold text-[#F2F0E8] flex items-center gap-1.5">
-                      <span>Guru Catur AI Co-Pilot</span>
+                      <span>Guru Catur Pendamping</span>
                       <span className="w-2 h-2 rounded-full bg-[#73B894] animate-pulse" />
                     </h2>
                     <span className="text-[10px] text-[#C7A66A]">Pendamping Aktif Ramah Pemula</span>
@@ -549,7 +546,7 @@ export default function PlayPage() {
                 <Lightbulb className="w-4 h-4 mr-1.5" />
                 {hintLoading
                   ? "Menganalisis Posisi Papan..."
-                  : "Minta Petunjuk Guru AI (Sokrates)"}
+                  : "Minta Petunjuk Guru Catur (Sokrates)"}
               </Button>
 
               {/* Secondary Controls: Undo, Mulai Ulang, Menyerah, Jelaskan Langkah */}
@@ -662,7 +659,7 @@ export default function PlayPage() {
               <span>Validasi Catur Standar Aktif</span>
             </div>
             <p className="text-[11px] text-[#8A9299] leading-relaxed">
-              Aturan diuji dengan <code className="text-[#F2F0E8]">chess.js</code>. Bot ditenagai engine Stockfish 19 Web Worker tanpa memblokir thread antarmuka.
+              Aturan catur tervalidasi standar. Bot ditenagai engine catur mandiri tanpa memblokir thread antarmuka.
             </p>
           </div>
         </div>

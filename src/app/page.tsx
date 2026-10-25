@@ -26,11 +26,6 @@ export default function HomePage() {
     <div className="space-y-10 py-4 sm:py-8 max-w-4xl mx-auto">
       {/* Hero Section */}
       <section className="space-y-4 text-center sm:text-left">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#24292E] border border-[#353B42] text-xs text-[#B0B5B9]">
-          <span className="w-2 h-2 rounded-full bg-[#73B894]" />
-          <span>Gratis &bull; Tanpa Akun &bull; 100% Berbahasa Indonesia</span>
-        </div>
-
         <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-[#F2F0E8] leading-tight">
           Belajar catur, satu langkah demi satu langkah.
         </h1>

@@ -152,7 +152,7 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
           {source === "gemini" && (
             <Badge variant="accent" size="sm" className="text-[10px] gap-1">
               <Sparkles className="w-3 h-3 text-[#C7A66A]" />
-              Gemini Voice
+              Suara Guru Catur
             </Badge>
           )}
           {source === "webspeech" && (

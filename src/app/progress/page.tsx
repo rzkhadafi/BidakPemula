@@ -172,7 +172,7 @@ export default function ProgressPage() {
                       isPlayingVoice ? "text-[#73B894] animate-pulse" : "text-[#C7A66A]"
                     }`}
                   />
-                  <span>{isPlayingVoice ? "Berhenti" : "Dengarkan Guru AI"}</span>
+                  <span>{isPlayingVoice ? "Berhenti" : "Dengarkan Guru Catur"}</span>
                 </Button>
 
                 <Link href={recommendation.href}>

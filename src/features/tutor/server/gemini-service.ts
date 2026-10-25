@@ -125,7 +125,7 @@ export class GeminiTutorService {
     const turnLabel = request.sideToMove === "w" ? "Putih" : "Hitam";
 
     // Build context prompt
-    const prompt = `Anda adalah Guru Catur AI Indonesia yang sabar, hangat, dan mendidik untuk pemain pemula.
+    const prompt = `Anda adalah Guru Catur Indonesia yang sabar, hangat, dan mendidik untuk pemain pemula.
 Tugas Anda adalah menjelaskan situasi posisi catur berikut dengan bahasa Indonesia yang alami dan mudah dipahami:
 
 Posisi (FEN): ${request.fen}
@@ -166,7 +166,7 @@ PEDOMAN PENTING:
 }`;
 
     const candidateModels = Array.from(
-      new Set([modelName, "gemini-3.8-flash"])
+      new Set([modelName, "gemini-3.8-flash", "gemini-3.8-flash-lite"])
     );
 
     for (const currentModel of candidateModels) {
@@ -296,6 +296,9 @@ PEDOMAN PENTING:
       new Set([
         primaryModel,
         "gemini-3.8-flash",
+        "gemini-3.8-flash-tts",
+        "gemini-3.8-flash-lite-tts",
+        "gemini-2.5-flash-preview-tts",
       ])
     );
 

@@ -34,60 +34,57 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
   onHighlightMove,
   className = "",
 }) => {
-  const instantFallback = React.useMemo(
-    () => initialExplanation || getCuratedTutorExplanation(requestContext),
-    [initialExplanation, requestContext]
+  const [explanation, setExplanation] = useState<TutorExplainResponse | null>(
+    initialExplanation
   );
-
-  const [explanation, setExplanation] = useState<TutorExplainResponse>(instantFallback);
   const [prevInitial, setPrevInitial] = useState<TutorExplainResponse | null>(initialExplanation);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isAiConnecting, setIsAiConnecting] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(!initialExplanation);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [customQuestion, setCustomQuestion] = useState<string>("");
   const [activeHighlightedMove, setActiveHighlightedMove] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
-  const [originalExplanation, setOriginalExplanation] = useState<TutorExplainResponse>(instantFallback);
+  const [originalExplanation, setOriginalExplanation] = useState<TutorExplainResponse | null>(initialExplanation);
 
-  if (prevInitial !== initialExplanation && initialExplanation) {
+  if (prevInitial !== initialExplanation) {
     setPrevInitial(initialExplanation);
     setExplanation(initialExplanation);
     setOriginalExplanation(initialExplanation);
     setActiveQuestion(null);
   }
 
-  // Non-blocking background sync with live Gemini if available
+  // Fetch initial explanation if not provided
   useEffect(() => {
     let cancelled = false;
-
-    // Only attempt to upgrade via Gemini if current explanation is not already Gemini-backed
-    if (explanation.source !== "gemini") {
-      setIsAiConnecting(true);
+    if (!initialExplanation) {
+      setLoading(true);
       requestTutorExplanation(requestContext)
         .then((data) => {
-          if (!cancelled && data.source === "gemini") {
+          if (!cancelled) {
             setExplanation(data);
             setOriginalExplanation(data);
+            setLoading(false);
           }
         })
-        .finally(() => {
+        .catch(() => {
           if (!cancelled) {
-            setIsAiConnecting(false);
+            setLoading(false);
           }
         });
     }
-
     return () => {
       cancelled = true;
     };
-  }, [requestContext]);
+  }, [initialExplanation, requestContext]);
+
+  // Fallback to instant curated guide so player can read immediately while waiting
+  const activeContent = explanation || getCuratedTutorExplanation(requestContext);
 
   const handleAskQuestion = async (q: string) => {
     const trimmed = q.trim();
     if (!trimmed || loading) return;
 
-    if (!originalExplanation && explanation) {
-      setOriginalExplanation(explanation);
+    if (!originalExplanation && activeContent) {
+      setOriginalExplanation(activeContent);
     }
 
     tutorSpeech.stop();
@@ -129,7 +126,7 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
       variant="surface"
       className={`space-y-4 border border-[#353B42] ${className}`}
       role="region"
-      aria-label="Panel Guru Catur AI"
+      aria-label="Panel Guru Catur"
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#353B42]">
@@ -139,224 +136,219 @@ export const TutorPanel: React.FC<TutorPanelProps> = ({
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-semibold text-[#F2F0E8] flex items-center gap-1.5">
-              <span>Guru Catur AI</span>
+              <span>Guru Catur</span>
             </h3>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {explanation?.source === "gemini" ? (
+          {loading && !explanation ? (
+            <Badge variant="muted" size="sm" className="text-[10px] animate-pulse">
+              Menghubungkan...
+            </Badge>
+          ) : activeContent.source === "gemini" ? (
             <Badge variant="accent" size="sm" className="text-[10px]">
-              Tersambung (Gemini)
+              Tersambung
             </Badge>
           ) : (
             <Badge variant="muted" size="sm" className="text-[10px]">
-              {isAiConnecting ? "Menghubungkan AI..." : "Panduan Mandiri"}
+              Panduan Mandiri
             </Badge>
           )}
         </div>
       </div>
 
-      {loading && !explanation ? (
-        <div className="py-8 flex flex-col items-center justify-center text-center space-y-2">
-          <Loader2 className="w-6 h-6 animate-spin text-[#C7A66A]" />
-          <p className="text-xs text-[#B0B5B9]">
-            Guru sedang menganalisis posisi dan merangkum penjelasan...
-          </p>
-        </div>
-      ) : explanation ? (
-        <div className="space-y-4">
-          {/* Active Question Banner */}
-          {activeQuestion && (
-            <div className="flex items-start justify-between gap-2 p-2.5 rounded-lg bg-[#C7A66A]/10 border border-[#C7A66A]/40 text-xs animate-in fade-in">
-              <div className="flex items-start gap-2 min-w-0">
-                <MessageSquare className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C7A66A] block">
-                    Pertanyaan Anda:
-                  </span>
-                  <p className="font-medium text-[#F2F0E8] text-xs mt-0.5">
-                    &ldquo;{activeQuestion}&rdquo;
-                  </p>
-                </div>
+      <div className="space-y-4">
+        {/* Active Question Banner */}
+        {activeQuestion && (
+          <div className="flex items-start justify-between gap-2 p-2.5 rounded-lg bg-[#C7A66A]/10 border border-[#C7A66A]/40 text-xs animate-in fade-in">
+            <div className="flex items-start gap-2 min-w-0">
+              <MessageSquare className="w-4 h-4 text-[#C7A66A] shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C7A66A] block">
+                  Pertanyaan Anda:
+                </span>
+                <p className="font-medium text-[#F2F0E8] text-xs mt-0.5">
+                  &ldquo;{activeQuestion}&rdquo;
+                </p>
               </div>
-              {originalExplanation && (
-                <button
-                  type="button"
-                  onClick={handleResetToOverview}
-                  className="inline-flex items-center gap-1 text-[11px] text-[#8A9299] hover:text-[#C7A66A] underline shrink-0 cursor-pointer pt-0.5 transition-colors"
-                  title="Kembali ke penjelasan materi umum"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Tinjauan Awal</span>
-                </button>
-              )}
             </div>
-          )}
-
-          {/* Loading indicator while formulating answer */}
-          {loading && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#24292E] border border-[#C7A66A]/50 text-xs text-[#C7A66A] animate-pulse">
-              <Loader2 className="w-4 h-4 animate-spin text-[#C7A66A] shrink-0" />
-              <span className="font-medium">Guru Catur sedang menyusun jawaban terbaik untuk Anda...</span>
-            </div>
-          )}
-
-          {/* Title & Core Summary */}
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-[#F2F0E8]">
-              {explanation.title}
-            </h4>
-            <p className="text-xs text-[#B0B5B9] leading-relaxed">
-              {explanation.summary}
-            </p>
-          </div>
-
-          {/* Integrated Speech Audio Player */}
-          <TutorAudioPlayer
-            spokenText={explanation.spokenText}
-            autoPlayTrigger={true}
-          />
-
-          {/* Educational Explanation */}
-          <div className="p-3 rounded-lg bg-[#141619] border border-[#353B42]/70 text-xs text-[#B0B5B9] leading-relaxed space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#C7A66A] uppercase tracking-wider">
-              <Compass className="w-3.5 h-3.5" />
-              <span>{activeQuestion ? "Jawaban Guru Catur" : `Konsep: ${explanation.concept}`}</span>
-            </div>
-            <p className="whitespace-pre-line">{explanation.explanation}</p>
-          </div>
-
-          {/* Stepped Hint Accordion */}
-          {explanation.hint && (
-            <div className="rounded-lg border border-[#353B42] bg-[#24292E]/60 overflow-hidden text-xs">
+            {originalExplanation && (
               <button
                 type="button"
-                onClick={() => setShowHint(!showHint)}
-                className="w-full flex items-center justify-between p-2.5 text-left text-xs font-medium text-[#C7A66A] hover:bg-[#2C3238] transition-colors"
+                onClick={handleResetToOverview}
+                className="inline-flex items-center gap-1 text-[11px] text-[#8A9299] hover:text-[#C7A66A] underline shrink-0 cursor-pointer pt-0.5 transition-colors"
+                title="Kembali ke penjelasan materi umum"
               >
-                <div className="flex items-center gap-1.5">
-                  <Lightbulb className="w-3.5 h-3.5" />
-                  <span>{showHint ? "Sembunyikan Petunjuk" : "Butuh Petunjuk Tambahan?"}</span>
-                </div>
-                {showHint ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-[#8A9299]" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-[#8A9299]" />
-                )}
+                <RotateCcw className="w-3 h-3" />
+                <span>Tinjauan Awal</span>
               </button>
-              {showHint && (
-                <div className="p-2.5 pt-0 text-[11px] text-[#F2F0E8] leading-relaxed border-t border-[#353B42]/50">
-                  {explanation.hint}
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* Suggested Legal Candidate Moves */}
-          {explanation.suggestedMoves && explanation.suggestedMoves.length > 0 && (
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A9299] block">
-                Langkah yang Disarankan:
-              </span>
-              <div className="space-y-1.5">
-                {explanation.suggestedMoves.map((m) => (
-                  <div
-                    key={m.uci}
-                    className={`flex items-start justify-between p-2 rounded-lg border text-xs transition-colors ${
-                      activeHighlightedMove === m.uci
-                        ? "bg-[#C7A66A]/15 border-[#C7A66A] text-[#F2F0E8]"
-                        : "bg-[#141619] border-[#353B42] text-[#B0B5B9]"
-                    }`}
-                  >
-                    <div className="space-y-0.5 flex-1 pr-2">
-                      <div className="flex items-center gap-1.5 font-medium text-[#F2F0E8]">
-                        <span className="px-1.5 py-0.5 rounded bg-[#24292E] font-mono text-[11px] text-[#C7A66A]">
-                          {m.san}
-                        </span>
-                        <span className="text-[11px] text-[#8A9299]">({m.uci})</span>
-                      </div>
-                      <p className="text-[11px] text-[#8A9299] leading-snug">
-                        {m.description}
-                      </p>
-                    </div>
+        {/* Loading indicator while formulating answer */}
+        {loading && activeQuestion && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#24292E] border border-[#C7A66A]/50 text-xs text-[#C7A66A] animate-pulse">
+            <Loader2 className="w-4 h-4 animate-spin text-[#C7A66A] shrink-0" />
+            <span className="font-medium">Guru Catur sedang menyusun jawaban terbaik untuk Anda...</span>
+          </div>
+        )}
 
-                    {onHighlightMove && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMoveClick(m)}
-                        className="text-[10px] h-6 px-2 text-[#C7A66A] hover:bg-[#C7A66A]/20 shrink-0"
-                      >
-                        Tampilkan
-                      </Button>
-                    )}
-                  </div>
-                ))}
+        {/* Title & Core Summary */}
+        <div className="space-y-1">
+          <h4 className="text-sm font-semibold text-[#F2F0E8]">
+            {activeContent.title}
+          </h4>
+          <p className="text-xs text-[#B0B5B9] leading-relaxed">
+            {activeContent.summary}
+          </p>
+        </div>
+
+        {/* Integrated Speech Audio Player */}
+        <TutorAudioPlayer
+          spokenText={activeContent.spokenText}
+          autoPlayTrigger={true}
+        />
+
+        {/* Educational Explanation */}
+        <div className="p-3 rounded-lg bg-[#141619] border border-[#353B42]/70 text-xs text-[#B0B5B9] leading-relaxed space-y-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#C7A66A] uppercase tracking-wider">
+            <Compass className="w-3.5 h-3.5" />
+            <span>{activeQuestion ? "Jawaban Guru Catur" : `Konsep: ${activeContent.concept}`}</span>
+          </div>
+          <p className="whitespace-pre-line">{activeContent.explanation}</p>
+        </div>
+
+        {/* Stepped Hint Accordion */}
+        {activeContent.hint && (
+          <div className="rounded-lg border border-[#353B42] bg-[#24292E]/60 overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => setShowHint(!showHint)}
+              className="w-full flex items-center justify-between p-2.5 text-left text-xs font-medium text-[#C7A66A] hover:bg-[#2C3238] transition-colors"
+            >
+              <div className="flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5" />
+                <span>{showHint ? "Sembunyikan Petunjuk" : "Butuh Petunjuk Tambahan?"}</span>
               </div>
-            </div>
-          )}
+              {showHint ? (
+                <ChevronUp className="w-3.5 h-3.5 text-[#8A9299]" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-[#8A9299]" />
+              )}
+            </button>
+            {showHint && (
+              <div className="p-2.5 pt-0 text-[11px] text-[#F2F0E8] leading-relaxed border-t border-[#353B42]/50">
+                {activeContent.hint}
+              </div>
+            )}
+          </div>
+        )}
 
-          {/* Follow-up Question Prompts & Custom Input */}
-          <div className="space-y-2 pt-1 border-t border-[#353B42]">
+        {/* Suggested Legal Candidate Moves */}
+        {activeContent.suggestedMoves && activeContent.suggestedMoves.length > 0 && (
+          <div className="space-y-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A9299] block">
-              Tanyakan Kepada Guru:
+              Langkah yang Disarankan:
             </span>
-
-            {/* Quick Chips */}
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                "Kenapa langkah ini penting?",
-                "Apa ancaman utama lawan?",
-                "Bisa jelaskan lebih sederhana?",
-              ].map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => handleAskQuestion(chip)}
-                  disabled={loading}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors cursor-pointer ${
-                    activeQuestion === chip
-                      ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] font-semibold shadow-xs"
-                      : "bg-[#141619] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#C7A66A]"
-                  } disabled:opacity-50`}
+            <div className="space-y-1.5">
+              {activeContent.suggestedMoves.map((m) => (
+                <div
+                  key={m.uci}
+                  className={`flex items-start justify-between p-2 rounded-lg border text-xs transition-colors ${
+                    activeHighlightedMove === m.uci
+                      ? "bg-[#C7A66A]/15 border-[#C7A66A] text-[#F2F0E8]"
+                      : "bg-[#141619] border-[#353B42] text-[#B0B5B9]"
+                  }`}
                 >
-                  {chip}
-                </button>
+                  <div className="space-y-0.5 flex-1 pr-2">
+                    <div className="flex items-center gap-1.5 font-medium text-[#F2F0E8]">
+                      <span className="px-1.5 py-0.5 rounded bg-[#24292E] font-mono text-[11px] text-[#C7A66A]">
+                        {m.san}
+                      </span>
+                      <span className="text-[11px] text-[#8A9299]">({m.uci})</span>
+                    </div>
+                    <p className="text-[11px] text-[#8A9299] leading-snug">
+                      {m.description}
+                    </p>
+                  </div>
+
+                  {onHighlightMove && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleMoveClick(m)}
+                      className="text-[10px] h-6 px-2 text-[#C7A66A] hover:bg-[#C7A66A]/20 shrink-0"
+                    >
+                      Tampilkan
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
+          </div>
+        )}
 
-            {/* Custom Question Text Input */}
-            <div className="flex items-center gap-1.5 pt-1">
-              <input
-                type="text"
-                value={customQuestion}
-                onChange={(e) => setCustomQuestion(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAskQuestion(customQuestion);
-                  }
-                }}
-                placeholder="Ajukan pertanyaan seputar posisi ini..."
-                maxLength={500}
+        {/* Follow-up Question Prompts & Custom Input */}
+        <div className="space-y-2 pt-1 border-t border-[#353B42]">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A9299] block">
+            Tanyakan Kepada Guru:
+          </span>
+
+          {/* Quick Chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              "Kenapa langkah ini penting?",
+              "Apa ancaman utama lawan?",
+              "Bisa jelaskan lebih sederhana?",
+            ].map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => handleAskQuestion(chip)}
                 disabled={loading}
-                className="flex-1 bg-[#141619] border border-[#353B42] focus:border-[#C7A66A] rounded-lg px-2.5 py-1.5 text-xs text-[#F2F0E8] placeholder:text-[#8A9299] focus:outline-none transition-colors"
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleAskQuestion(customQuestion)}
-                disabled={!customQuestion.trim() || loading}
-                className="px-2.5 text-xs"
-                aria-label="Kirim pertanyaan"
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors cursor-pointer ${
+                  activeQuestion === chip
+                    ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] font-semibold shadow-xs"
+                    : "bg-[#141619] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#C7A66A]"
+                } disabled:opacity-50`}
               >
-                <Send className="w-3.5 h-3.5 text-[#C7A66A]" />
-              </Button>
-            </div>
+                {chip}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Question Text Input */}
+          <div className="flex items-center gap-1.5 pt-1">
+            <input
+              type="text"
+              value={customQuestion}
+              onChange={(e) => setCustomQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAskQuestion(customQuestion);
+                }
+              }}
+              placeholder="Ajukan pertanyaan seputar posisi ini..."
+              maxLength={500}
+              disabled={loading}
+              className="flex-1 bg-[#141619] border border-[#353B42] focus:border-[#C7A66A] rounded-lg px-2.5 py-1.5 text-xs text-[#F2F0E8] placeholder:text-[#8A9299] focus:outline-none transition-colors"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleAskQuestion(customQuestion)}
+              disabled={!customQuestion.trim() || loading}
+              className="px-2.5 text-xs"
+              aria-label="Kirim pertanyaan"
+            >
+              <Send className="w-3.5 h-3.5 text-[#C7A66A]" />
+            </Button>
           </div>
         </div>
-      ) : null}
+      </div>
     </Card>
   );
 };

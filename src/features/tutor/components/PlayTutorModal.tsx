@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { Sparkles, X } from "lucide-react";
 import { TutorPanel } from "./TutorPanel";
 import { TutorExplainRequest } from "../types";
-import { getCuratedTutorExplanation } from "../server/curated-tutor-fallbacks";
 import { tutorSpeech } from "../speech-controller";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +17,7 @@ interface PlayTutorModalProps {
 }
 
 /**
- * Panel Penjelasan Guru Catur AI (Non-Modal / Docked Side Panel)
+ * Panel Penjelasan Guru Catur (Non-Modal / Docked Side Panel)
  * Menggantikan modal pop-up agar papan catur selalu 100% terlihat dan tidak tertutup saat belajar.
  */
 export const PlayTutorModal: React.FC<PlayTutorModalProps> = ({
@@ -42,7 +41,7 @@ export const PlayTutorModal: React.FC<PlayTutorModalProps> = ({
       variant="surface"
       className={`p-4 space-y-3 border border-[#C7A66A]/60 bg-gradient-to-b from-[#1C2024] to-[#141619] shadow-xl rounded-2xl animate-in fade-in ${className}`}
       role="region"
-      aria-label="Panel Bimbingan Guru Catur AI"
+      aria-label="Panel Bimbingan Guru Catur"
     >
       {/* Header Panel */}
       <div className="flex items-start justify-between pb-2.5 border-b border-[#353B42]">
@@ -52,7 +51,7 @@ export const PlayTutorModal: React.FC<PlayTutorModalProps> = ({
           </div>
           <div>
             <h2 className="text-sm font-bold text-[#F2F0E8] flex items-center gap-1.5">
-              <span>Bimbingan Guru Catur AI</span>
+              <span>Bimbingan Guru Catur</span>
               <span className="w-2 h-2 rounded-full bg-[#73B894] animate-pulse" />
             </h2>
             <p className="text-[11px] text-[#C7A66A]">
@@ -77,7 +76,6 @@ export const PlayTutorModal: React.FC<PlayTutorModalProps> = ({
         <TutorPanel
           key={requestContext.fen}
           requestContext={requestContext}
-          initialExplanation={getCuratedTutorExplanation(requestContext)}
           onHighlightMove={onHighlightMove}
           className="border-0 shadow-none p-0 bg-transparent"
         />

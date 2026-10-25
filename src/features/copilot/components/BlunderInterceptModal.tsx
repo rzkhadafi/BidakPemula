@@ -62,7 +62,7 @@ export const BlunderInterceptModal: React.FC<BlunderInterceptModalProps> = ({
                 report.severity === "fatal" ? "text-[#E17C78]" : "text-[#E3B66F]"
               }`}
             >
-              AI Co-Pilot Mendeteksi Bahaya Serius
+              Pendamping Mendeteksi Bahaya Serius
             </span>
           </div>
         </div>

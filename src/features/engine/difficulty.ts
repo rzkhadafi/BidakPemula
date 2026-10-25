@@ -49,7 +49,7 @@ export const BOT_DIFFICULTIES: Record<BotDifficultyLevel, BotDifficultyConfig> =
     depth: 12,
     moveTimeMs: 1200,
     blunderProbability: 0.0,
-    description: "Kekuatan penuh Stockfish untuk pemain yang mencari tantangan sejati.",
+    description: "Kekuatan penuh engine untuk pemain yang mencari tantangan sejati.",
   },
 };
 

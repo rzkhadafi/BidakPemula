@@ -239,22 +239,22 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {/* Status & Preferensi Guru AI */}
+        {/* Status & Preferensi Guru Catur */}
         <Card variant="surface" className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-[#353B42]">
             <Sparkles className="w-4 h-4 text-[#C7A66A]" />
             <h2 className="text-sm font-semibold text-[#F2F0E8]">
-              Guru Catur AI & Penjelasan Suara
+              Guru Catur & Penjelasan Suara
             </h2>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
-                Status Layanan Guru AI
+                Status Layanan Guru Catur
               </span>
               <span className="text-xs text-[#8A9299]">
-                Didukung model Gemini & sintesis suara bahasa Indonesia di sisi server
+                Didukung sintesis suara bahasa Indonesia di sisi server
               </span>
             </div>
             <Badge variant="accent">Aktif (Server-Side)</Badge>
@@ -280,10 +280,10 @@ export default function SettingsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#353B42]">
             <div>
               <span className="text-xs sm:text-sm font-medium text-[#F2F0E8] block">
-                Karakter Suara Guru AI (Gemini TTS)
+                Karakter Suara Guru Catur
               </span>
               <span className="text-xs text-[#8A9299]">
-                Pilihan intonasi dan warna suara manusiawi dari model Gemini
+                Pilihan intonasi dan warna suara manusiawi yang jernih
               </span>
             </div>
             <select

@@ -264,7 +264,7 @@ export function useChessGame(
         pgn: chessRef.current.pgn(),
         moves: currentHistory,
         durationMs: Math.max(0, Date.now() - startTime),
-        engineVersion: "Stockfish 19 Lite",
+        engineVersion: "Engine Catur 19",
       };
 
       saveArchivedGame(archived);

@@ -60,7 +60,7 @@ describe("Tutor UI Components", () => {
       />
     );
 
-    expect(screen.getByText("Guru Catur AI")).toBeInTheDocument();
+    expect(screen.getByText("Guru Catur")).toBeInTheDocument();
     expect(screen.getByText("Analisis Pembukaan: 1. e4")).toBeInTheDocument();
     expect(screen.getByText(/Penguasaan Pusat Papan/i)).toBeInTheDocument();
     expect(screen.getByText("e5")).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe("Tutor UI Components", () => {
       />
     );
 
-    expect(screen.getByText("Bimbingan Guru Catur AI")).toBeInTheDocument();
+    expect(screen.getByText("Bimbingan Guru Catur")).toBeInTheDocument();
 
     rerender(
       <PlayTutorModal
@@ -97,7 +97,7 @@ describe("Tutor UI Components", () => {
       />
     );
 
-    expect(screen.queryByText("Bimbingan Guru Catur AI")).not.toBeInTheDocument();
+    expect(screen.queryByText("Bimbingan Guru Catur")).not.toBeInTheDocument();
   });
 
   it("submits question when clicking 'Kenapa langkah ini penting?' chip and shows Q&A banner", async () => {

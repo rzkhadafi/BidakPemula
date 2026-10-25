@@ -156,7 +156,7 @@ export const SocraticHintModal: React.FC<SocraticHintModalProps> = ({
               <span className="w-2 h-2 rounded-full bg-[#73B894] animate-pulse" />
             </h2>
             <p className="text-[11px] text-[#C7A66A]">
-              Guru AI memandu cara berpikir Anda tanpa menutup papan catur.
+              Guru Catur memandu cara berpikir Anda tanpa menutup papan catur.
             </p>
           </div>
         </div>
