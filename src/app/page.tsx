@@ -89,7 +89,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#353B42] flex items-center justify-between text-xs">
+            <div className="pt-2 border-t border-[#353B42] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 text-xs">
               <span className="text-[#8A9299]">
                 Rekomendasi disesuaikan dari hasil latihan pribadimu
               </span>

@@ -105,7 +105,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
         </div>
 
         <Badge variant="accent" size="sm" className="shrink-0 text-[11px]">
-          Pelajaran {lesson.order} dari 9
+          Pelajaran {lesson.order} <span className="hidden sm:inline">dari</span><span className="sm:hidden">/</span> 9
         </Badge>
       </div>
 
@@ -113,7 +113,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start flex-1 min-h-0">
         {/* Left Column: Interactive Practice Board (STATIONARY / NO SCROLL) */}
         <div className="lg:col-span-7 flex flex-col items-center w-full shrink-0">
-          <div className="w-full max-w-[min(510px,calc(100dvh-175px))]">
+          <div className="w-full max-w-[min(100%,480px)] lg:max-w-[min(510px,calc(100dvh-175px))]">
             <InteractiveLessonBoard
               lesson={lesson}
               currentStepIndex={currentStepIdx}
@@ -130,7 +130,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab("tutor")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors ${
                 activeTab === "tutor"
                   ? "bg-[#C7A66A] text-[#141619] font-semibold"
                   : "text-[#8A9299] hover:text-[#F2F0E8]"
@@ -142,7 +142,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab("guide")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-colors ${
                 activeTab === "guide"
                   ? "bg-[#24292E] text-[#F2F0E8] font-semibold border border-[#353B42]"
                   : "text-[#8A9299] hover:text-[#F2F0E8]"

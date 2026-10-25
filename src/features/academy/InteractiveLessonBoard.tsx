@@ -347,7 +347,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
 
       {/* Step Guidance & Hint Strip */}
       <div className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg bg-[#1C2024]/90 border border-[#353B42] text-xs text-[#B0B5B9]">
-        <span className="truncate text-[11px] sm:text-xs">
+        <span className="text-[11px] sm:text-xs leading-snug flex-1">
           {step.subText || "Lakukan gerakan pada papan catur di atas."}
         </span>
         {!showHint && (
@@ -439,7 +439,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           </div>
 
           {/* Action Buttons - Big, Obvious, and Accessible */}
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
             <Button
               variant="secondary"
               size="sm"
@@ -447,7 +447,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
                 setShowSuccessModal(false);
                 handleResetStep();
               }}
-              className="w-full sm:w-auto text-xs"
+              className="w-full sm:w-auto text-xs min-h-[38px] sm:min-h-0"
               title="Coba ulangi tantangan ini sekali lagi"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1" />
@@ -459,7 +459,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
               size="sm"
               autoFocus
               onClick={handleNextStep}
-              className="w-full sm:w-auto py-2.5 px-4 font-bold text-xs bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 shadow-md cursor-pointer"
+              className="w-full sm:w-auto py-2.5 px-4 font-bold text-xs bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 shadow-md cursor-pointer min-h-[42px] sm:min-h-0"
               title="Lanjutkan ke langkah materi berikutnya"
             >
               <span>
@@ -500,7 +500,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
             <Button
               variant="secondary"
               size="sm"
@@ -509,7 +509,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
                 handleResetStep();
                 setShowHint(true);
               }}
-              className="w-full sm:w-auto text-xs"
+              className="w-full sm:w-auto text-xs min-h-[38px] sm:min-h-0"
               title="Lihat petunjuk langkah ini"
             >
               <HelpCircle className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
@@ -524,7 +524,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
                 setShowErrorModal(false);
                 handleResetStep();
               }}
-              className="w-full sm:w-auto py-2.5 px-4 font-bold text-xs bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 shadow-md cursor-pointer"
+              className="w-full sm:w-auto py-2.5 px-4 font-bold text-xs bg-gradient-to-r from-[#C7A66A] to-[#D8BB83] text-[#141619] hover:brightness-110 shadow-md cursor-pointer min-h-[42px] sm:min-h-0"
               title="Coba ulangi tantangan ini"
             >
               <RotateCcw className="w-4 h-4 mr-1.5" />

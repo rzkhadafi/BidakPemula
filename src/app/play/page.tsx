@@ -208,7 +208,7 @@ export default function PlayPage() {
       <div className="flex items-center gap-1.5">
         <Bot className="w-3.5 h-3.5 text-[#73B894]" />
         <span className="font-semibold text-xs text-[#F2F0E8]">
-          Bot ({currentDiff?.label || "Santai"})
+          <span className="hidden sm:inline">Bot </span>({currentDiff?.label || "Santai"})
         </span>
         <span
           className={`w-1.5 h-1.5 rounded-full ${
@@ -317,7 +317,8 @@ export default function PlayPage() {
             className="h-8 px-2 sm:px-2.5 text-xs"
           >
             <Settings2 className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
-            <span>Pengaturan Game</span>
+            <span className="hidden sm:inline">Pengaturan Game</span>
+            <span className="sm:hidden">Atur</span>
           </Button>
         </div>
       </div>
@@ -599,11 +600,12 @@ export default function PlayPage() {
                   size="sm"
                   onClick={handleOpenTutor}
                   disabled={history.length === 0}
-                  className="justify-center text-xs border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10"
+                  className="justify-center text-xs border-[#C7A66A]/40 text-[#C7A66A] hover:bg-[#C7A66A]/10 min-h-[36px]"
                   title="Dengarkan penjelasan suara mendalam mengenai langkah terakhir"
                 >
                   <Sparkles className="w-3.5 h-3.5 mr-1 text-[#C7A66A]" />
-                  Jelaskan Langkah (Suara)
+                  <span className="hidden sm:inline">Jelaskan Langkah (Suara)</span>
+                  <span className="sm:hidden">Tutor Suara</span>
                 </Button>
               </div>
             </Card>

@@ -164,7 +164,7 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
       </div>
 
       {/* Main Playback Controls */}
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#353B42]/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#353B42]/60">
         <div className="flex items-center gap-1.5">
           {playbackState === "loading" ? (
             <Button variant="secondary" size="sm" disabled className="gap-1.5 text-xs">

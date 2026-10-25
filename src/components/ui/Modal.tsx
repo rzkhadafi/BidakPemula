@@ -50,21 +50,21 @@ export const Modal: React.FC<ModalProps> = ({
         }
       }}
     >
-      <div className="relative w-full max-w-lg bg-[#1C2024] border border-[#353B42] rounded-xl shadow-2xl p-6 text-[#F2F0E8] overflow-hidden">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 id="modal-title" className="text-lg font-semibold text-[#F2F0E8]">
+      <div className="relative w-full max-w-lg bg-[#1C2024] border border-[#353B42] rounded-xl shadow-2xl p-4 sm:p-6 text-[#F2F0E8] max-h-[90dvh] overflow-y-auto">
+        <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
+          <div className="min-w-0 pr-1">
+            <h2 id="modal-title" className="text-base sm:text-lg font-semibold text-[#F2F0E8] leading-snug">
               {title}
             </h2>
             {description && (
-              <p className="text-sm text-[#B0B5B9] mt-1">{description}</p>
+              <p className="text-xs sm:text-sm text-[#B0B5B9] mt-1 leading-relaxed">{description}</p>
             )}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Tutup dialog"
-            className="p-1 rounded-md text-[#B0B5B9] hover:text-[#F2F0E8] hover:bg-[#2C3238] transition-colors focus-visible:outline-2 focus-visible:outline-[#C7A66A]"
+            className="p-1.5 rounded-lg text-[#B0B5B9] hover:text-[#F2F0E8] hover:bg-[#2C3238] transition-colors focus-visible:outline-2 focus-visible:outline-[#C7A66A] shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

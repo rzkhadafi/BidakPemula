@@ -192,19 +192,19 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div
-      className={`w-full max-w-[min(100%,calc(100dvh-230px))] lg:max-w-[min(560px,calc(100dvh-215px))] xl:max-w-[min(620px,calc(100dvh-200px))] mx-auto select-none flex flex-col items-center ${className}`}
+      className={`w-full max-w-[min(100%,480px)] lg:max-w-[min(540px,calc(100dvh-210px))] xl:max-w-[min(600px,calc(100dvh-190px))] mx-auto select-none flex flex-col items-center ${className}`}
     >
       {/* Utility Bar: Kacamata Catur Toggle, Radar Panah & Right Slot (Bot Pill & Jam) */}
       {(showVisionToggle || showRadarToggle || topRightSlot) && (
-        <div className="w-full relative flex items-center justify-between gap-2 mb-1.5 px-0.5 min-h-[32px] shrink-0">
+        <div className="w-full relative flex items-center justify-between gap-1.5 sm:gap-2 mb-1.5 px-0.5 min-h-[32px] shrink-0">
           {/* Left: Button Kacamata Catur & Radar Panah Toggle */}
-          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 flex-wrap">
             {showVisionToggle && (
               <>
                 <button
                   type="button"
                   onClick={handleToggleVision}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                     visionEnabled
                       ? "bg-[#C7A66A]/20 border-[#C7A66A] text-[#F2F0E8] shadow-xs"
                       : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
@@ -214,9 +214,11 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   aria-pressed={visionEnabled}
                 >
                   <Glasses className={`w-3.5 h-3.5 ${visionEnabled ? "text-[#C7A66A]" : "text-[#8A9299]"}`} />
-                  <span className="font-semibold">Kacamata Catur</span>
+                  <span className="font-semibold">
+                    <span className="hidden sm:inline">Kacamata </span>Catur
+                  </span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                    className={`text-[10px] px-1 sm:px-1.5 py-0.2 rounded font-semibold ${
                       visionEnabled ? "bg-[#C7A66A] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
                     }`}
                   >
@@ -228,7 +230,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowLegend((prev) => !prev)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1C2024] border border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] text-[11px] cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg bg-[#1C2024] border border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] text-[11px] cursor-pointer"
                     title="Panduan simbol visual"
                   >
                     <HelpCircle className="w-3 h-3" />
@@ -242,7 +244,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
               <button
                 type="button"
                 onClick={handleToggleRadarArrows}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                   radarArrowsEnabled
                     ? "bg-[#73B894]/20 border-[#73B894] text-[#F2F0E8] shadow-xs"
                     : "bg-[#1C2024] border-[#353B42] text-[#8A9299] hover:text-[#F2F0E8] hover:border-[#8A9299]"
@@ -252,9 +254,11 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 aria-pressed={radarArrowsEnabled}
               >
                 <Navigation className={`w-3.5 h-3.5 ${radarArrowsEnabled ? "text-[#73B894]" : "text-[#8A9299]"}`} />
-                <span className="font-semibold">Radar Panah</span>
+                <span className="font-semibold">
+                  <span className="hidden sm:inline">Radar </span>Panah
+                </span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                  className={`text-[10px] px-1 sm:px-1.5 py-0.2 rounded font-semibold ${
                     radarArrowsEnabled ? "bg-[#73B894] text-[#141619]" : "bg-[#24292E] text-[#8A9299]"
                   }`}
                 >
@@ -307,7 +311,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
           {/* Floating Popover Legend (Zero layout shift, absolute overlay di atas papan) */}
           {visionEnabled && showLegend && (
-            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-72 p-3 rounded-xl bg-[#1C2024] border border-[#353B42] shadow-2xl z-40 text-xs space-y-2 animate-in fade-in slide-in-from-top-1">
+            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-72 max-w-[calc(100vw-32px)] p-3 rounded-xl bg-[#1C2024] border border-[#353B42] shadow-2xl z-40 text-xs space-y-2 animate-in fade-in slide-in-from-top-1">
               <div className="flex items-center justify-between pb-1.5 border-b border-[#353B42]">
                 <span className="font-semibold text-[#F2F0E8] text-xs">Panduan Simbol Kacamata</span>
                 <button
@@ -420,7 +424,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   {/* Rank coordinate on first column (top-left inside square) */}
                   {fileIdx === 0 && (
                     <span
-                      className={`absolute top-0.5 left-1 text-[11px] sm:text-[12px] font-sans font-semibold pointer-events-none select-none z-10 ${
+                      className={`absolute top-0.5 left-0.5 sm:left-1 text-[9px] sm:text-[11px] font-sans font-semibold pointer-events-none select-none z-10 ${
                         isLight ? "text-[#73471F]" : "text-[#E8D4B8]"
                       }`}
                     >
@@ -431,7 +435,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   {/* File coordinate on bottom row (bottom-right inside square) */}
                   {rankIdx === 7 && (
                     <span
-                      className={`absolute bottom-0.5 right-1 text-[11px] sm:text-[12px] font-sans font-semibold pointer-events-none select-none z-10 ${
+                      className={`absolute bottom-0.5 right-0.5 sm:right-1 text-[9px] sm:text-[11px] font-sans font-semibold pointer-events-none select-none z-10 ${
                         isLight ? "text-[#73471F]" : "text-[#E8D4B8]"
                       }`}
                     >

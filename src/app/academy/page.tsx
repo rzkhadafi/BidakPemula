@@ -42,7 +42,7 @@ export default function AcademyPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link href="/progress">
             <Button variant="secondary" size="sm" className="text-xs flex items-center gap-1.5">
               <Compass className="w-3.5 h-3.5 text-[#C7A66A]" />

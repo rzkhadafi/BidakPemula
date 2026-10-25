@@ -81,7 +81,7 @@ export const PuzzleViewClient: React.FC<PuzzleViewClientProps> = ({
         {/* Left Column: Interactive Chessboard */}
         <div className="lg:col-span-8 flex flex-col items-center w-full shrink-0">
           {/* Turn Banner */}
-          <div className="w-full max-w-[min(540px,calc(100dvh-200px))] flex items-center justify-between py-1.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
+          <div className="w-full max-w-[min(100%,480px)] lg:max-w-[min(540px,calc(100dvh-200px))] flex items-center justify-between py-1.5 px-3 mb-2 rounded-lg bg-[#1C2024] border border-[#353B42]">
             <div className="flex items-center gap-2">
               <span
                 className={`w-3 h-3 rounded-full border ${
