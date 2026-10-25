@@ -16,6 +16,7 @@ import {
   getTutorPreferences,
   saveTutorPreferences,
   subscribeTutorPreferences,
+  getServerTutorPreferencesSnapshot,
 } from "../tutor-preferences";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -38,7 +39,7 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   const preferences = useSyncExternalStore(
     subscribeTutorPreferences,
     getTutorPreferences,
-    () => ({ autoplay: false, speed: 1.0 as const, voice: "Aoede" })
+    getServerTutorPreferencesSnapshot
   );
 
   const lastSpokenTextRef = useRef<string | null>(null);

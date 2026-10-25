@@ -19,6 +19,10 @@ function notify(): void {
   });
 }
 
+export function getServerTutorPreferencesSnapshot(): TutorPreferences {
+  return DEFAULT_PREFERENCES;
+}
+
 export function getTutorPreferences(): TutorPreferences {
   if (typeof window === "undefined") {
     return DEFAULT_PREFERENCES;
