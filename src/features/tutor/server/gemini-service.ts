@@ -271,13 +271,20 @@ PEDOMAN PENTING:
 
     const apiKey = this.getApiKey();
     if (!apiKey || process.env.TUTOR_ENABLED === "false") {
+      console.warn("[GeminiTutorService] GEMINI_API_KEY belum dikonfigurasi di Environment Variables Vercel atau TUTOR_ENABLED=false.");
       return null;
     }
 
     const primaryModel = this.getTtsModel();
     const voiceName = voice || this.getDefaultVoice();
     const candidateModels = Array.from(
-      new Set([primaryModel, "gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts", "gemini-3.1-flash-tts-preview"])
+      new Set([
+        primaryModel,
+        "gemini-3.8-flash-tts",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-3.8-flash-lite-tts",
+        "gemini-3.1-flash-tts-preview",
+      ])
     );
 
     for (const modelName of candidateModels) {
