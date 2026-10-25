@@ -57,10 +57,10 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
     if (autoPlayTrigger && preferences.autoplay && spokenText) {
       if (lastSpokenTextRef.current !== spokenText) {
         lastSpokenTextRef.current = spokenText;
-        tutorSpeech.speak(spokenText).catch(() => {});
+        tutorSpeech.speak(spokenText, preferences.voice).catch(() => {});
       }
     }
-  }, [autoPlayTrigger, preferences.autoplay, spokenText]);
+  }, [autoPlayTrigger, preferences.autoplay, spokenText, preferences.voice]);
 
   // Clean up any ongoing audio when the player component unmounts
   useEffect(() => {
@@ -72,8 +72,9 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   const { playbackState, source, speed, errorMessage } = controllerState;
 
   const handlePlay = () => {
+    tutorSpeech.unlockAudio();
     lastSpokenTextRef.current = spokenText;
-    tutorSpeech.speak(spokenText);
+    tutorSpeech.speak(spokenText, preferences.voice);
   };
 
   const handlePause = () => {
@@ -85,8 +86,9 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
   };
 
   const handleReplay = () => {
+    tutorSpeech.unlockAudio();
     lastSpokenTextRef.current = spokenText;
-    tutorSpeech.replay();
+    tutorSpeech.speak(spokenText, preferences.voice);
   };
 
   const handleStop = () => {
@@ -101,9 +103,10 @@ export const TutorAudioPlayer: React.FC<TutorAudioPlayerProps> = ({
     const checked = e.target.checked;
     saveTutorPreferences({ autoplay: checked });
     if (checked) {
+      tutorSpeech.unlockAudio();
       if (spokenText && controllerState.playbackState === "idle") {
         lastSpokenTextRef.current = spokenText;
-        tutorSpeech.speak(spokenText).catch(() => {});
+        tutorSpeech.speak(spokenText, preferences.voice).catch(() => {});
       }
     } else {
       tutorSpeech.stop();

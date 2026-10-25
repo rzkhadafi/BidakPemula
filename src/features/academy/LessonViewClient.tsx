@@ -44,10 +44,16 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
     setCurrentStepIdx(0);
   }
 
-  // Stop previous speech immediately when step, lesson, or tab changes
+  // Stop previous speech when navigating to a different lesson or switching away to guide tab
+  React.useEffect(() => {
+    if (activeTab === "guide") {
+      tutorSpeech.stop();
+    }
+  }, [activeTab]);
+
   React.useEffect(() => {
     tutorSpeech.stop();
-  }, [currentStepIdx, lesson.id, activeTab]);
+  }, [lesson.id]);
 
   // Cleanup speech when navigating away
   React.useEffect(() => {

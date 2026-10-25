@@ -62,7 +62,7 @@ export class GeminiTutorService {
   }
 
   private static getTtsModel(): string {
-    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-2.5-flash-preview-tts";
+    return process.env.GEMINI_TTS_MODEL?.trim() || "gemini-3.8-flash-tts";
   }
 
   private static getDefaultVoice(): string {
@@ -274,80 +274,87 @@ PEDOMAN PENTING:
       return null;
     }
 
-    const modelName = this.getTtsModel();
+    const primaryModel = this.getTtsModel();
     const voiceName = voice || this.getDefaultVoice();
+    const candidateModels = Array.from(
+      new Set([primaryModel, "gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts", "gemini-3.1-flash-tts-preview"])
+    );
 
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 14000);
+    for (const modelName of candidateModels) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: trimmed }] }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: voiceName,
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: trimmed }] }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: voiceName,
+                  },
                 },
               },
             },
-          },
-        }),
-      });
+          }),
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        console.warn(`Gemini TTS API returned status ${response.status}`);
-        return null;
-      }
-
-      const json = await response.json();
-      const candidatePart = json?.candidates?.[0]?.content?.parts?.[0];
-      const inlineData = candidatePart?.inlineData;
-
-      if (!inlineData?.data) {
-        console.warn("Gemini TTS response missing audio inlineData");
-        return null;
-      }
-
-      const rawBuffer = Buffer.from(inlineData.data, "base64");
-      const returnedMime = inlineData.mimeType || "audio/wav";
-
-      // If already a complete WAV with RIFF header, return directly
-      let wavBuffer: Buffer;
-      if (
-        rawBuffer.length >= 12 &&
-        rawBuffer.subarray(0, 4).toString() === "RIFF" &&
-        rawBuffer.subarray(8, 12).toString() === "WAVE"
-      ) {
-        wavBuffer = rawBuffer;
-      } else {
-        // Raw Linear PCM (e.g. audio/L16;codec=pcm;rate=24000)
-        let sampleRate = 24000;
-        const rateMatch = returnedMime.match(/rate=(\d+)/);
-        if (rateMatch) {
-          const parsedRate = parseInt(rateMatch[1], 10);
-          if (!isNaN(parsedRate) && parsedRate > 0) {
-            sampleRate = parsedRate;
-          }
+        if (!response.ok) {
+          console.warn(`Gemini TTS API (${modelName}) returned status ${response.status}`);
+          continue;
         }
-        wavBuffer = pcmToWav(rawBuffer, sampleRate, 1, 16);
-      }
 
-      return {
-        audioBuffer: wavBuffer,
-        mimeType: "audio/wav",
-      };
-    } catch (err) {
-      console.warn("Gemini TTS synthesis failed:", err);
-      return null;
+        const json = await response.json();
+        const candidatePart = json?.candidates?.[0]?.content?.parts?.[0];
+        const inlineData = candidatePart?.inlineData;
+
+        if (!inlineData?.data) {
+          console.warn(`Gemini TTS (${modelName}) missing inlineData`);
+          continue;
+        }
+
+        const rawBuffer = Buffer.from(inlineData.data, "base64");
+        const returnedMime = inlineData.mimeType || "audio/wav";
+
+        // If already a complete WAV with RIFF header, return directly
+        let wavBuffer: Buffer;
+        if (
+          rawBuffer.length >= 12 &&
+          rawBuffer.subarray(0, 4).toString() === "RIFF" &&
+          rawBuffer.subarray(8, 12).toString() === "WAVE"
+        ) {
+          wavBuffer = rawBuffer;
+        } else {
+          // Raw Linear PCM (e.g. audio/L16;codec=pcm;rate=24000)
+          let sampleRate = 24000;
+          const rateMatch = returnedMime.match(/rate=(\d+)/);
+          if (rateMatch) {
+            const parsedRate = parseInt(rateMatch[1], 10);
+            if (!isNaN(parsedRate) && parsedRate > 0) {
+              sampleRate = parsedRate;
+            }
+          }
+          wavBuffer = pcmToWav(rawBuffer, sampleRate, 1, 16);
+        }
+
+        return {
+          audioBuffer: wavBuffer,
+          mimeType: "audio/wav",
+        };
+      } catch (err) {
+        console.warn(`Gemini TTS attempt on model ${modelName} failed:`, err);
+        continue;
+      }
     }
+
+    return null;
   }
 }

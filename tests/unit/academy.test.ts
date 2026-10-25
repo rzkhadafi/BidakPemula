@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Chess } from "chess.js";
+import { Chess, Square } from "chess.js";
 import {
   ACADEMY_LESSONS,
   getLessonById,
@@ -49,7 +49,7 @@ describe("Academy Curriculum & Catalog Verification", () => {
           const from = step.expectedMoveUci.slice(0, 2);
           const to = step.expectedMoveUci.slice(2, 4);
           const promotion = (step.expectedMoveUci[4] as "q" | "r" | "b" | "n") || undefined;
-          const targetPieceBeforeMove = c.get(to);
+          const targetPieceBeforeMove = c.get(to as Square);
 
           const res = c.move({ from, to, promotion });
           expect(res).not.toBeNull();

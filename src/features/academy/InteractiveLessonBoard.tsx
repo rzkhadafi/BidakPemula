@@ -254,6 +254,7 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   );
 
   const handleNextStep = () => {
+    tutorSpeech.unlockAudio();
     tutorSpeech.stop();
     setShowSuccessModal(false);
     if (currentStepIdx < lesson.steps.length - 1) {

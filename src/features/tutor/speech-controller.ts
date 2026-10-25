@@ -96,6 +96,27 @@ export class SpeechController {
   }
 
   /**
+   * Primes and unlocks the HTMLAudioElement during user interactions
+   * so subsequent async speech playback is never blocked by browser autoplay policies.
+   */
+  public unlockAudio(): void {
+    if (typeof window === "undefined") return;
+    try {
+      const audio = this.getAudioElement();
+      if (audio.paused && (!audio.src || audio.src.startsWith("data:"))) {
+        audio.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+        const p = audio.play();
+        if (p && typeof p.then === "function") {
+          p.then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(() => {});
+        }
+      }
+    } catch {}
+  }
+
+  /**
    * Instantly silences all active sound engines (both HTMLAudioElement and Web Speech API).
    */
   private silenceAllAudio(): void {
@@ -103,8 +124,6 @@ export class SpeechController {
       try {
         this.audio.pause();
         this.audio.currentTime = 0;
-        this.audio.removeAttribute("src");
-        this.audio.load();
       } catch {}
     }
 
@@ -300,6 +319,16 @@ export class SpeechController {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "id-ID";
       utterance.rate = this.state.speed;
+
+      const prefs = getTutorPreferences();
+      // Adjust pitch according to chosen voice persona
+      if (prefs.voice === "Puck") {
+        utterance.pitch = 1.2;
+      } else if (prefs.voice === "Charon" || prefs.voice === "Fenrir") {
+        utterance.pitch = 0.85;
+      } else {
+        utterance.pitch = 1.05; // Aoede / Kore
+      }
 
       // Select Indonesian voice if available
       const voices = window.speechSynthesis.getVoices();

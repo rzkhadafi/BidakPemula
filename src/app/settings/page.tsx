@@ -25,6 +25,7 @@ import {
   getTutorPreferences,
   saveTutorPreferences,
 } from "@/features/tutor/tutor-preferences";
+import { tutorSpeech } from "@/features/tutor/speech-controller";
 import { chessAudio } from "@/lib/audio/chess-audio";
 import {
   getRadarArrowsSetting,
@@ -51,6 +52,9 @@ export default function SettingsPage() {
   };
 
   const handleAutoplayToggle = (checked: boolean) => {
+    if (checked) {
+      tutorSpeech.unlockAudio();
+    }
     setTutorAutoplay(checked);
     saveTutorPreferences({ autoplay: checked });
   };
