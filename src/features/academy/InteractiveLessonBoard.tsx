@@ -7,7 +7,6 @@ import { InteractiveChessboard } from "@/components/chessboard/InteractiveChessb
 import { AcademyLesson, LessonStep } from "./types";
 import { markLessonStepCompleted } from "./academy-progress";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { chessAudio } from "@/lib/audio/chess-audio";
@@ -298,26 +297,27 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-2.5 w-full">
       {/* Step Header */}
-      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#1C2024] border border-[#353B42]">
-        <div className="flex items-center gap-2">
-          <Badge variant="accent" size="sm">
-            Tantangan {currentStepIdx + 1} dari {lesson.steps.length}
+      <div className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-[#1C2024] border border-[#353B42] text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <Badge variant="accent" size="sm" className="shrink-0 text-[10px]">
+            Tantangan {currentStepIdx + 1}/{lesson.steps.length}
           </Badge>
-          <span className="text-xs text-[#F2F0E8] font-medium hidden sm:inline">
+          <span className="text-xs text-[#F2F0E8] font-semibold truncate">
             {step.instruction}
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleResetStep}
-            className="text-xs text-[#8A9299] hover:text-[#F2F0E8] h-7 px-2"
+            className="text-xs text-[#8A9299] hover:text-[#F2F0E8] h-6 px-2"
+            title="Reset langkah tantangan"
           >
-            <RotateCcw className="w-3.5 h-3.5 mr-1" />
-            Ulangi
+            <RotateCcw className="w-3 h-3 mr-1" />
+            <span>Ulangi</span>
           </Button>
         </div>
       </div>
@@ -345,77 +345,75 @@ export const InteractiveLessonBoard: React.FC<InteractiveLessonBoardProps> = ({
         }}
       />
 
-      {/* Instruction & Feedback Card */}
-      <Card variant="surface" className="space-y-3">
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-[#F2F0E8] flex items-center gap-2">
-            <span>{step.instruction}</span>
-          </h3>
-          <p className="text-xs text-[#B0B5B9] leading-relaxed">
-            {step.subText}
-          </p>
-        </div>
-
-        {/* Fallback Banner jika Modal Ditutup Sementara */}
-        {status === "correct" && !showSuccessModal && (
-          <div className="p-3 rounded-lg bg-[#73B894]/15 border border-[#73B894]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2 text-xs text-[#73B894] font-medium">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#73B894]" />
-              <span>Langkah Benar! Tantangan selesai.</span>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSuccessModal(true)}
-                className="text-xs text-[#73B894] hover:text-[#F2F0E8] h-7 px-2"
-              >
-                Lihat Penjelasan
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleNextStep}
-                className="w-full sm:w-auto text-xs py-1.5 px-3 font-semibold"
-              >
-                <span>
-                  {currentStepIdx < lesson.steps.length - 1
-                    ? "Lanjut ke Tantangan Berikutnya"
-                    : "Selesaikan Pelajaran Ini"}
-                </span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-              </Button>
-            </div>
-          </div>
+      {/* Step Guidance & Hint Strip */}
+      <div className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg bg-[#1C2024]/90 border border-[#353B42] text-xs text-[#B0B5B9]">
+        <span className="truncate text-[11px] sm:text-xs">
+          {step.subText || "Lakukan gerakan pada papan catur di atas."}
+        </span>
+        {!showHint && (
+          <button
+            type="button"
+            onClick={() => setShowHint(true)}
+            className="hover:text-[#F2F0E8] text-[#C7A66A] underline flex items-center gap-1 text-[11px] shrink-0 cursor-pointer"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Petunjuk</span>
+          </button>
         )}
+      </div>
 
+      {/* Fallback Banner jika Modal Ditutup Sementara */}
+      {status === "correct" && !showSuccessModal && (
+        <div className="p-2.5 rounded-lg bg-[#73B894]/15 border border-[#73B894]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 text-xs text-[#73B894] font-medium">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-[#73B894]" />
+            <span>Langkah Benar! Tantangan selesai.</span>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSuccessModal(true)}
+              className="text-xs text-[#73B894] hover:text-[#F2F0E8] h-6 px-2"
+            >
+              Lihat Penjelasan
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleNextStep}
+              className="w-full sm:w-auto text-xs py-1 px-2.5 font-semibold"
+            >
+              <span>
+                {currentStepIdx < lesson.steps.length - 1
+                  ? "Lanjut ke Tantangan Berikutnya"
+                  : "Selesaikan Pelajaran Ini"}
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
 
-
-        {/* Hint Section */}
-        {showHint && status !== "correct" && (
-          <div className="p-2.5 rounded-lg bg-[#24292E] border border-[#353B42] text-xs text-[#B0B5B9] space-y-1 animate-in fade-in">
-            <span className="font-medium text-[#C7A66A] flex items-center gap-1">
+      {/* Hint Section */}
+      {showHint && status !== "correct" && (
+        <div className="p-2.5 rounded-lg bg-[#24292E] border border-[#353B42] text-xs text-[#B0B5B9] space-y-1 animate-in fade-in">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[#C7A66A] flex items-center gap-1 text-[11px]">
               <Sparkles className="w-3 h-3" />
               Petunjuk Arahan:
             </span>
-            <p className="leading-relaxed">{step.hint}</p>
-          </div>
-        )}
-
-        {status === "idle" && !showHint && (
-          <div className="pt-1 flex items-center justify-between text-xs text-[#8A9299]">
-            <span>Lakukan gerakan langsung pada papan catur di atas.</span>
             <button
               type="button"
-              onClick={() => setShowHint(true)}
-              className="hover:text-[#F2F0E8] underline flex items-center gap-1 text-[11px]"
+              onClick={() => setShowHint(false)}
+              className="text-[10px] text-[#8A9299] hover:text-[#F2F0E8] cursor-pointer"
             >
-              <HelpCircle className="w-3 h-3" />
-              Butuh Petunjuk?
+              ✕ Tutup
             </button>
           </div>
-        )}
-      </Card>
+          <p className="leading-relaxed text-[11px] text-[#F2F0E8]">{step.hint}</p>
+        </div>
+      )}
 
       {/* Pop-up Modal Keberhasilan Langkah (Ramah Pemula, Tanpa Perlu Scroll) */}
       <Modal

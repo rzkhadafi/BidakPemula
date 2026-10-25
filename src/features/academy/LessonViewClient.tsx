@@ -83,48 +83,50 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
   );
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Navigation Breadcrumb */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#353B42]">
-        <Link
-          href="/academy"
-          className="inline-flex items-center gap-1.5 text-xs text-[#B0B5B9] hover:text-[#F2F0E8] transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Kembali ke Kurikulum Belajar</span>
-        </Link>
-        <Badge variant="accent">Pelajaran {lesson.order} dari 9</Badge>
-      </div>
-
-      {/* Lesson Header */}
-      <div className="space-y-1">
-        <h1 className="text-xl sm:text-3xl font-semibold text-[#F2F0E8]">
-          {lesson.title}
-        </h1>
-        <p className="text-xs sm:text-sm text-[#C7A66A] font-medium">
-          {lesson.subtitle}
-        </p>
-        <p className="text-xs sm:text-sm text-[#B0B5B9] leading-relaxed pt-1 max-w-3xl">
-          {lesson.summary}
-        </p>
-      </div>
-
-      {/* Main Grid: Interactive Board & Lesson Guide */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Interactive Practice Board */}
-        <div className="lg:col-span-7 flex flex-col items-center w-full">
-          <InteractiveLessonBoard
-            lesson={lesson}
-            currentStepIndex={currentStepIdx}
-            onStepChange={setCurrentStepIdx}
-            onLessonComplete={handleLessonComplete}
-          />
+    <div className="w-full max-w-7xl mx-auto flex flex-col space-y-3">
+      {/* Sleek Compact Header Bar */}
+      <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-[#353B42] text-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Link
+            href="/academy"
+            className="inline-flex items-center gap-1 text-xs text-[#B0B5B9] hover:text-[#F2F0E8] transition-colors shrink-0"
+            title="Kembali ke Kurikulum Belajar"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Kurikulum</span>
+          </Link>
+          <span className="text-[#353B42] select-none">|</span>
+          <h1 className="font-semibold text-sm sm:text-base text-[#F2F0E8] truncate">
+            {lesson.title}
+          </h1>
+          <span className="hidden md:inline text-xs text-[#C7A66A] font-medium truncate">
+            • {lesson.subtitle}
+          </span>
         </div>
 
-        {/* Right Column: AI Tutor & Concept Guide */}
-        <div className="lg:col-span-5 space-y-4 w-full">
+        <Badge variant="accent" size="sm" className="shrink-0 text-[11px]">
+          Pelajaran {lesson.order} dari 9
+        </Badge>
+      </div>
+
+      {/* Main Split-Screen: Interactive Board (Left, Stationary) & AI Tutor / Guide (Right, Scrollable) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column: Interactive Practice Board (STATIONARY / NO SCROLL) */}
+        <div className="lg:col-span-7 flex flex-col items-center w-full">
+          <div className="w-full max-w-[530px]">
+            <InteractiveLessonBoard
+              lesson={lesson}
+              currentStepIndex={currentStepIdx}
+              onStepChange={setCurrentStepIdx}
+              onLessonComplete={handleLessonComplete}
+            />
+          </div>
+        </div>
+
+        {/* Right Column: AI Tutor & Concept Guide (SCROLLABLE CONTAINER) */}
+        <div className="lg:col-span-5 w-full flex flex-col lg:max-h-[calc(100vh-130px)] lg:sticky lg:top-3">
           {/* Tab Selection */}
-          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[#1C2024] border border-[#353B42]">
+          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[#1C2024] border border-[#353B42] shrink-0 mb-2.5">
             <button
               type="button"
               onClick={() => setActiveTab("tutor")}
@@ -151,65 +153,72 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
             </button>
           </div>
 
-          {activeTab === "tutor" ? (
-            <TutorPanel
-              key={`${lesson.id}-${currentStep.id}`}
-              requestContext={tutorRequestContext}
-            />
-          ) : (
-            <>
-              {/* Concept Guide Card */}
-              <Card variant="surface" className="space-y-3">
-                <div className="flex items-center gap-2 text-xs text-[#C7A66A] font-semibold uppercase tracking-wider pb-2 border-b border-[#353B42]">
-                  <BookOpen className="w-4 h-4" />
-                  <span>{lesson.conceptHeading}</span>
-                </div>
-
-                <div className="space-y-2.5 text-xs text-[#B0B5B9] leading-relaxed">
-                  {lesson.conceptBody.map((paragraph, idx) => (
-                    <p key={idx}>{paragraph}</p>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Key Takeaways Card */}
-              <Card variant="surface" className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#F2F0E8] pb-1 border-b border-[#353B42]">
-                  Poin Penting untuk Diingat:
-                </h3>
-                <ul className="space-y-2 text-xs text-[#B0B5B9]">
-                  {lesson.takeaways.map((point, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#C7A66A] mt-1.5 shrink-0" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </>
-          )}
-
-          {/* Navigation Controls */}
-          <div className="flex items-center justify-between pt-2">
-            {prevLesson ? (
-              <Link href={`/academy/${prevLesson.id}`}>
-                <Button variant="secondary" size="sm" className="text-xs">
-                  <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-                  <span>Pelajaran {prevLesson.order}</span>
-                </Button>
-              </Link>
+          {/* Independent Scrollable Container for Tutor & Guide */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+            {activeTab === "tutor" ? (
+              <TutorPanel
+                key={`${lesson.id}-${currentStep.id}`}
+                requestContext={tutorRequestContext}
+              />
             ) : (
-              <div />
+              <>
+                {/* Concept Guide Card */}
+                <Card variant="surface" className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-[#C7A66A] font-semibold uppercase tracking-wider pb-2 border-b border-[#353B42]">
+                    <BookOpen className="w-4 h-4" />
+                    <span>{lesson.conceptHeading}</span>
+                  </div>
+
+                  <p className="text-xs text-[#F2F0E8] font-medium leading-relaxed">
+                    {lesson.summary}
+                  </p>
+
+                  <div className="space-y-2 text-xs text-[#B0B5B9] leading-relaxed pt-1 border-t border-[#353B42]/50">
+                    {lesson.conceptBody.map((paragraph, idx) => (
+                      <p key={idx}>{paragraph}</p>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Key Takeaways Card */}
+                <Card variant="surface" className="space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#F2F0E8] pb-1 border-b border-[#353B42]">
+                    Poin Penting untuk Diingat:
+                  </h3>
+                  <ul className="space-y-2 text-xs text-[#B0B5B9]">
+                    {lesson.takeaways.map((point, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#C7A66A] mt-1.5 shrink-0" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </>
             )}
 
-            {nextLesson && (
-              <Link href={`/academy/${nextLesson.id}`}>
-                <Button variant="primary" size="sm" className="text-xs">
-                  <span>Pelajaran {nextLesson.order}</span>
-                  <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </Link>
-            )}
+            {/* Navigation Controls */}
+            <div className="flex items-center justify-between pt-2">
+              {prevLesson ? (
+                <Link href={`/academy/${prevLesson.id}`}>
+                  <Button variant="secondary" size="sm" className="text-xs">
+                    <ChevronLeft className="w-3.5 h-3.5 mr-1" />
+                    <span>Pelajaran {prevLesson.order}</span>
+                  </Button>
+                </Link>
+              ) : (
+                <div />
+              )}
+
+              {nextLesson && (
+                <Link href={`/academy/${nextLesson.id}`}>
+                  <Button variant="primary" size="sm" className="text-xs">
+                    <span>Pelajaran {nextLesson.order}</span>
+                    <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
