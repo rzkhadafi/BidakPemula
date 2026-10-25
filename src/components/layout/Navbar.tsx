@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   GraduationCap,
@@ -45,10 +46,15 @@ export const Navbar: React.FC = () => {
             href="/"
             className="flex items-center gap-2.5 text-[#F2F0E8] hover:text-[#C7A66A] transition-colors focus-visible:outline-2 focus-visible:outline-[#C7A66A] rounded-md px-1"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#24292E] border border-[#353B42] flex items-center justify-center font-bold text-[#C7A66A]">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M19 22H5v-2h14v2M17.5 13c-.3 0-.5-.1-.7-.3l-2.8-2.8v-1.4l1.4-1.4c.4-.4.4-1 0-1.4-.4-.4-1-.4-1.4 0L12.5 7.1l-1-1 1.4-1.4c.4-.4.4-1 0-1.4-.4-.4-1-.4-1.4 0L9 5.8C8.6 6.2 8.4 6.7 8.4 7.2v2.1l-2.1 2.1c-.2.2-.3.5-.3.7v3.9h11.5v-3z" />
-              </svg>
+            <div className="relative w-9 h-9 flex items-center justify-center shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Logo Bidak Pemula"
+                width={36}
+                height={36}
+                className="w-full h-full object-contain drop-shadow-sm"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-semibold tracking-wider text-sm sm:text-base uppercase text-[#F2F0E8]">

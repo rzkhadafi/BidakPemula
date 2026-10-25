@@ -16,9 +16,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bidak Pemula — Belajar & Bermain Catur Ramah Pemula",
+  title: "Bidak Pemula — Belajar Catur Mudah",
   description:
     "Platform belajar, bermain catur melawan bot komputer, dan mengasah taktik catur dengan analisis terstruktur dalam Bahasa Indonesia.",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
