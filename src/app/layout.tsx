@@ -20,7 +20,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bidak-pemula.vercel
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Bidak Pemula — Belajar Catur Interaktif dari Nol",
+    default: "Bidak Pemula",
     template: "%s | Bidak Pemula",
   },
   description:
