@@ -507,7 +507,7 @@ export default function PlayPage() {
                 </div>
                 <p className="text-[#B0B5B9] text-xs leading-relaxed">
                   {history.length === 0
-                    ? "Selamat datang! Saya mendampingi setiap langkahmu. Jika bingung memilih langkah awal, tekan tombol Petunjuk Sokrates di bawah."
+                    ? "Saya mendampingi setiap langkahmu. Jika bingung memilih langkah awal, gunakan tombol Petunjuk Sokrates di bawah."
                     : botThinking
                     ? "Bot sedang berpikir... Perhatikan susunan bidakmu sementara menunggu."
                     : isPlayerTurn

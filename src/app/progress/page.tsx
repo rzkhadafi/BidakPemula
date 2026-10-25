@@ -51,7 +51,7 @@ export default function ProgressPage() {
       return;
     }
 
-    const textToSpeak = `Halo! Langkah latihan berikutnya yang saya sarankan adalah ${recommendation.targetTitle}. ${recommendation.reason}`;
+    const textToSpeak = `Langkah latihan berikutnya yang saya sarankan adalah ${recommendation.targetTitle}. ${recommendation.reason}`;
     setIsPlayingVoice(true);
 
     controller.speak(textToSpeak).finally(() => {

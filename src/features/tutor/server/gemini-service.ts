@@ -150,7 +150,11 @@ ${
 PEDOMAN PENTING:
 1. Jelaskan alasan sebuah langkah baik/buruk dengan bahasa Indonesia sederhana tanpa jargon yang membingungkan. Jika menyebut istilah (misal: rokade, garpu, pin), jelaskan artinya secara singkat.
 2. JANGAN MENGARANG langkah terbaik atau evaluasi jika data engine tidak menyediakannya. Jika analisis engine tidak ada, sampaikan penjelasan berdasarkan prinsip visual papan.
-3. Field "spokenText" HARUS berupa naskah percakapan lisan yang hangat, bersahabat, memiliki intonasi hidup, dan menyenangkan didengar (maksimal 3 kalimat). Gunakan gaya tutur seorang mentor ramah yang berbicara langsung kepada murid (misalnya: "Halo! Langkah ini bagus sekali karena membuka jalan untuk perwiramu menguasai petak tengah."). Hindari gaya bahasa baku seperti ensiklopedia dan jangan pernah mengeja kode notasi mentah seperti "Nf3" atau tanda catur teknis.
+3. Field "spokenText" HARUS berupa naskah percakapan lisan yang padat, ringkas, langsung ke intinya (maksimal 2 kalimat), bersahabat, dan enak didengar.
+   ATURAN MUTLAK:
+   - JANGAN PERNAH mengawali dengan sapaan, salam, atau basa-basi pembuka seperti "Halo", "Hai", "Selamat datang", atau sejenisnya.
+   - Langsung bicarakan inti situasi papan atau instruksi langkah (misalnya: "Langkah ini membuka jalan bagi perwiramu untuk menguasai petak pusat." atau "Perhatikan perwira lawan yang sedang mengancam petak ini.").
+   - Hindari gaya bahasa baku seperti ensiklopedia dan jangan pernah mengeja kode notasi mentah seperti "Nf3" atau tanda catur teknis.
 4. Kembalikan HANYA format JSON valid tanpa markdown formatting tambahan atau pembungkus lain:
 {
   "title": "Judul singkat penjelasan",
@@ -241,11 +245,19 @@ PEDOMAN PENTING:
           });
         }
 
+        const rawSpoken = parsed.spokenText || parsed.summary || "Mari amati posisi bidak pada papan bersama-sama.";
+        const cleanSpoken = rawSpoken
+          .replace(/^(halo[!,\s]*|hai[!,\s]*|halo\s+\w+[!,\s]*|selamat\s+(pagi|siang|sore|malam|datang)[!,\s]*)/i, "")
+          .trim();
+        const finalSpoken = cleanSpoken.length > 0
+          ? cleanSpoken.charAt(0).toUpperCase() + cleanSpoken.slice(1)
+          : rawSpoken;
+
         return {
           title: parsed.title || "Penjelasan Posisi Catur",
           summary: parsed.summary || "Analisis posisi catur Anda saat ini.",
           explanation: parsed.explanation || "Perhatikan perwira dan koordinasi petak di atas papan.",
-          spokenText: parsed.spokenText || parsed.summary || "Mari amati posisi bidak pada papan bersama-sama.",
+          spokenText: finalSpoken,
           concept: parsed.concept || "Strategi Dasar Catur",
           suggestedMoves: verifiedMoves.slice(0, 3),
           hint: parsed.hint || undefined,
@@ -267,13 +279,21 @@ PEDOMAN PENTING:
    * Returns audio buffer as WAV format.
    */
   public static async synthesizeSpeech(text: string, voice?: string): Promise<SpeechResult | null> {
-    const trimmed = text.trim();
+    let trimmed = text.trim();
     if (!trimmed) {
       throw {
         code: "INVALID_REQUEST",
         message: "Teks untuk sintesis suara tidak boleh kosong.",
         retryable: false,
       } as TutorApiError;
+    }
+
+    // Strip leading greetings like "Halo!", "Hai!", etc. so speech immediately starts to the point
+    const stripped = trimmed
+      .replace(/^(halo[!,\s]*|hai[!,\s]*|halo\s+\w+[!,\s]*|selamat\s+(pagi|siang|sore|malam|datang)[!,\s]*)/i, "")
+      .trim();
+    if (stripped.length > 0) {
+      trimmed = stripped.charAt(0).toUpperCase() + stripped.slice(1);
     }
 
     if (trimmed.length > 1000) {

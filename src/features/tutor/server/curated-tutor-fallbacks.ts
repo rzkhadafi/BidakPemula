@@ -66,7 +66,7 @@ export function getCuratedTutorExplanation(request: TutorExplainRequest): TutorE
       title: `Panduan: ${title}`,
       summary: instruction,
       explanation: `Dalam materi ini, kita mempelajari bagaimana bidak catur berinteraksi di atas 64 petak. Perhatikan petak tujuan dan jalur yang terbuka agar perwira Anda dapat bergerak secara maksimal tanpa terancam oleh lawan.`,
-      spokenText: `Halo! Mari kita perhatikan papan ini bersama. ${instruction} Ingat prinsip dasarnya: jalankan bidak Anda ke petak yang aman dan aktif, serta selalu lindungi perwira dari ancaman lawan.`,
+      spokenText: `Mari kita perhatikan papan ini bersama. ${instruction} Jalankan bidak Anda ke petak yang aman dan aktif, serta selalu lindungi perwira dari ancaman lawan.`,
       concept: "Fondasi Gerakan & Penempatan Bidak",
       suggestedMoves: suggestedMoves.slice(0, 2),
       hint: "Perhatikan petak yang disorot atau jalur bebas di depan bidak Anda.",
