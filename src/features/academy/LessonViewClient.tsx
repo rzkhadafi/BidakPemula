@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { AcademyLesson } from "./types";
 import { InteractiveLessonBoard } from "./InteractiveLessonBoard";
+import { PieceShowcaseExplorer } from "./PieceShowcaseExplorer";
 import { markLessonCompleted } from "./academy-progress";
 import { TutorPanel } from "@/features/tutor/components/TutorPanel";
 import { tutorSpeech } from "@/features/tutor/speech-controller";
@@ -82,6 +83,82 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
     [currentStep.fen, currentStep.instruction, lesson.title]
   );
 
+  const isShowcaseLesson = lesson.id === "kenalan-pasukan";
+
+  if (isShowcaseLesson) {
+    return (
+      <div className="w-full">
+        <PieceShowcaseExplorer
+          lesson={lesson}
+          prevLesson={prevLesson}
+          nextLesson={nextLesson}
+          onLessonComplete={handleLessonComplete}
+        />
+
+        {/* Completion Modal */}
+        <Modal
+          isOpen={completionModalOpen}
+          onClose={() => setCompletionModalOpen(false)}
+          title="Pelajaran Berhasil Diselesaikan!"
+          description={`Selamat! Anda telah menguasai materi ${lesson.title}.`}
+        >
+          <div className="space-y-4 pt-2">
+            <div className="p-4 rounded-xl bg-[#73B894]/15 border border-[#73B894]/40 flex items-center gap-3 text-xs text-[#73B894]">
+              <Trophy className="w-8 h-8 text-[#C7A66A] shrink-0" />
+              <div className="space-y-0.5">
+                <span className="font-semibold text-sm text-[#F2F0E8] block">
+                  Progres Tersimpan di Perangkat Anda
+                </span>
+                <p className="text-[#B0B5B9]">
+                  Pemahaman Anda semakin tajam untuk melangkah ke materi berikutnya.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setCompletionModalOpen(false);
+                  router.push("/academy");
+                }}
+              >
+                Ke Daftar Pelajaran
+              </Button>
+
+              {nextLesson ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setCompletionModalOpen(false);
+                    router.push(`/academy/${nextLesson.id}`);
+                  }}
+                >
+                  <span>Lanjut ke Pelajaran {nextLesson.order}</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setCompletionModalOpen(false);
+                    router.push("/play");
+                  }}
+                >
+                  <span>Coba Main Melawan Bot</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </Modal>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto flex flex-col space-y-2 min-h-0">
       {/* Sleek Compact Header Bar */}
@@ -105,7 +182,7 @@ export const LessonViewClient: React.FC<LessonViewClientProps> = ({
         </div>
 
         <Badge variant="accent" size="sm" className="shrink-0 text-[11px]">
-          Pelajaran {lesson.order} <span className="hidden sm:inline">dari</span><span className="sm:hidden">/</span> 9
+          Pelajaran {lesson.order} <span className="hidden sm:inline">dari</span><span className="sm:hidden">/</span> 10
         </Badge>
       </div>
 
