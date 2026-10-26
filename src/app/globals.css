@@ -180,14 +180,20 @@ button,
 }
 
 .animate-piece-glide {
-  animation: chessPieceGlide 200ms cubic-bezier(0.2, 0, 0.2, 1) both;
+  animation: chessPieceGlide 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform;
   z-index: 35 !important;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
+  contain: layout paint;
+  filter: none !important;
 }
 
 .animate-piece-captured {
   animation: chessPieceCaptured 180ms ease-out both;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   pointer-events: none;
 }

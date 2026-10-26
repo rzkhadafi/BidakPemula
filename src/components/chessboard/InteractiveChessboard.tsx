@@ -271,7 +271,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       setMoveAnimState((prev) =>
         prev.animatingMove ? { ...prev, animatingMove: null } : prev
       );
-    }, 220);
+    }, 210);
 
     return () => clearTimeout(timer);
   }, [moveAnimState.animatingMove, currentBoardMap]);
@@ -526,8 +526,16 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                   key={squareCoord}
                   data-square={squareCoord}
                   onClick={() => !disabled && onSquareClick(squareCoord)}
-                  onMouseEnter={() => setHoveredSquare(squareCoord)}
-                  onMouseLeave={() => setHoveredSquare(null)}
+                  onMouseEnter={() => {
+                    if (typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches) {
+                      setHoveredSquare(squareCoord);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches) {
+                      setHoveredSquare(null);
+                    }
+                  }}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, squareCoord)}
                   title={visionEnabled && squareThreat ? squareThreat.summary : undefined}
@@ -623,17 +631,19 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
                     return (
                       <div
-                        key={isAnimating ? animatingMove?.key : squareCoord}
+                        key={squareCoord}
                         draggable={!disabled && piece.color === chess.turn()}
                         onDragStart={(e) => handleDragStart(e, squareCoord)}
                         style={glideStyle}
-                        className={`w-[88%] h-[88%] flex items-center justify-center select-none drop-shadow-md ${
+                        className={`w-full h-full flex items-center justify-center select-none ${
                           isAnimating
                             ? "animate-piece-glide z-35 pointer-events-none"
-                            : "z-10 transition-transform duration-150 active:scale-95"
+                            : "z-10 transition-transform duration-100 active:scale-95"
                         }`}
                       >
-                        <ChessPiece type={piece.type} color={piece.color} />
+                        <div className="w-[88%] h-[88%] flex items-center justify-center">
+                          <ChessPiece type={piece.type} color={piece.color} />
+                        </div>
                       </div>
                     );
                   })()}
