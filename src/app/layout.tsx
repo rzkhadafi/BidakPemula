@@ -99,14 +99,34 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "Bidak Pemula",
-  url: siteUrl,
-  description:
-    "Platform belajar catur interaktif berbahasa Indonesia untuk pemula.",
-  applicationCategory: "EducationalApplication",
-  inLanguage: "id",
-  operatingSystem: "All",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      name: "Bidak Pemula",
+      alternateName: ["BidakPemula", "Bidak Pemula Catur"],
+      url: siteUrl,
+      inLanguage: "id-ID",
+      description:
+        "Platform belajar catur interaktif berbahasa Indonesia untuk pemula.",
+      publisher: {
+        "@type": "Organization",
+        name: "Bidak Pemula",
+        url: siteUrl,
+      },
+    },
+    {
+      "@type": "WebApplication",
+      "@id": `${siteUrl}/#app`,
+      name: "Bidak Pemula",
+      url: siteUrl,
+      description:
+        "Platform belajar catur interaktif berbahasa Indonesia untuk pemula.",
+      applicationCategory: "EducationalApplication",
+      inLanguage: "id",
+      operatingSystem: "All",
+    },
+  ],
 };
 
 export default function RootLayout({
